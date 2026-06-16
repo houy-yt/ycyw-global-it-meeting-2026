@@ -1,0 +1,669 @@
+<template>
+  <div>
+    <!-- ============ HERO ============ -->
+    <section class="hero-bg text-white py-14 sm:py-16">
+      <div class="container-x text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase">
+          <span class="h-1.5 w-1.5 rounded-full bg-brand-orange"></span>
+          参会人员 · Attendees
+        </div>
+        <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">
+          Meet the Team
+        </h1>
+        <p class="mt-3 text-white/80 text-sm sm:text-base">
+          共 <span class="font-bold text-brand-orange">{{ total }}</span> 位同仁，来自
+          <span class="font-bold text-brand-orange">{{ orderedGroups.length }}</span> 所学校 / 部门
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ LOADING / ERROR / EMPTY ============ -->
+    <section class="container-x section-y" v-if="loading || loadError || orderedGroups.length === 0">
+      <div v-if="loading" class="space-y-4">
+        <el-skeleton :rows="4" animated />
+        <el-skeleton :rows="4" animated />
+      </div>
+      <div v-else-if="loadError" class="card p-8 text-center">
+        <div class="text-brand-red text-base font-semibold">加载参会人员失败</div>
+        <div class="mt-2 text-sm text-slate-500">{{ loadError }}</div>
+        <el-button class="mt-4" type="primary" @click="load">重试</el-button>
+      </div>
+      <div v-else class="card p-10 text-center text-slate-400">
+        暂无参会人员数据
+      </div>
+    </section>
+
+    <!-- ============ MAIN: TIMELINE ============ -->
+    <section v-else class="section-y">
+      <div class="container-x">
+        <div class="timeline">
+          <div
+            v-for="g in orderedGroups"
+            :key="g.school"
+            class="timeline-item"
+          >
+            <!-- LEFT: Title area -->
+            <div class="timeline-left">
+              <h2
+                class="text-sm sm:text-2xl font-extrabold leading-tight"
+                :style="{ color: schoolColor(g.school) }"
+              >
+                {{ g.school }}
+              </h2>
+              <span v-if="g.school !== 'CTO'" class="text-xs sm:text-sm text-slate-400 mt-1 block">{{ g.people.length }} 人</span>
+            </div>
+
+            <!-- CENTER: timeline line + node dot -->
+            <div class="timeline-center">
+              <div class="timeline-line-full" aria-hidden="true"></div>
+              <span
+                class="timeline-node"
+                :style="{
+                  background: schoolColor(g.school),
+                  boxShadow: '0 0 0 4px #fafbfc, 0 0 0 6px ' + schoolColor(g.school) + '20'
+                }"
+                aria-hidden="true"
+              >
+                <span class="timeline-node-ring" :style="{ borderColor: schoolColor(g.school) }"></span>
+              </span>
+            </div>
+
+            <!-- RIGHT: Photos grid -->
+            <div class="timeline-right">
+              <div class="people-grid">
+                <div
+                  v-for="(p, idx) in g.people"
+                  :key="g.school + '-' + idx"
+                  class="person-card group"
+                  @click="preview(p)"
+                >
+                  <div
+                    class="photo relative overflow-hidden bg-slate-100 ring-1 ring-slate-200/70 group-hover:ring-brand-blue/40 transition shadow-soft"
+                  >
+                    <img
+                      v-if="p.photoUrl && !imgFail[uniqueKey(g.school, idx)]"
+                      :src="p.photoUrl"
+                      :alt="displayName(p)"
+                      loading="lazy"
+                      class="w-full h-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                      @error="onImgError(g.school, idx)"
+                    />
+                    <div
+                      v-else
+                      class="w-full h-full flex items-center justify-center text-white text-3xl font-extrabold tracking-wider"
+                      :style="{ background: initialColor(p) }"
+                    >
+                      {{ initialLetter(p) }}
+                    </div>
+                    <div
+                      class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent opacity-0 group-hover:opacity-100 transition"
+                    ></div>
+                  </div>
+                  <div class="mt-2.5 text-sm font-semibold text-brand-deep truncate text-center">
+                    {{ primaryName(p) }}
+                  </div>
+                  <div
+                    v-if="secondaryName(p)"
+                    class="text-xs text-slate-500 truncate mt-0.5 text-center"
+                  >
+                    {{ secondaryName(p) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Photo Preview Modal -->
+      <Teleport to="body">
+        <Transition name="modal-fade">
+          <div
+            v-if="previewPerson"
+            class="photo-modal-overlay"
+            @click.self="previewPerson = null"
+          >
+            <div class="photo-modal-container">
+              <!-- Close button -->
+              <button
+                class="photo-modal-close"
+                @click="previewPerson = null"
+                aria-label="关闭"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+
+              <!-- Photo card with 3D depth -->
+              <div class="photo-modal-card">
+                <div class="photo-modal-frame">
+                  <img
+                    :src="previewPerson.photoUrl"
+                    :alt="displayName(previewPerson)"
+                    class="photo-modal-img"
+                  />
+                </div>
+                <!-- Person info -->
+                <div class="photo-modal-info">
+                  <div class="photo-modal-name">{{ primaryName(previewPerson) }}</div>
+                  <div v-if="secondaryName(previewPerson)" class="photo-modal-name-sub">{{ secondaryName(previewPerson) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
+
+    </section>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import api from '../api';
+
+// ---------- state ----------
+const loading = ref(true);
+const loadError = ref('');
+const total = ref(0);
+const groups = ref([]); // [{ school, people: [] }]
+const imgFail = reactive({}); // { [`${school}__${idx}`]: true }
+const previewPerson = ref(null);
+
+// ---------- ordering ----------
+const SCHOOL_ORDER = [
+  'CTO',
+  'YCIS-BJ',
+  'YCIS-SH',
+  'YCIS-CQ',
+  'YCIS-QD',
+  'YCIS-HK',
+  'YWIES-BJ',
+  'YWIES-SHLG',
+  'YWIES-GZ',
+  'YWIES-TX',
+  'YWIES-YT',
+  'YWAD',
+  'Yaotong-BJ',
+  'Yaotong-SH',
+];
+function schoolRank(name) {
+  // Case-insensitive matching
+  const nl = (name || '').toLowerCase();
+  const i = SCHOOL_ORDER.findIndex((s) => s.toLowerCase() === nl);
+  return i === -1 ? 999 : i;
+}
+const orderedGroups = computed(() => {
+  return [...groups.value].sort((a, b) => {
+    const r = schoolRank(a.school) - schoolRank(b.school);
+    if (r !== 0) return r;
+    return a.school.localeCompare(b.school);
+  });
+});
+
+// ---------- visuals ----------
+function schoolColor(name) {
+  const n = (name || '').toLowerCase();
+  if (n === 'cto') return '#0032a0';
+  if (n.includes('ycis')) return '#ff0044';
+  if (n.includes('ywies') || n.includes('ywad')) return '#ff8200';
+  if (n.includes('yaotong')) return '#0032a0';
+  return '#64748b'; // fallback slate
+}
+const AVATAR_PALETTE = ['#0032a0', '#001e60', '#ff8200', '#ff0044', '#1f6feb', '#3a8a4d', '#7c3aed', '#0ea5e9'];
+function _hash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h;
+}
+function initialColor(p) {
+  const key = (p.nameEn || p.nameCn || '').trim() || 'x';
+  return AVATAR_PALETTE[_hash(key) % AVATAR_PALETTE.length];
+}
+function initialLetter(p) {
+  const name = (p.nameEn || '').trim();
+  if (name) return name[0].toUpperCase();
+  const cn = (p.nameCn || '').trim();
+  if (cn) return cn[0];
+  return '·';
+}
+function uniqueKey(school, idx) {
+  return school + '__' + idx;
+}
+
+// ---------- display helpers ----------
+function displayName(p) {
+  return p.nameEn || p.nameCn || '—';
+}
+function primaryName(p) {
+  return p.nameEn || p.nameCn || '—';
+}
+function secondaryName(p) {
+  if (p.nameEn && p.nameCn && p.nameEn !== p.nameCn) return p.nameCn;
+  return '';
+}
+
+// ---------- events ----------
+function onImgError(school, idx) {
+  imgFail[uniqueKey(school, idx)] = true;
+}
+function preview(p) {
+  if (p.photoUrl) previewPerson.value = p;
+}
+function handleKeydown(e) {
+  if (e.key === 'Escape' && previewPerson.value) {
+    previewPerson.value = null;
+  }
+}
+
+// ---------- load ----------
+async function load() {
+  loading.value = true;
+  loadError.value = '';
+  try {
+    const { data } = await api.get('/attendees');
+    // eslint-disable-next-line no-console
+    console.log('[attendees] response:', data);
+
+    let normalized = [];
+    if (Array.isArray(data)) {
+      const map = {};
+      for (const a of data) {
+        const k = a.school || 'Other';
+        if (!map[k]) map[k] = [];
+        map[k].push(a);
+      }
+      normalized = Object.entries(map).map(([school, people]) => ({ school, people }));
+    } else if (Array.isArray(data?.groups)) {
+      normalized = data.groups.map((g) => ({
+        school: g.school || 'Other',
+        people: g.people || [],
+      }));
+    } else if (Array.isArray(data?.schools)) {
+      normalized = data.schools.map((g) => ({
+        school: g.name || g.school || 'Other',
+        people: g.members || g.people || [],
+      }));
+    }
+
+    groups.value = normalized;
+    total.value =
+      typeof data?.total === 'number'
+        ? data.total
+        : normalized.reduce((n, g) => n + g.people.length, 0);
+  } catch (e) {
+    console.error(e);
+    loadError.value = e?.response?.data?.message || e.message || '网络错误';
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  load();
+  window.addEventListener('keydown', handleKeydown);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown);
+});
+</script>
+
+<style scoped>
+/* ========== Timeline ========== */
+.timeline {
+  position: relative;
+}
+
+/* ===== DESKTOP (>=640px): 3-column grid (3:7) ===== */
+.timeline-item {
+  display: grid;
+  grid-template-columns: 3fr 48px 7fr;
+  gap: 0;
+  align-items: start;
+}
+
+/* ===== MOBILE (<640px): 2-column, single-column flow ===== */
+@media (max-width: 639px) {
+  .timeline-item {
+    grid-template-columns: 28px 1fr;
+    grid-template-rows: auto auto;
+    gap: 0;
+    align-items: start;
+  }
+}
+
+/* ---------- LEFT column: Title ---------- */
+.timeline-left {
+  text-align: right;
+  padding-right: 24px;
+  padding-top: 0;
+  margin-top: -6px;
+  padding-bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+@media (max-width: 639px) {
+  .timeline-left {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: left;
+    padding-right: 0;
+    padding-left: 12px;
+    padding-bottom: 8px;
+    padding-top: 0;
+    margin-top: 0;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .timeline-left span {
+    margin-top: 0;
+  }
+}
+.timeline-item:last-child .timeline-left {
+  /* no change needed for desktop */
+}
+@media (min-width: 640px) {
+  .timeline-item:last-child .timeline-left {
+    padding-bottom: 0;
+  }
+}
+
+/* ---------- CENTER column: line + dot ---------- */
+.timeline-center {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 0;
+  align-self: stretch;
+}
+@media (max-width: 639px) {
+  .timeline-center {
+    grid-column: 1;
+    grid-row: 1 / -1; /* span both rows */
+    padding-top: 2px;
+  }
+}
+
+/* Full-height vertical line behind the dot */
+.timeline-line-full {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: rgba(0, 50, 160, 0.3);
+}
+/* Start line from dot center for first item */
+.timeline-item:first-child .timeline-line-full {
+  top: 6px;
+}
+@media (min-width: 640px) {
+  .timeline-item:first-child .timeline-line-full {
+    top: 9px;
+  }
+}
+
+/* Node dot */
+.timeline-node {
+  position: relative;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  z-index: 1;
+}
+@media (min-width: 640px) {
+  .timeline-node {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Pulse ring around dot */
+.timeline-node-ring {
+  position: absolute;
+  inset: -6px;
+  border: 2px solid;
+  border-radius: 9999px;
+  opacity: 0.35;
+  animation: pulse 2.6s ease-out infinite;
+}
+@media (min-width: 640px) {
+  .timeline-node-ring {
+    inset: -8px;
+  }
+}
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- RIGHT column: Photos ---------- */
+.timeline-right {
+  padding-left: 24px;
+  padding-top: 0;
+  padding-bottom: 48px;
+}
+@media (max-width: 639px) {
+  .timeline-right {
+    grid-column: 2;
+    grid-row: 2;
+    padding-left: 12px;
+    padding-top: 0;
+    padding-bottom: 28px;
+  }
+}
+.timeline-item:last-child .timeline-right {
+  padding-bottom: 0;
+}
+
+/* ---------- People grid ---------- */
+.people-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px 10px;
+}
+.person-card {
+  cursor: pointer;
+  max-width: 150px;
+}
+.person-card .photo {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px;
+  max-height: 200px;
+  max-width: 150px;
+}
+@media (min-width: 640px) {
+  .people-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 20px 16px;
+  }
+}
+@media (min-width: 1024px) {
+  .people-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 22px 18px;
+  }
+  .person-card .photo {
+    border-radius: 6px;
+  }
+}
+</style>
+
+<!-- Non-scoped styles for Teleported modal -->
+<style>
+/* ========== Photo Preview Modal ========== */
+.photo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 10, 30, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 30px;
+}
+
+.photo-modal-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 420px;
+}
+
+.photo-modal-close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(6px);
+}
+.photo-modal-close:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+/* Card with 3D depth effect */
+.photo-modal-card {
+  width: 100%;
+  perspective: 800px;
+  animation: modal-card-enter 0.45s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.photo-modal-frame {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #111;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    0 30px 80px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 -4px 20px rgba(0, 50, 160, 0.15);
+  transform: rotateX(1.5deg);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.photo-modal-frame:hover {
+  transform: rotateX(0deg) scale(1.01);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 16px 50px rgba(0, 0, 0, 0.5),
+    0 40px 100px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset,
+    0 0 60px rgba(0, 50, 160, 0.12);
+}
+
+/* Glossy shine overlay on the frame */
+.photo-modal-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.04) 30%,
+    transparent 50%
+  );
+  pointer-events: none;
+}
+
+.photo-modal-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 75vh;
+  object-fit: contain;
+}
+
+/* Person info below photo */
+.photo-modal-info {
+  text-align: center;
+  margin-top: 20px;
+}
+.photo-modal-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.photo-modal-name-sub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+/* ========== Transition animations ========== */
+.modal-fade-enter-active {
+  transition: opacity 0.3s ease;
+}
+.modal-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+@keyframes modal-card-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.88) translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ========== Desktop: larger max-width ========== */
+@media (min-width: 640px) {
+  .photo-modal-overlay {
+    padding: 40px;
+  }
+  .photo-modal-container {
+    max-width: 480px;
+  }
+  .photo-modal-frame {
+    border-radius: 20px;
+  }
+  .photo-modal-frame::after {
+    border-radius: 20px;
+  }
+  .photo-modal-name {
+    font-size: 20px;
+  }
+}
+</style>

@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: meeting
+      POSTGRES_PASSWORD: meetingpass
+      POSTGRES_DB: global_it
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      JWT_SECRET: please_change_me_in_production
+      DATABASE_URL: postgresql://meeting:meetingpass@postgres:5432/global_it
+      ADMIN_EMAILS: admin@ycyw-edu.com
+      # ---- Storage ----
+      # Local disk by default; set USE_OSS=true and configure OSS_* to use Aliyun OSS.
+      USE_OSS: 'false'
+      OSS_REGION: cn-hangzhou
+      OSS_ACCESS_KEY_ID: ''
+      OSS_ACCESS_SECRET: ''
+      OSS_BUCKET: ''
+      OSS_ENDPOINT: ''
+      # ---- OIDC (optional, not enabled by default) ----
+      OIDC_ENABLED: 'false'
+      OIDC_CLIENT_ID: ''
+      OIDC_AUTHORITY: ''
+      OIDC_REDIRECT_URI: ''
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - '3000:3000'
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - '80:80'
+
+volumes:
+  pgdata:
+  uploads:

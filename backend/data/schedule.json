@@ -1,0 +1,73 @@
+{
+  "meeting": {
+    "name": "YCYW 2026 Global IT Meeting",
+    "tagline": "连接 · 创新 · 未来",
+    "startDate": "2026-07-14",
+    "endDate": "2026-07-16",
+    "location": "北京"
+  },
+  "dates": [
+    {
+      "date": "2026-07-14",
+      "dayLabel": "7月14日，周二",
+      "items": [
+        { "time": "8:00 - 8:30",   "title": "签到入校", "talks": [] },
+        { "time": "8:40 - 9:20",   "title": "", "talks": [{ "title": "开幕致辞、IT Roadmap", "speaker": "Joyce" }] },
+        { "time": "9:20 - 10:20",  "title": "", "talks": [{ "title": "", "speaker": "Michael" }] },
+        { "time": "10:30 - 11:30", "title": "", "talks": [{ "title": "", "speaker": "Wayne" }] },
+        { "time": "11:30 - 12:10", "title": "午餐", "talks": [] },
+        { "time": "12:15 - 13:30", "title": "前往 ClassIN", "talks": [] },
+        { "time": "13:30 - 17:30", "title": "", "talks": [{ "title": "ClassIN 参观", "speaker": "全体" }] },
+        { "time": "18:30 - 20:00", "title": "团队晚餐", "talks": [] }
+      ]
+    },
+    {
+      "date": "2026-07-15",
+      "dayLabel": "7月15日，周三",
+      "items": [
+        {
+          "time": "8:30 - 10:00",
+          "title": "",
+          "talks": [
+            { "title": "OpenClaw, Claude Code", "speaker": "蒲守理" },
+            { "title": "AI Coding", "speaker": "阮志龙" },
+            { "title": "Dify 工作流及 Agent 技巧", "speaker": "王林州" }
+          ]
+        },
+        { "time": "10:00 - 10:20", "title": "茶歇", "talks": [] },
+        {
+          "time": "10:20 - 12:10",
+          "title": "",
+          "talks": [
+            { "title": "AI 多模态", "speaker": "侯英" },
+            { "title": "SchoolApp 改进亮点", "speaker": "张双良" },
+            { "title": "Teams App 消息通知的应用", "speaker": "王光辉" }
+          ]
+        },
+        { "time": "12:10 - 13:30", "title": "午餐", "talks": [] },
+        { "time": "13:30 - 14:40", "title": "", "talks": [{ "title": "Veeam 产品安装部署技术分享", "speaker": "Veeam 厂家" }] },
+        { "time": "14:40 - 15:00", "title": "茶歇", "talks": [] },
+        { "time": "15:00 - 17:30", "title": "", "talks": [{ "title": "后勤部与 IT 部门联合讲座", "speaker": "" }] },
+        { "time": "18:30 - 20:30", "title": "联合晚餐", "talks": [] }
+      ]
+    },
+    {
+      "date": "2026-07-16",
+      "dayLabel": "7月16日，周四",
+      "items": [
+        { "time": "8:30 - 9:15",   "title": "", "talks": [{ "title": "", "speaker": "YCCECE" }] },
+        { "time": "9:15 - 10:00",  "title": "", "talks": [{ "title": "", "speaker": "Erin" }] },
+        { "time": "10:00 - 10:20", "title": "茶歇", "talks": [] },
+        { "time": "10:20 - 10:50", "title": "", "talks": [{ "title": "图书馆系统分享", "speaker": "KK" }] },
+        { "time": "11:00 - 12:00", "title": "", "talks": [{ "title": "", "speaker": "Jason / Alan" }] },
+        { "time": "12:00 - 13:30", "title": "午餐", "talks": [] },
+        { "time": "13:30 - 14:00", "title": "", "talks": [{ "title": "Mosyle Manager 管理平台试用分享", "speaker": "Ethan Duan" }] },
+        { "time": "14:10 - 15:10", "title": "", "talks": [{ "title": "AI 攻防博弈新纪元——防御体系升级与主动对抗实践", "speaker": "Peter" }] },
+        { "time": "15:10 - 15:30", "title": "茶歇", "talks": [] },
+        { "time": "15:30 - 16:10", "title": "", "talks": [{ "title": "用友答疑（提前搜集问题）", "speaker": "Sarah" }] },
+        { "time": "16:10 - 16:40", "title": "", "talks": [{ "title": "AI 合规性（网信和公安）法规解读", "speaker": "Alex" }] },
+        { "time": "16:40 - 17:30", "title": "", "talks": [{ "title": "总结", "speaker": "" }] }
+      ]
+    }
+  ]
+}

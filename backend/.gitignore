@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.log
+dev.db
+dev.db-journal
+uploads/*
+!uploads/.gitkeep
+prisma/migrations/dev_*

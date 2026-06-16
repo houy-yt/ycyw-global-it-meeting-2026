@@ -1,0 +1,101 @@
+// Prisma schema for YCYW 2026 Global IT Meeting
+// Development: SQLite (file:./dev.db)
+// Production : switch provider to "postgresql" and set DATABASE_URL accordingly.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  nickname     String?
+  isAttendee   Boolean       @default(false)
+  isAdmin      Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+
+  reflections  Reflection[]
+  comments     Comment[]
+  galleryItems GalleryItem[]
+  likes        Like[]
+}
+
+model Reflection {
+  id          Int       @id @default(autoincrement())
+  title       String
+  content     String
+  authorId    Int
+  isAnonymous Boolean   @default(false)
+  likeCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  author      User      @relation(fields: [authorId], references: [id])
+  comments    Comment[]
+  likes       Like[]
+}
+
+model Comment {
+  id           Int        @id @default(autoincrement())
+  content      String
+  reflectionId Int
+  authorId     Int
+  isAnonymous  Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  reflection   Reflection @relation(fields: [reflectionId], references: [id], onDelete: Cascade)
+  author       User       @relation(fields: [authorId], references: [id])
+}
+
+model Like {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  reflectionId Int
+  createdAt    DateTime   @default(now())
+
+  user         User       @relation(fields: [userId], references: [id])
+  reflection   Reflection @relation(fields: [reflectionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reflectionId])
+}
+
+model GalleryItem {
+  id         Int      @id @default(autoincrement())
+  title      String
+  type       String   // 'image' | 'video' | 'link'
+  fileUrl    String   // local URL like /uploads/xxx OR OSS URL; '' when type=link
+  videoLink  String?  // YouTube/Vimeo etc when type=link
+  tags       String   // JSON string array, e.g. ["AI应用","开幕"]
+  uploaderId Int
+  createdAt  DateTime @default(now())
+
+  uploader   User     @relation(fields: [uploaderId], references: [id])
+}
+
+model PastMeeting {
+  id        Int      @id @default(autoincrement())
+  year      Int      @unique
+  title     String
+  location  String
+  dateRange String
+  linkUrl   String?
+  createdAt DateTime @default(now())
+}
+
+model PresetTag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  content   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
