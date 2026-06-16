@@ -42,6 +42,16 @@ app.use('/api/preset-tags', require('./routes/presetTags'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/admin', require('./routes/admin'));
 
+// ---------- Static: Frontend (production) ----------
+const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  // SPA fallback: non-API, non-uploads requests → index.html
+  app.get(/^(?!\/api|\/uploads)/, (req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 // ---------- 404 / Error ----------
 app.use('/api', (req, res) => res.status(404).json({ message: 'Not found' }));
 // eslint-disable-next-line no-unused-vars
