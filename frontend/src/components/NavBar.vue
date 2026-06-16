@@ -16,8 +16,8 @@
           v-for="l in links"
           :key="l.to"
           :to="l.to"
-          class="px-3 py-2 text-sm font-medium text-slate-600 rounded-full hover:bg-brand-blue/5 hover:text-brand-blue transition"
-          active-class="!text-brand-blue bg-brand-blue/10"
+          class="px-3 py-2 text-sm font-medium text-slate-600 rounded-full hover:bg-brand-blue/5 hover:text-brand-blue transition relative"
+          active-class="!text-brand-blue !bg-transparent nav-active-underline"
         >
           {{ l.label }}
         </router-link>

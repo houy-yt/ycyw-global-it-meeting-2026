@@ -1,13 +1,9 @@
 <template>
   <div>
     <!-- ============ HERO ============ -->
-    <section class="relative overflow-hidden hero-bg text-white">
-      <div
-        class="absolute inset-0 opacity-[0.10] bg-grid-pattern"
-        style="background-size: 40px 40px"
-      ></div>
-      <div class="container-x relative py-20 sm:py-28">
-        <div class="text-center max-w-3xl mx-auto">
+    <section class="relative overflow-hidden hero-banner text-white md:min-h-[90vh] flex items-center">
+      <div class="container-x relative py-12 sm:py-20 md:py-28 w-full">
+        <div class="max-w-2xl">
           <div
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest text-white/90 uppercase"
           >
@@ -15,25 +11,38 @@
             YCYW · Education · Global IT
           </div>
           <h1
-            class="mt-6 text-4xl sm:text-6xl font-extrabold leading-tight tracking-tight"
+            class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight"
           >
             YCYW <span class="text-brand-orange">2026</span><br />
             Global IT Meeting
           </h1>
-          <p class="mt-5 text-lg sm:text-xl text-white/80">
-            Connect · Innovate · Empower
-          </p>
-          <p class="mt-2 text-sm sm:text-base text-white/70">
-            2026 年 7 月 14 日 – 16 日 &nbsp;·&nbsp; 北京亦庄
+
+          <!-- white divider line -->
+          <div class="mt-6 w-14 h-[3px] rounded bg-white/50"></div>
+
+          <p class="mt-5 text-lg sm:text-xl text-white/80 tracking-wide">
+            Connect <span class="mx-2 text-white/40">|</span> Innovate <span class="mx-2 text-white/40">|</span> Empower
           </p>
 
-          <div class="mt-8 flex flex-wrap justify-center gap-3">
+          <div class="mt-4 flex items-center gap-2 text-sm sm:text-base text-white/70 flex-wrap">
+            <span class="inline-flex items-center gap-1.5">
+              <font-awesome-icon icon="calendar-days" class="text-white/50" />
+              2026 年 7 月 14 日 – 16 日
+            </span>
+            <span class="text-white/30">|</span>
+            <span class="inline-flex items-center gap-1.5">
+              <font-awesome-icon icon="location-dot" class="text-white/50" />
+              北京亦庄
+            </span>
+          </div>
+
+          <div class="mt-8 flex flex-wrap gap-3">
             <router-link to="/schedule" class="btn-orange">查看完整日程 →</router-link>
-            <router-link to="/attendees" class="btn-secondary !bg-white/10 !text-white !ring-white/30 hover:!ring-white">参会人员</router-link>
+            <router-link to="/attendees" class="btn-secondary !bg-transparent !text-white !ring-white/40 hover:!ring-white hover:!bg-white/10">参会人员</router-link>
           </div>
         </div>
 
-        <div class="mt-14">
+        <div class="mt-14 max-w-xl">
           <Countdown :start="meta.start" :end="meta.end" />
         </div>
       </div>

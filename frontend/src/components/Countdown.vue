@@ -1,23 +1,33 @@
 <template>
-  <div
-    class="grid grid-cols-4 gap-3 sm:gap-4 max-w-2xl mx-auto"
-    aria-label="meeting countdown"
-  >
+  <div class="inline-flex flex-col items-center">
     <div
-      v-for="b in blocks"
-      :key="b.label"
-      class="rounded-2xl bg-white/10 ring-1 ring-white/20 backdrop-blur-md py-4 sm:py-6 text-center"
+      class="inline-flex items-stretch rounded-xl ring-1 ring-white/20 backdrop-blur-md overflow-hidden"
+      aria-label="meeting countdown"
     >
-      <div class="text-3xl sm:text-5xl font-extrabold text-white tabular-nums">
-        {{ String(b.value).padStart(2, '0') }}
-      </div>
-      <div class="text-[10px] sm:text-xs mt-1 tracking-widest text-white/70 uppercase">
-        {{ b.label }}
-      </div>
+      <template v-for="(b, i) in blocks" :key="b.label">
+        <!-- divider between blocks -->
+        <div
+          v-if="i > 0"
+          class="flex items-stretch bg-white/10"
+        >
+          <div class="w-px bg-white/20 my-4"></div>
+        </div>
+        <!-- block -->
+        <div
+          class="flex flex-col items-center justify-center px-6 sm:px-8 py-4 sm:py-5 bg-white/10"
+        >
+          <div class="text-3xl sm:text-5xl font-extrabold text-white tabular-nums">
+            {{ String(b.value).padStart(2, '0') }}
+          </div>
+          <div class="text-[10px] sm:text-xs mt-1 tracking-widest text-white/70 uppercase">
+            {{ b.label }}
+          </div>
+        </div>
+      </template>
     </div>
-  </div>
-  <div class="text-center mt-4 text-white/80 text-xs sm:text-sm">
-    {{ statusText }}
+    <div class="mt-4 text-white/80 text-xs sm:text-sm text-center">
+      {{ statusText }}
+    </div>
   </div>
 </template>
 
