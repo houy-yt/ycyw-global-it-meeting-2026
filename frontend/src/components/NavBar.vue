@@ -13,7 +13,7 @@
       <!-- desktop nav -->
       <nav class="hidden md:flex items-center gap-1">
         <router-link
-          v-for="l in links"
+          v-for="l in links.filter(x => !x.hidden)"
           :key="l.to"
           :to="l.to"
           class="px-3 py-2 text-sm font-medium text-slate-600 rounded-full hover:bg-brand-blue/5 hover:text-brand-blue transition relative"
@@ -89,7 +89,7 @@
       <div v-if="mobileOpen" class="md:hidden border-t border-slate-200 bg-white">
         <nav class="w-full px-4 sm:px-6 py-3 grid gap-1">
           <router-link
-            v-for="l in links"
+            v-for="l in links.filter(x => !x.hidden)"
             :key="l.to"
             :to="l.to"
             class="px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-brand-blue/5"
@@ -141,7 +141,7 @@ const links = [
   { to: '/attendees', label: '参会人员' },
   { to: '/reflections', label: '会后反思' },
   { to: '/gallery', label: '会议剪影' },
-  { to: '/past-meetings', label: '往届会议' },
+  { to: '/past-meetings', label: '往届会议', hidden: true },
 ];
 
 const initial = computed(() => {

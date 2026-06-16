@@ -37,7 +37,7 @@
           </div>
 
           <div class="mt-8 flex flex-wrap gap-3">
-            <router-link to="/schedule" class="btn-orange">查看完整日程 →</router-link>
+            <router-link to="/schedule" class="btn-orange">查看完整日程 <font-awesome-icon icon="circle-right" /></router-link>
             <router-link to="/attendees" class="btn-secondary !bg-transparent !text-white !ring-white/40 hover:!ring-white hover:!bg-white/10">参会人员</router-link>
           </div>
         </div>
@@ -308,7 +308,7 @@
     </section>
 
     <!-- ============ PAST MEETINGS ============ -->
-    <section class="section-y bg-white border-y border-slate-100">
+    <section class="section-y bg-white border-y border-slate-100" style="display: none;">
       <div class="container-x">
         <div class="flex items-end justify-between flex-wrap gap-4">
           <div>
