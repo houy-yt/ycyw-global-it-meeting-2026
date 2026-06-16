@@ -165,10 +165,9 @@ router.get('/oidc-callback', async (req, res) => {
     stateStore.delete(stateParam);
 
     // Build the full callback URL that the browser was redirected to
-    const currentUrl = new URL(
-      req.originalUrl,
-      `${req.protocol}://${req.get('host')}`,
-    );
+    // Use OIDC_REDIRECT_URI origin to ensure correct protocol behind reverse proxy
+    const redirectBase = new URL(process.env.OIDC_REDIRECT_URI);
+    const currentUrl = new URL(req.originalUrl, redirectBase.origin);
 
     // openid-client v6: authorizationCodeGrant(config, currentUrl, checks)
     const tokenResponse = await lib.authorizationCodeGrant(config, currentUrl, {
