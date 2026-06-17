@@ -75,12 +75,9 @@ body {
     linear-gradient(135deg, var(--brand-deep) 0%, var(--brand-blue) 100%);
 }
 
-/* Hero with banner image - mobile: gradient fallback, desktop: banner image */
+/* Hero with banner image - mobile: sm banner, desktop: full banner */
 .hero-banner {
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255, 130, 0, 0.25), transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(255, 0, 68, 0.18), transparent 45%),
-    linear-gradient(135deg, var(--brand-deep) 0%, var(--brand-blue) 100%);
+  background: url('/hero-banner-sm.jpg') center / cover no-repeat;
 }
 
 @media (min-width: 768px) {

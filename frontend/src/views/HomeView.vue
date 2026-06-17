@@ -2,8 +2,8 @@
   <div>
     <!-- ============ HERO ============ -->
     <section class="relative overflow-hidden hero-banner text-white md:min-h-[90vh] flex items-center">
-      <div class="container-x relative py-12 sm:py-20 md:py-28 w-full">
-        <div class="max-w-2xl">
+      <div class="container-x relative py-12 sm:py-20 md:py-28 w-full text-center md:text-left">
+        <div class="max-w-none md:max-w-2xl">
           <div
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest text-white/90 uppercase"
           >
@@ -18,31 +18,31 @@
           </h1>
 
           <!-- white divider line -->
-          <div class="mt-6 w-14 h-[3px] rounded bg-white/50"></div>
+          <div class="mt-6 w-14 h-[3px] rounded bg-white/50 mx-auto md:mx-0"></div>
 
           <p class="mt-5 text-lg sm:text-xl text-white/80 tracking-wide">
             Connect <span class="mx-2 text-white/40">|</span> Innovate <span class="mx-2 text-white/40">|</span> Empower
           </p>
 
-          <div class="mt-4 flex items-center gap-2 text-sm sm:text-base text-white/70 flex-wrap">
+          <div class="mt-4 flex flex-col md:flex-row items-center gap-2 text-sm sm:text-base text-white/70 flex-wrap justify-center md:justify-start">
             <span class="inline-flex items-center gap-1.5">
               <font-awesome-icon icon="calendar-days" class="text-white/50" />
               2026 年 7 月 14 日 – 16 日
             </span>
-            <span class="text-white/30">|</span>
+            <span class="text-white/30 hidden md:inline">|</span>
             <span class="inline-flex items-center gap-1.5">
               <font-awesome-icon icon="location-dot" class="text-white/50" />
               北京亦庄
             </span>
           </div>
 
-          <div class="mt-8 flex flex-wrap gap-3">
+          <div class="mt-8 flex flex-wrap gap-3 justify-center md:justify-start">
             <router-link to="/schedule" class="btn-orange">查看完整日程 <font-awesome-icon icon="circle-right" /></router-link>
             <router-link to="/attendees" class="btn-secondary !bg-transparent !text-white !ring-white/40 hover:!ring-white hover:!bg-white/10">参会人员</router-link>
           </div>
         </div>
 
-        <div class="mt-14 max-w-xl">
+        <div class="mt-14 max-w-xl mx-auto md:mx-0">
           <Countdown :start="meta.start" :end="meta.end" />
         </div>
       </div>
