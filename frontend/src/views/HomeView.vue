@@ -38,7 +38,7 @@
 
           <div class="mt-8 flex flex-wrap gap-3 justify-center md:justify-start">
             <router-link to="/schedule" class="btn-orange">查看完整日程 <font-awesome-icon icon="circle-right" /></router-link>
-            <router-link to="/attendees" class="btn-secondary !bg-transparent !text-white !ring-white/40 hover:!ring-white hover:!bg-white/10">参会人员</router-link>
+            <router-link to="/attendees" class="btn-secondary !bg-[rgba(0,50,160,0.65)] !text-white !ring-white/40 hover:!ring-white hover:!bg-white/10">参会人员</router-link>
           </div>
         </div>
 
@@ -114,12 +114,31 @@
 
         <div class="relative">
           <div
-            class="aspect-[4/3] rounded-md hero-bg shadow-glow ring-1 ring-brand-deep/10 flex items-center justify-center p-10"
+            class="aspect-[4/3] rounded-md shadow-glow ring-1 ring-brand-deep/10 flex items-center justify-center p-10"
+            style="background: url('/save-date-bg.jpg') center/cover no-repeat"
           >
-            <div class="text-white text-center">
-              <div class="text-sm tracking-widest text-white/70 uppercase">Save the date</div>
-              <div class="text-5xl sm:text-7xl font-extrabold mt-3 tabular-nums">07.14</div>
-              <div class="text-sm text-white/70 mt-2">- 07.16 / 2026 / Beijing</div>
+            <div class="text-center w-full">
+              <!-- SAVE THE DATE with diamond decorators -->
+              <div class="flex items-center justify-center gap-3">
+                <span class="block w-12 h-px bg-[#c9a84c]/60"></span>
+                <span class="text-[#c9a84c] text-xs">◆</span>
+                <span class="text-sm tracking-[0.3em] text-[#c9a84c] uppercase font-medium">Save the Date</span>
+                <span class="text-[#c9a84c] text-xs">◆</span>
+                <span class="block w-12 h-px bg-[#c9a84c]/60"></span>
+              </div>
+              <!-- Big date with gold gradient -->
+              <div
+                class="text-5xl sm:text-7xl font-extrabold mt-4 tabular-nums"
+                style="background-image: linear-gradient(135deg, #e8d48b 0%, #c9a84c 40%, #a07c2a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"
+              >07.14 - 07.16</div>
+              <!-- Divider with diamond -->
+              <div class="flex items-center justify-center gap-2 mt-3">
+                <span class="block w-10 h-px bg-[#c9a84c]/60"></span>
+                <span class="text-[#c9a84c] text-[10px]">◆</span>
+                <span class="block w-10 h-px bg-[#c9a84c]/60"></span>
+              </div>
+              <!-- Sub text -->
+              <div class="text-sm text-[#c9a84c]/80 mt-2 tracking-wide">- 2026 / Beijing Yizhuang -</div>
             </div>
           </div>
         </div>
