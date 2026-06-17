@@ -19,12 +19,15 @@ const fs = require('fs');
 const prisma = new PrismaClient();
 
 /**
- * Build a stable mock email from an attendee record.
- * Rule:
- *   - Has English name -> lowercase + remove spaces  + "@ycyw-edu.com"
- *   - Otherwise        -> "user<no>@ycyw-edu.com"
+ * Get the email for an attendee record.
+ * Uses the real email from attendees.json if available,
+ * otherwise falls back to a generated placeholder.
  */
-function buildEmail(att) {
+function getEmail(att) {
+  if (att.email && att.email.trim()) {
+    return att.email.trim().toLowerCase();
+  }
+  // Fallback for attendees without email in the list
   const en = (att.nameEn || '').trim();
   if (en) {
     const slug = en.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -52,7 +55,7 @@ async function main() {
   const attendees = JSON.parse(fs.readFileSync(attendeesPath, 'utf-8'));
 
   for (const att of attendees) {
-    const email = buildEmail(att);
+    const email = getEmail(att);
     const nickname = buildNickname(att);
     const isAdmin = adminEmails.includes(email.toLowerCase());
 

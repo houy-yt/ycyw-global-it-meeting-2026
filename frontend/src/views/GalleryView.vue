@@ -29,43 +29,81 @@
           >{{ t.name }}</button>
         </div>
 
-        <!-- grid -->
-        <div
-          v-if="items.length"
-          class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"
-        >
+        <!-- masonry grid -->
+        <div v-if="items.length" class="masonry">
           <div
             v-for="g in items"
             :key="g.id"
-            class="card overflow-hidden group cursor-pointer"
-            @click="preview(g)"
+            class="masonry-item"
           >
-            <div class="aspect-square bg-slate-100 relative overflow-hidden">
-              <img
-                v-if="g.type === 'image'"
-                :src="g.fileUrl"
-                class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-              />
-              <div v-else class="absolute inset-0 flex items-center justify-center bg-brand-deep text-white">
-                <div class="text-center">
-                  <div class="text-4xl"><font-awesome-icon :icon="g.type === 'link' ? 'link' : 'video'" /></div>
-                  <div class="text-xs mt-2 px-3 line-clamp-2">{{ g.title }}</div>
+            <div
+              class="card overflow-hidden group cursor-pointer"
+              @click="preview(g)"
+            >
+              <div class="relative overflow-hidden bg-slate-100">
+                <!-- Image -->
+                <img
+                  v-if="g.type === 'image'"
+                  :src="g.fileUrl"
+                  :alt="g.title"
+                  class="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <!-- Video (MP4 direct link) – use <video> as thumbnail with fallback poster -->
+                <div v-else-if="g.type === 'video'" class="relative">
+                  <video
+                    :src="g.fileUrl"
+                    preload="metadata"
+                    muted
+                    class="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
+                    @error="$event.target.poster = '/video-cover.jpg'"
+                  />
+                  <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                    <font-awesome-icon icon="circle-play" class="text-4xl group-hover:scale-110 transition-transform" style="color: rgba(255,255,255,0.75)" />
+                  </div>
+                </div>
+                <!-- Link with platform thumbnail (fallback to video-cover.jpg) -->
+                <div v-else-if="g.type === 'link' && getThumbnailUrl(g.videoLink)" class="relative">
+                  <img
+                    :src="getThumbnailUrl(g.videoLink)"
+                    :alt="g.title"
+                    class="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                    @error="$event.target.src = '/video-cover.jpg'"
+                  />
+                  <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                    <font-awesome-icon icon="circle-play" class="text-4xl group-hover:scale-110 transition-transform" style="color: rgba(255,255,255,0.75)" />
+                  </div>
+                </div>
+                <!-- Link without thumbnail – fallback icon -->
+                <div v-else class="flex items-center justify-center bg-brand-deep text-white py-16 relative">
+                  <div class="text-center">
+                    <div class="text-4xl">
+                      <font-awesome-icon
+                        :icon="g.type === 'link' && getEmbedInfo(g.videoLink) ? 'circle-play' : 'link'"
+                      />
+                    </div>
+                    <div class="text-xs mt-2 px-3 line-clamp-2">{{ g.title }}</div>
+                    <div
+                      v-if="g.type === 'link' && getEmbedInfo(g.videoLink)"
+                      class="mt-2 text-[10px] text-white/50"
+                    >▶ 点击播放</div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="p-3">
-              <div class="text-sm font-medium text-brand-deep truncate">{{ g.title }}</div>
-              <div class="mt-1 flex gap-1 flex-wrap">
-                <span v-for="t in g.tags.slice(0, 2)" :key="t" class="chip !text-[10px] !py-0.5">{{ t }}</span>
-              </div>
-              <div class="mt-1 text-[11px] text-slate-400 flex items-center justify-between">
-                <span class="truncate">{{ g.uploader?.nickname }}</span>
-                <button
-                  v-if="auth.isAdmin"
-                  class="text-brand-red hover:underline"
-                  @click.stop="del(g)"
-                >删除</button>
+              <div class="p-3">
+                <div class="text-sm font-medium text-brand-deep truncate">{{ g.title }}</div>
+                <div class="mt-1 flex gap-1 flex-wrap">
+                  <span v-for="t in g.tags.slice(0, 2)" :key="t" class="chip !text-[10px] !py-0.5">{{ t }}</span>
+                </div>
+                <div class="mt-1 text-[11px] text-slate-400 flex items-center justify-between">
+                  <span class="truncate">{{ g.uploader?.nickname }}</span>
+                  <button
+                    v-if="auth.isAdmin"
+                    class="text-brand-red hover:underline"
+                    @click.stop="del(g)"
+                  >删除</button>
+                </div>
               </div>
             </div>
           </div>
@@ -129,7 +167,7 @@
           />
         </div>
         <div v-else>
-          <label class="text-sm text-slate-600">视频链接（YouTube / Vimeo / 直链）</label>
+          <label class="text-sm text-slate-600">视频链接（腾讯视频 / YouTube / Bilibili / Vimeo）</label>
           <input
             v-model="upload.videoLink"
             class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue"
@@ -170,36 +208,40 @@
       </template>
     </el-dialog>
 
-    <!-- Preview Dialog -->
-    <el-dialog v-model="previewVisible" :title="current?.title" width="800px" align-center>
-      <div v-if="current?.type === 'image'" class="text-center">
-        <img :src="current.fileUrl" class="max-h-[70vh] mx-auto rounded-xl" />
-      </div>
-      <div v-else-if="current?.type === 'video'" class="text-center">
-        <video :src="current.fileUrl" controls class="max-h-[70vh] mx-auto rounded-xl" />
-      </div>
-      <div v-else-if="current?.type === 'link'" class="text-center">
-        <a :href="current.videoLink" target="_blank" class="text-brand-blue underline">
-          {{ current.videoLink }}
-        </a>
-      </div>
-      <div class="mt-4 text-xs text-slate-500 text-center">
-        {{ current?.uploader?.nickname }} · {{ formatTime(current?.createdAt) }}
-        <span v-if="current?.tags?.length" class="ml-2">
-          标签：{{ current.tags.join('、') }}
-        </span>
-      </div>
-    </el-dialog>
+    <!-- Floating action button (visible when scrolled past hero) -->
+    <Transition name="fab-fade">
+      <button
+        v-show="showFab"
+        class="fab-action btn-orange"
+        @click="openUpload"
+      >
+        <font-awesome-icon icon="plus" />
+        <span class="hidden sm:inline ml-1.5">上传剪影</span>
+      </button>
+    </Transition>
+
+    <!-- Preview Modal (shared component) -->
+    <PhotoPreviewModal
+      v-model="previewVisible"
+      :src="current?.fileUrl || ''"
+      :title="current?.title || ''"
+      :subtitle="current?.uploader?.nickname || ''"
+      :type="current?.type || 'image'"
+      :video-link="current?.videoLink || ''"
+      :meta="previewMeta"
+    />
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import dayjs from 'dayjs';
 import api from '../api';
 import { useAuthStore } from '../stores/auth';
+import PhotoPreviewModal from '../components/PhotoPreviewModal.vue';
+import { getEmbedInfo, getThumbnailUrl } from '../utils/videoEmbed';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -225,10 +267,23 @@ const fileInput = ref(null);
 
 const previewVisible = ref(false);
 const current = ref(null);
+const showFab = ref(false);
 
-function formatTime(t) {
-  return t ? dayjs(t).format('YYYY-MM-DD HH:mm') : '';
+function handleScroll() {
+  showFab.value = window.scrollY > 300;
 }
+
+const previewMeta = computed(() => {
+  if (!current.value) return '';
+  const parts = [];
+  if (current.value.createdAt) {
+    parts.push(dayjs(current.value.createdAt).format('YYYY-MM-DD HH:mm'));
+  }
+  if (current.value.tags?.length) {
+    parts.push('标签：' + current.value.tags.join('、'));
+  }
+  return parts.join('  ·  ');
+});
 
 async function load(reset = true) {
   if (reset) {
@@ -326,10 +381,55 @@ async function del(g) {
 }
 
 onMounted(async () => {
+  window.addEventListener('scroll', handleScroll, { passive: true });
   await Promise.all([loadTags(), load(true)]);
   // Auto-open upload dialog if redirected back from login with action=upload
   if (route.query.action === 'upload' && auth.isLoggedIn) {
     openUpload();
   }
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
 </script>
+
+<style scoped>
+/* ========== Masonry / Waterfall Layout ========== */
+.masonry {
+  columns: 2;
+  column-gap: 14px;
+}
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 14px;
+}
+
+@media (min-width: 640px) {
+  .masonry {
+    columns: 3;
+    column-gap: 16px;
+  }
+  .masonry-item {
+    margin-bottom: 16px;
+  }
+}
+@media (min-width: 1024px) {
+  .masonry {
+    columns: 4;
+    column-gap: 18px;
+  }
+  .masonry-item {
+    margin-bottom: 18px;
+  }
+}
+@media (min-width: 1280px) {
+  .masonry {
+    columns: 5;
+    column-gap: 20px;
+  }
+  .masonry-item {
+    margin-bottom: 20px;
+  }
+}
+</style>

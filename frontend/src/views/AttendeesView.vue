@@ -115,43 +115,14 @@
         </div>
       </div>
 
-      <!-- Custom Photo Preview Modal -->
-      <Teleport to="body">
-        <Transition name="modal-fade">
-          <div
-            v-if="previewPerson"
-            class="photo-modal-overlay"
-            @click.self="previewPerson = null"
-          >
-            <div class="photo-modal-container">
-              <!-- Close button -->
-              <button
-                class="photo-modal-close"
-                @click="previewPerson = null"
-                aria-label="关闭"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-
-              <!-- Photo card with 3D depth -->
-              <div class="photo-modal-card">
-                <div class="photo-modal-frame">
-                  <img
-                    :src="previewPerson.photoUrl"
-                    :alt="displayName(previewPerson)"
-                    class="photo-modal-img"
-                  />
-                </div>
-                <!-- Person info -->
-                <div class="photo-modal-info">
-                  <div class="photo-modal-name">{{ primaryName(previewPerson) }}</div>
-                  <div v-if="secondaryName(previewPerson)" class="photo-modal-name-sub">{{ secondaryName(previewPerson) }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Transition>
-      </Teleport>
+      <!-- Photo Preview Modal (shared component) -->
+      <PhotoPreviewModal
+        v-model="previewModalVisible"
+        :src="previewPerson?.photoUrl || ''"
+        :title="previewPerson ? primaryName(previewPerson) : ''"
+        :subtitle="previewPerson ? secondaryName(previewPerson) : ''"
+        type="image"
+      />
 
     </section>
   </div>
@@ -160,6 +131,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import api from '../api';
+import PhotoPreviewModal from '../components/PhotoPreviewModal.vue';
 
 // ---------- state ----------
 const loading = ref(true);
@@ -168,6 +140,10 @@ const total = ref(0);
 const groups = ref([]); // [{ school, people: [] }]
 const imgFail = reactive({}); // { [`${school}__${idx}`]: true }
 const previewPerson = ref(null);
+const previewModalVisible = computed({
+  get: () => !!previewPerson.value,
+  set: (v) => { if (!v) previewPerson.value = null; },
+});
 
 // ---------- ordering ----------
 const SCHOOL_ORDER = [
@@ -502,168 +478,3 @@ onBeforeUnmount(() => {
 }
 </style>
 
-<!-- Non-scoped styles for Teleported modal -->
-<style>
-/* ========== Photo Preview Modal ========== */
-.photo-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 10, 30, 0.78);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  padding: 30px;
-}
-
-.photo-modal-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 420px;
-}
-
-.photo-modal-close {
-  position: absolute;
-  top: -48px;
-  right: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.85);
-  cursor: pointer;
-  transition: all 0.25s ease;
-  backdrop-filter: blur(6px);
-}
-.photo-modal-close:hover {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
-  transform: rotate(90deg);
-}
-
-/* Card with 3D depth effect */
-.photo-modal-card {
-  width: 100%;
-  perspective: 800px;
-  animation: modal-card-enter 0.45s cubic-bezier(0.23, 1, 0.32, 1) both;
-}
-
-.photo-modal-frame {
-  position: relative;
-  width: 100%;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #111;
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.3),
-    0 12px 40px rgba(0, 0, 0, 0.45),
-    0 30px 80px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-    0 -4px 20px rgba(0, 50, 160, 0.15);
-  transform: rotateX(1.5deg);
-  transition: transform 0.35s ease, box-shadow 0.35s ease;
-}
-.photo-modal-frame:hover {
-  transform: rotateX(0deg) scale(1.01);
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.3),
-    0 16px 50px rgba(0, 0, 0, 0.5),
-    0 40px 100px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.12) inset,
-    0 0 60px rgba(0, 50, 160, 0.12);
-}
-
-/* Glossy shine overlay on the frame */
-.photo-modal-frame::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  background: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(255, 255, 255, 0.04) 30%,
-    transparent 50%
-  );
-  pointer-events: none;
-}
-
-.photo-modal-img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 75vh;
-  object-fit: contain;
-}
-
-/* Person info below photo */
-.photo-modal-info {
-  text-align: center;
-  margin-top: 20px;
-}
-.photo-modal-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.95);
-  letter-spacing: 0.02em;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-.photo-modal-name-sub {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.55);
-  margin-top: 4px;
-  font-weight: 400;
-}
-
-/* ========== Transition animations ========== */
-.modal-fade-enter-active {
-  transition: opacity 0.3s ease;
-}
-.modal-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-
-@keyframes modal-card-enter {
-  0% {
-    opacity: 0;
-    transform: scale(0.88) translateY(30px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* ========== Desktop: larger max-width ========== */
-@media (min-width: 640px) {
-  .photo-modal-overlay {
-    padding: 40px;
-  }
-  .photo-modal-container {
-    max-width: 480px;
-  }
-  .photo-modal-frame {
-    border-radius: 20px;
-  }
-  .photo-modal-frame::after {
-    border-radius: 20px;
-  }
-  .photo-modal-name {
-    font-size: 20px;
-  }
-}
-</style>

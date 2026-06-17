@@ -1,8 +1,9 @@
 /**
- * Demo data seeder for Reflections page.
+ * Demo data seeder for Reflections & Gallery pages.
  *
- * Inserts ~10 sample reflections with comments and likes.
- * All demo reflections have titles prefixed with [DEMO] for easy cleanup.
+ * Inserts ~10 sample reflections with comments and likes,
+ * and ~16 gallery items with placeholder images of various dimensions.
+ * All demo records have titles prefixed with [DEMO] for easy cleanup.
  *
  * Run standalone:  node prisma/seed-demo.js
  * Or via npm:      npm run db:seed-demo
@@ -170,6 +171,124 @@ async function seedDemo() {
   console.log(`✅  ${REFLECTIONS.length} demo reflections created with comments and likes.`);
 }
 
+/** Sample gallery items ------------------------------------------------ */
+const GALLERY_ITEMS = [
+  { title: '开幕致辞全景',       w: 1600, h: 900,  tags: ['开幕致辞'] },
+  { title: '嘉宾签到',           w: 800,  h: 600,  tags: ['开幕致辞', '茶歇花絮'] },
+  { title: 'AI Workshop 实况',   w: 1200, h: 800,  tags: ['AI 应用', 'AI Coding'] },
+  { title: 'Dify Agent 演示',    w: 800,  h: 800,  tags: ['Dify Agent'] },
+  { title: '分组讨论',           w: 600,  h: 800,  tags: ['技术讲座'] },
+  { title: 'Veeam 部署实操',     w: 1200, h: 800,  tags: ['Veeam 安装部署'] },
+  { title: 'ClassIN 参观合影',   w: 1600, h: 900,  tags: ['参观 ClassIN'] },
+  { title: '团队晚餐',           w: 800,  h: 600,  tags: ['团队晚餐'] },
+  { title: '北京夜景',           w: 1200, h: 800,  tags: ['茶歇花絮'] },
+  { title: 'AI 合规讲座',        w: 800,  h: 600,  tags: ['AI 合规', '技术讲座'] },
+  { title: '图书馆系统演示',     w: 600,  h: 800,  tags: ['图书馆系统'] },
+  { title: 'Mosyle 移动端管理',  w: 800,  h: 1200, tags: ['Mosyle Manager'] },
+  { title: '茶歇交流',           w: 800,  h: 800,  tags: ['茶歇花絮'] },
+  { title: '用友答疑环节',       w: 1200, h: 800,  tags: ['用友答疑'] },
+  { title: '学校参访留影',       w: 1600, h: 900,  tags: ['学校参访'] },
+  { title: '总结大会',           w: 1200, h: 800,  tags: ['总结', 'IT Roadmap'] },
+  { title: 'AI 攻防演练',        w: 800,  h: 600,  tags: ['AI 攻防', 'AI 应用'] },
+  { title: '后勤联合讲座现场',   w: 1200, h: 800,  tags: ['后勤联合讲座'] },
+  { title: '颁奖瞬间',           w: 600,  h: 600,  tags: ['总结'] },
+  { title: '合影留念',           w: 1600, h: 900,  tags: ['总结', '茶歇花絮'] },
+  // Video items
+  { title: 'AI Coding 现场演示',  type: 'video', fileUrl: 'http://mpv.videocc.net/4b964bbdf4/4/4b964bbdf40084eb52861382a60b0d34_2.mp4', tags: ['AI Coding', 'AI 应用'] },
+  { title: '团队晚餐花絮',        type: 'video', fileUrl: 'https://osswebsite.ycyw.com/ycis-bj/video/videos/ycis-bj-30th-anniversary-brand-video.mp4', tags: ['团队晚餐', '茶歇花絮'] },
+  { title: '学校参访 Vlog',       type: 'video', fileUrl: 'https://object.ycyw.com/media-library/shared/corp-video-for-homepage.mp4', tags: ['学校参访'] },
+  // Link item (腾讯视频 iframe 嵌入)
+  { title: '2026 IT 大会回顾', type: 'link', videoLink: 'https://v.qq.com/x/page/k33706g6chd.html', tags: ['总结'] },
+];
+
+async function seedGalleryDemo() {
+  console.log('🎭  Seeding demo gallery items...');
+
+  // Check if gallery demo data already exists
+  const existing = await prisma.galleryItem.findFirst({
+    where: { title: { startsWith: DEMO_PREFIX } },
+  });
+  if (existing) {
+    console.log('⚠️  Gallery demo data already exists. Run clean-demo.js first if you want to re-seed.');
+    return;
+  }
+
+  // Get attendee users to use as uploaders
+  const users = await prisma.user.findMany({
+    where: { isAttendee: true },
+    take: 20,
+  });
+
+  if (users.length < 2) {
+    console.log('❌  Not enough attendee users. Run seed.js first.');
+    return;
+  }
+
+  // Conference dates: 2026-07-14 ~ 2026-07-16
+  const baseDates = [
+    new Date('2026-07-14T09:00:00+08:00'),
+    new Date('2026-07-14T14:30:00+08:00'),
+    new Date('2026-07-14T16:00:00+08:00'),
+    new Date('2026-07-15T09:30:00+08:00'),
+    new Date('2026-07-15T10:45:00+08:00'),
+    new Date('2026-07-15T14:00:00+08:00'),
+    new Date('2026-07-15T15:30:00+08:00'),
+    new Date('2026-07-15T18:30:00+08:00'),
+    new Date('2026-07-15T20:00:00+08:00'),
+    new Date('2026-07-16T09:00:00+08:00'),
+    new Date('2026-07-16T10:30:00+08:00'),
+    new Date('2026-07-16T11:00:00+08:00'),
+    new Date('2026-07-16T13:30:00+08:00'),
+    new Date('2026-07-16T14:30:00+08:00'),
+    new Date('2026-07-16T15:00:00+08:00'),
+    new Date('2026-07-16T16:00:00+08:00'),
+    new Date('2026-07-16T16:30:00+08:00'),
+    new Date('2026-07-16T17:00:00+08:00'),
+    new Date('2026-07-16T17:15:00+08:00'),
+    new Date('2026-07-16T17:30:00+08:00'),
+    // Extra dates for video / link items (appear near the top when sorted desc)
+    new Date('2026-07-16T17:45:00+08:00'),
+    new Date('2026-07-16T18:00:00+08:00'),
+    new Date('2026-07-16T18:15:00+08:00'),
+    new Date('2026-07-16T18:30:00+08:00'),
+  ];
+
+  for (let i = 0; i < GALLERY_ITEMS.length; i++) {
+    const item = GALLERY_ITEMS[i];
+    const uploader = users[i % users.length];
+    const createdAt = baseDates[i % baseDates.length] || new Date();
+
+    const itemType = item.type || 'image';
+
+    // Determine fileUrl and videoLink based on type
+    let fileUrl = '';
+    let videoLink = null;
+
+    if (itemType === 'image') {
+      // Use picsum.photos for placeholder images with different dimensions
+      fileUrl = `https://picsum.photos/seed/demo${i + 1}/${item.w}/${item.h}`;
+    } else if (itemType === 'video') {
+      fileUrl = item.fileUrl;
+    } else if (itemType === 'link') {
+      videoLink = item.videoLink;
+    }
+
+    await prisma.galleryItem.create({
+      data: {
+        title: DEMO_PREFIX + item.title,
+        type: itemType,
+        fileUrl,
+        videoLink,
+        tags: JSON.stringify(item.tags),
+        uploaderId: uploader.id,
+        createdAt,
+      },
+    });
+  }
+
+  console.log(`✅  ${GALLERY_ITEMS.length} demo gallery items created.`);
+}
+
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -180,7 +299,10 @@ function shuffleArray(arr) {
 
 // Allow both standalone execution and import
 if (require.main === module) {
-  seedDemo()
+  (async () => {
+    await seedDemo();
+    await seedGalleryDemo();
+  })()
     .catch((e) => {
       console.error(e);
       process.exit(1);
@@ -190,4 +312,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { seedDemo };
+module.exports = { seedDemo, seedGalleryDemo };

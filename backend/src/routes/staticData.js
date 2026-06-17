@@ -29,7 +29,9 @@ router.get('/attendees', (req, res) => {
     for (const a of list) {
       const key = a.school || 'Other';
       if (!groups[key]) groups[key] = [];
-      groups[key].push(a);
+      // Strip email from public API response
+      const { email, ...publicData } = a;
+      groups[key].push(publicData);
     }
     const grouped = Object.entries(groups).map(([school, people]) => ({
       school,

@@ -167,6 +167,8 @@ router.patch('/:id', authRequired, adminRequired, async (req, res) => {
   const data = {};
   if (req.body.title !== undefined) data.title = String(req.body.title).slice(0, 200);
   if (req.body.tags !== undefined) data.tags = JSON.stringify(parseTags(req.body.tags));
+  if (req.body.fileUrl !== undefined) data.fileUrl = String(req.body.fileUrl).slice(0, 500);
+  if (req.body.videoLink !== undefined) data.videoLink = String(req.body.videoLink).slice(0, 500) || null;
 
   const updated = await prisma.galleryItem.update({
     where: { id },

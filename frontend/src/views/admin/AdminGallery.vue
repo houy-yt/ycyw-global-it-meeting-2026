@@ -24,17 +24,59 @@
       <el-table-column label="时间" width="170">
         <template #default="{ row }">{{ format(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="100">
+      <el-table-column label="操作" width="140">
         <template #default="{ row }">
+          <el-button type="primary" size="small" @click="openEdit(row)">编辑</el-button>
           <el-button type="danger" size="small" @click="del(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- Edit Dialog -->
+    <el-dialog v-model="editDialog.show" title="编辑剪影" width="560px" align-center>
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm text-slate-600 font-medium">标题</label>
+          <input
+            v-model="editDialog.title"
+            class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue"
+          />
+        </div>
+        <div v-if="editDialog.type === 'link'">
+          <label class="text-sm text-slate-600 font-medium">视频链接</label>
+          <input
+            v-model="editDialog.videoLink"
+            class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue"
+            placeholder="https://..."
+          />
+        </div>
+        <div v-else>
+          <label class="text-sm text-slate-600 font-medium">文件路径 (fileUrl)</label>
+          <input
+            v-model="editDialog.fileUrl"
+            class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue"
+            placeholder="/uploads/gallery/..."
+          />
+        </div>
+        <div>
+          <label class="text-sm text-slate-600 font-medium">标签 <span class="text-xs text-slate-400">(逗号分隔)</span></label>
+          <input
+            v-model="editDialog.tagsStr"
+            class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue"
+            placeholder="标签1, 标签2"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="editDialog.show = false">取消</el-button>
+        <el-button type="primary" :loading="editDialog.saving" @click="saveEdit">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import dayjs from 'dayjs';
 import api from '../../api';
@@ -42,11 +84,56 @@ import api from '../../api';
 const items = ref([]);
 const q = ref('');
 
+const editDialog = reactive({
+  show: false,
+  saving: false,
+  id: null,
+  type: 'image',
+  title: '',
+  fileUrl: '',
+  videoLink: '',
+  tagsStr: '',
+});
+
 function format(t) { return dayjs(t).format('YYYY-MM-DD HH:mm'); }
 
 async function load() {
   const { data } = await api.get('/admin/gallery', { params: { q: q.value } });
   items.value = data;
+}
+
+function openEdit(row) {
+  editDialog.id = row.id;
+  editDialog.type = row.type || 'image';
+  editDialog.title = row.title || '';
+  editDialog.fileUrl = row.fileUrl || '';
+  editDialog.videoLink = row.videoLink || '';
+  editDialog.tagsStr = (row.tags || []).join(', ');
+  editDialog.show = true;
+}
+
+async function saveEdit() {
+  if (!editDialog.title) return ElMessage.warning('标题不能为空');
+  editDialog.saving = true;
+  try {
+    const payload = {
+      title: editDialog.title,
+      tags: editDialog.tagsStr,
+    };
+    if (editDialog.type === 'link') {
+      payload.videoLink = editDialog.videoLink;
+    } else {
+      payload.fileUrl = editDialog.fileUrl;
+    }
+    await api.patch(`/gallery/${editDialog.id}`, payload);
+    ElMessage.success('保存成功');
+    editDialog.show = false;
+    load();
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '保存失败');
+  } finally {
+    editDialog.saving = false;
+  }
 }
 
 async function del(row) {

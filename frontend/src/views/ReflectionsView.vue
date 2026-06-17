@@ -248,11 +248,23 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- Floating action button (visible when scrolled past hero) -->
+    <Transition name="fab-fade">
+      <button
+        v-show="showFab"
+        class="fab-action btn-orange"
+        @click="openPublish"
+      >
+        <font-awesome-icon icon="pen-to-square" />
+        <span class="hidden sm:inline ml-1.5">写下我的反思</span>
+      </button>
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, nextTick } from 'vue';
+import { reactive, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import dayjs from 'dayjs';
@@ -271,8 +283,13 @@ const loading = ref(false);
 const posting = ref(false);
 const detail = ref(null);
 const showPublishForm = ref(false);
+const showFab = ref(false);
 
 const form = reactive({ title: '', content: '', isAnonymous: false });
+
+function handleScroll() {
+  showFab.value = window.scrollY > 300;
+}
 
 /* ── Note colors ── */
 const NOTE_COLORS = [
@@ -450,11 +467,16 @@ async function del(r) {
 }
 
 onMounted(async () => {
+  window.addEventListener('scroll', handleScroll, { passive: true });
   await load(true);
   // Auto-open publish form if redirected back from login with action=publish
   if (route.query.action === 'publish' && auth.isLoggedIn) {
     openPublish();
   }
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll);
 });
 </script>
 

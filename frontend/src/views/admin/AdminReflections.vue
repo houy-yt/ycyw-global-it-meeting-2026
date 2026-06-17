@@ -21,23 +21,57 @@
       <el-table-column prop="createdAt" label="时间" width="170">
         <template #default="{ row }">{{ format(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="100">
+      <el-table-column label="操作" width="140">
         <template #default="{ row }">
+          <el-button type="primary" size="small" @click="openEdit(row)">编辑</el-button>
           <el-button type="danger" size="small" @click="del(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- Edit Dialog -->
+    <el-dialog v-model="editDialog.show" title="编辑反思" width="560px" align-center>
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm text-slate-600 font-medium">标题</label>
+          <input
+            v-model="editDialog.title"
+            class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue"
+          />
+        </div>
+        <div>
+          <label class="text-sm text-slate-600 font-medium">内容</label>
+          <textarea
+            v-model="editDialog.content"
+            rows="8"
+            class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue resize-none"
+          ></textarea>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="editDialog.show = false">取消</el-button>
+        <el-button type="primary" :loading="editDialog.saving" @click="saveEdit">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import dayjs from 'dayjs';
 import api from '../../api';
 
 const items = ref([]);
 const q = ref('');
+
+const editDialog = reactive({
+  show: false,
+  saving: false,
+  id: null,
+  title: '',
+  content: '',
+});
 
 function format(t) {
   return dayjs(t).format('YYYY-MM-DD HH:mm');
@@ -46,6 +80,31 @@ function format(t) {
 async function load() {
   const { data } = await api.get('/admin/reflections', { params: { q: q.value } });
   items.value = data;
+}
+
+function openEdit(row) {
+  editDialog.id = row.id;
+  editDialog.title = row.title;
+  editDialog.content = row.content || '';
+  editDialog.show = true;
+}
+
+async function saveEdit() {
+  if (!editDialog.title) return ElMessage.warning('标题不能为空');
+  editDialog.saving = true;
+  try {
+    await api.put(`/reflections/${editDialog.id}`, {
+      title: editDialog.title,
+      content: editDialog.content,
+    });
+    ElMessage.success('保存成功');
+    editDialog.show = false;
+    load();
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '保存失败');
+  } finally {
+    editDialog.saving = false;
+  }
 }
 
 async function del(row) {

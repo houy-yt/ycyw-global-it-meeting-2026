@@ -130,3 +130,29 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--brand-blue);
 }
+
+/* ========== Floating Action Button (FAB) ========== */
+.fab-action {
+  position: fixed;
+  bottom: 5.5rem;       /* sit above BackToTop button */
+  right: 1.5rem;
+  z-index: 40;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+@media (min-width: 640px) {
+  .fab-action {
+    bottom: 2.5rem;
+    right: 2rem;
+  }
+}
+
+/* FAB fade transition */
+.fab-fade-enter-active,
+.fab-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fab-fade-enter-from,
+.fab-fade-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}

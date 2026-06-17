@@ -9,6 +9,8 @@
 
 const express = require('express');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const router = express.Router();
 const prisma = require('../utils/prisma');
 const { signToken, authRequired } = require('../middleware/auth');
@@ -224,7 +226,48 @@ router.get('/me', authRequired, (req, res) => {
 
 /* ────────────────── helpers ────────────────── */
 
+/**
+ * Load attendee emails from attendees.json.
+ * Returns { emails: Set<string>, prefixes: Set<string> } (all lowercase).
+ */
+let _attendeeEmailCache = null;
+function loadAttendeeEmails() {
+  if (_attendeeEmailCache) return _attendeeEmailCache;
+  try {
+    const filePath = path.join(__dirname, '..', '..', 'data', 'attendees.json');
+    const list = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    const emails = new Set();
+    const prefixes = new Set();
+    for (const att of list) {
+      const e = (att.email || '').trim().toLowerCase();
+      if (e) {
+        emails.add(e);
+        const prefix = e.split('@')[0];
+        if (prefix) prefixes.add(prefix);
+      }
+    }
+    _attendeeEmailCache = { emails, prefixes };
+  } catch (err) {
+    console.error('[Auth] Failed to load attendees.json for email matching:', err.message);
+    _attendeeEmailCache = { emails: new Set(), prefixes: new Set() };
+  }
+  return _attendeeEmailCache;
+}
+
+/**
+ * Check if a login email belongs to an attendee.
+ * Matches by full email or by email prefix (the part before @).
+ */
+function isAttendeeEmail(email) {
+  const { emails, prefixes } = loadAttendeeEmails();
+  const lower = email.toLowerCase();
+  if (emails.has(lower)) return true;
+  const prefix = lower.split('@')[0];
+  return prefix ? prefixes.has(prefix) : false;
+}
+
 async function findOrCreateUser(email, nickname) {
+  const isAttendee = isAttendeeEmail(email);
   let user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
@@ -233,23 +276,30 @@ async function findOrCreateUser(email, nickname) {
       data: {
         email,
         nickname: nickname || email.split('@')[0],
-        isAttendee: false,
+        isAttendee,
         isAdmin,
       },
     });
   } else {
+    const updates = {};
+
     // Promote to admin if admin list was updated
     if (ADMIN_EMAILS.includes(email) && !user.isAdmin) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { isAdmin: true },
-      });
+      updates.isAdmin = true;
+    }
+    // Promote to attendee if attendee list was updated
+    if (isAttendee && !user.isAttendee) {
+      updates.isAttendee = true;
     }
     // Update nickname if provided and user has default
     if (nickname && user.nickname === user.email.split('@')[0]) {
+      updates.nickname = nickname;
+    }
+
+    if (Object.keys(updates).length > 0) {
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { nickname },
+        data: updates,
       });
     }
   }
