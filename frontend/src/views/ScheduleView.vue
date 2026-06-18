@@ -92,6 +92,8 @@
                 <div class="card p-4 sm:p-5">
                   <!-- Section title (optional, e.g. "AI 应用分享") -->
                   <div v-if="it.title" class="text-xs font-semibold text-brand-orange uppercase tracking-wider mb-3">{{ it.title }}</div>
+                  <!-- Item-level description -->
+                  <div v-if="it.description" class="text-sm text-slate-600 leading-relaxed mb-3 whitespace-pre-line">{{ it.description }}</div>
                   <!-- Talks list -->
                   <template v-if="it.talks && it.talks.length">
                     <div
@@ -109,6 +111,23 @@
                       <div v-if="tk.speaker" class="mt-1">
                         <span class="text-sm text-slate-500">—— {{ tk.speaker }}</span>
                       </div>
+                      <div v-if="tk.abstract" class="text-xs text-slate-500 mt-1 line-clamp-2">{{ tk.abstract }}</div>
+                      <!-- Resource pills -->
+                      <div v-if="tk.resources && tk.resources.length" class="mt-2 flex flex-wrap gap-1.5">
+                        <button
+                          v-for="r in tk.resources"
+                          :key="r.id"
+                          class="res-pill"
+                          @click="openResource(r, tk)"
+                          :title="r.title || resourceLabel(r.type)"
+                        >
+                          <span>{{ resourceIcon(r.type) }}</span>
+                          <span class="truncate max-w-[100px]">{{ r.title || resourceLabel(r.type) }}</span>
+                        </button>
+                      </div>
+                      <div v-if="tk.abstract || (tk.resources && tk.resources.length)" class="mt-2">
+                        <button class="text-xs text-brand-blue hover:underline" @click="openTalk(tk)">查看详情 →</button>
+                      </div>
                     </div>
                   </template>
                   <!-- Fallback: no talks, show title only -->
@@ -120,16 +139,57 @@
         </div>
       </div>
     </section>
+
+    <!-- ============ Talk detail modal ============ -->
+    <el-dialog v-model="talkModal.show" :title="talkModal.talk?.title || '演讲详情'" width="720px" align-center destroy-on-close>
+      <div v-if="talkModal.talk" class="space-y-4">
+        <div v-if="talkModal.talk.speaker" class="text-sm text-slate-500">演讲者：{{ talkModal.talk.speaker }}</div>
+        <div v-if="talkModal.talk.abstract" class="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{{ talkModal.talk.abstract }}</div>
+
+        <!-- Resources -->
+        <div v-if="talkModal.talk.resources?.length" class="border-t pt-4">
+          <div class="text-sm font-semibold text-brand-deep mb-3">演讲资料</div>
+          <div class="space-y-2">
+            <div v-for="r in talkModal.talk.resources" :key="r.id" class="border rounded-lg p-3 bg-slate-50">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xl">{{ resourceIcon(r.type) }}</span>
+                <span class="font-medium text-brand-deep">{{ r.title || resourceLabel(r.type) }}</span>
+                <span class="ml-auto chip !text-[10px]">{{ r.type }}</span>
+              </div>
+              <!-- Inline preview for video/audio/image -->
+              <video v-if="r.type === 'video' && r.fileUrl" :src="r.fileUrl" controls class="w-full rounded mt-2" />
+              <audio v-else-if="r.type === 'audio' && r.fileUrl" :src="r.fileUrl" controls class="w-full mt-2" />
+              <img v-else-if="r.type === 'image' && r.fileUrl" :src="r.fileUrl" class="w-full rounded mt-2 max-h-80 object-contain" />
+              <!-- Embed YouTube/external video link -->
+              <div v-else-if="r.linkUrl && getEmbedUrl(r.linkUrl)" class="aspect-video mt-2">
+                <iframe :src="getEmbedUrl(r.linkUrl)" class="w-full h-full rounded" frameborder="0" allowfullscreen></iframe>
+              </div>
+              <!-- Other types: download / open link -->
+              <div class="mt-2 flex gap-2">
+                <a v-if="r.fileUrl" :href="r.fileUrl" target="_blank" class="text-xs text-brand-blue hover:underline">下载 / 打开</a>
+                <a v-if="r.linkUrl" :href="r.linkUrl" target="_blank" class="text-xs text-brand-blue hover:underline">外部链接</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="text-sm text-slate-400 italic">暂无资料</div>
+      </div>
+      <template #footer>
+        <el-button @click="talkModal.show = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import api from '../api';
+import { getEmbedUrl } from '../utils/videoEmbed';
 
 const meta = ref(null);
 const dates = ref([]);
 const active = ref(0);
+const talkModal = reactive({ show: false, talk: null });
 
 function getIconType(title) {
   if (!title) return '';
@@ -139,6 +199,20 @@ function getIconType(title) {
   if (title.includes('签到')) return 'checkin';
   if (title.includes('前往')) return 'transit';
   return '';
+}
+
+const RES_ICONS = { ppt: '📊', pdf: '📄', video: '🎬', audio: '🎧', image: '🖼️', link: '🔗' };
+const RES_LABELS = { ppt: 'PPT', pdf: 'PDF', video: '视频', audio: '音频', image: '图片', link: '链接' };
+function resourceIcon(t) { return RES_ICONS[t] || '📎'; }
+function resourceLabel(t) { return RES_LABELS[t] || t; }
+
+function openTalk(t) {
+  talkModal.talk = t;
+  talkModal.show = true;
+}
+function openResource(r, talk) {
+  // For media resources, open the talk modal so user can preview/download all at once.
+  openTalk(talk);
 }
 
 onMounted(async () => {
@@ -270,5 +344,25 @@ onMounted(async () => {
 .sch-item:last-child .sch-right {
   padding-bottom: 0;
   border-bottom: none;
+}
+
+/* Resource pill */
+.res-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 11px;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.res-pill:hover {
+  background: #e0f2fe;
+  border-color: var(--brand-blue);
+  color: var(--brand-blue);
 }
 </style>

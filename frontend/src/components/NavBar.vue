@@ -138,6 +138,7 @@ const links = [
   { to: '/', label: '首页' },
   { to: '/schedule', label: '日程安排' },
   { to: '/venue', label: '会议地点' },
+  { to: '/entry-guide', label: '入校指引' },
   { to: '/attendees', label: '参会人员' },
   { to: '/reflections', label: '会后反思' },
   { to: '/gallery', label: '会议剪影' },

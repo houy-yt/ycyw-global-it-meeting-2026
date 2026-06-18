@@ -9,10 +9,12 @@
     "start": "node src/server.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name init",
-    "db:push": "prisma db push",
+    "db:push": "prisma db push --accept-data-loss",
     "db:seed": "node prisma/seed.js",
     "db:seed-demo": "node prisma/seed-demo.js",
     "db:clean-demo": "node prisma/clean-demo.js",
+    "db:migrate-static": "node prisma/migrate-static-to-db.js",
+    "db:init": "prisma db push --accept-data-loss && node prisma/seed.js",
     "db:reset": "prisma migrate reset --force"
   },
   "prisma": {

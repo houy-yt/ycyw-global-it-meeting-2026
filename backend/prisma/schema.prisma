@@ -26,14 +26,20 @@ model User {
 }
 
 model Reflection {
-  id          Int       @id @default(autoincrement())
-  title       String
-  content     String
-  authorId    Int
-  isAnonymous Boolean   @default(false)
-  likeCount   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             Int       @id @default(autoincrement())
+  title          String
+  content        String
+  authorId       Int
+  isAnonymous    Boolean   @default(false)
+  likeCount      Int       @default(0)
+  // ----- Analytics caches (computed by sentimentService) -----
+  sentiment       String?   // 'positive' | 'neutral' | 'negative'
+  sentimentScore  Float?    // raw score, dictionary or LLM
+  sentimentEngine String?   // which engine produced the score (local/openai/...)
+  wordCount       Int?      // tokens counted (CN chars + EN words)
+  analyzedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   author      User      @relation(fields: [authorId], references: [id])
   comments    Comment[]
@@ -98,4 +104,117 @@ model Announcement {
   content   String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+// ============================================================================
+// Meeting basic info (single row, id always = 1)
+// ============================================================================
+model MeetingInfo {
+  id        Int      @id @default(1)
+  name      String   @default("YCYW 2026 Global IT Meeting")
+  tagline   String?
+  startDate DateTime
+  endDate   DateTime
+  location  String   @default("北京")
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// Schedule: a day → multiple items → multiple talks → multiple resources
+// ============================================================================
+model ScheduleDay {
+  id        Int            @id @default(autoincrement())
+  date      DateTime       @unique
+  dayLabel  String
+  sortOrder Int            @default(0)
+  items     ScheduleItem[]
+}
+
+model ScheduleItem {
+  id           Int          @id @default(autoincrement())
+  dayId        Int
+  startTime    String       // "8:40"
+  endTime      String       // "9:20"
+  sortOrder    Int          @default(0)
+  sectionTitle String?      // "AI 应用分享" / "午餐"
+  category     String       @default("session") // session/meal/tea/checkin/transit/other
+  description  String?      // 详细描述（Markdown/纯文本）
+  day          ScheduleDay  @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  talks        Talk[]
+}
+
+model Talk {
+  id         Int            @id @default(autoincrement())
+  itemId     Int
+  title      String
+  speaker    String?
+  abstract   String?        // 演讲简介/详细描述
+  sortOrder  Int            @default(0)
+  item       ScheduleItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  resources  TalkResource[]
+}
+
+model TalkResource {
+  id        Int      @id @default(autoincrement())
+  talkId    Int
+  type      String   // 'ppt' | 'pdf' | 'video' | 'audio' | 'link' | 'image'
+  title     String?
+  fileUrl   String?  // local /uploads/talks/xxx
+  linkUrl   String?  // external link
+  fileSize  Int?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  talk      Talk     @relation(fields: [talkId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// Attendees (replaces data/attendees.json)
+// ============================================================================
+model Attendee {
+  id         Int      @id @default(autoincrement())
+  no         Int?
+  nameEn     String?
+  nameCn     String?
+  email      String?
+  photoUrl   String?
+  school     String   // 学校/组织代码，对应 Organization.code
+  department String   @default("IT") // 部门代码：IT / Logistics / HRD / FAD / CMD
+  title      String?  // 职位
+  phone      String?
+  bio        String?  // 简介
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// 学校/总部/分公司等组织维度
+model Organization {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  category  String   @default("school") // school/headquarter/other
+  color     String?
+  sortOrder Int      @default(0)
+}
+
+// 部门字典（IT/Logistics/HRD/FAD/CMD ...）
+model Department {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  nameCn    String?
+  color     String?
+  sortOrder Int      @default(0)
+}
+
+// ============================================================================
+// System settings: key-value pairs (upload limits, sentiment engine, etc.)
+// ============================================================================
+model SystemSetting {
+  key       String   @id
+  value     String
+  // category for grouping in admin UI: 'upload' / 'analytics' / 'general'
+  category  String   @default("general")
+  updatedAt DateTime @updatedAt
 }

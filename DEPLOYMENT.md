@@ -180,7 +180,8 @@ docker compose logs -f backend
 后端容器的 `CMD` 会自动执行：
 1. `npx prisma migrate deploy` — 应用数据库迁移
 2. `node prisma/seed.js` — 灌入种子数据（幂等，重复执行安全）
-3. `node src/server.js` — 启动 API 服务
+3. `node prisma/clean-demo.js` — 自动清除「会后反思」和「会议剪影」的 `[DEMO]` 假数据（及关联的评论、点赞），其他所有数据保留
+4. `node src/server.js` — 启动 API 服务
 
 ### 3.4 验证部署
 

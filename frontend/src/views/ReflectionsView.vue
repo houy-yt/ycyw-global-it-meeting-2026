@@ -15,60 +15,6 @@
     <section class="section-y">
       <div class="container-x">
 
-        <!-- Publish form (shown when toggled) -->
-        <Transition name="slide-down">
-          <div v-if="showPublishForm" class="max-w-2xl mx-auto mb-12">
-            <!-- Logged in but not attendee -->
-            <div v-if="auth.isLoggedIn && !auth.isAttendee"
-              class="rounded-2xl bg-brand-red/5 border border-brand-red/20 p-6 text-center"
-            >
-              <div class="text-sm text-brand-red">
-                当前账户未识别为参会人员，无法发布反思。请使用参会人员邮箱登录。
-              </div>
-              <button class="mt-3 text-xs text-slate-400 hover:text-slate-600" @click="showPublishForm = false">收起</button>
-            </div>
-
-            <!-- Logged in & attendee: publish form -->
-            <div v-else-if="auth.isLoggedIn && auth.isAttendee" class="rounded-2xl bg-white shadow-soft border border-slate-100 p-6 sm:p-8">
-              <div class="flex items-center justify-between mb-5">
-                <div class="flex items-center gap-3">
-                  <div class="h-10 w-10 rounded-full bg-brand-blue text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
-                    {{ (auth.displayName || 'U').charAt(0).toUpperCase() }}
-                  </div>
-                  <div>
-                    <div class="text-base font-semibold text-brand-deep">发布新反思</div>
-                    <div class="text-xs text-slate-400">以 {{ auth.displayName }} 的身份发布</div>
-                  </div>
-                </div>
-                <button class="text-slate-400 hover:text-slate-600 text-sm" @click="showPublishForm = false">✕</button>
-              </div>
-              <div class="space-y-3">
-                <input
-                  v-model="form.title"
-                  placeholder="给你的反思起个标题…"
-                  class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue transition"
-                />
-                <textarea
-                  v-model="form.content"
-                  placeholder="写下你的思考…"
-                  rows="5"
-                  class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue transition resize-none"
-                ></textarea>
-                <div class="flex items-center justify-between">
-                  <label class="flex items-center gap-2 text-sm text-slate-500 cursor-pointer select-none">
-                    <input type="checkbox" v-model="form.isAnonymous" class="accent-brand-blue" />
-                    匿名发布
-                  </label>
-                  <button class="btn-primary !py-2.5 !px-6" :disabled="posting" @click="submit">
-                    <template v-if="posting">发布中...</template>
-                    <template v-else><font-awesome-icon icon="paper-plane" class="mr-1" /> 发布反思</template>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Transition>
-
         <!-- Masonry Reflections Grid -->
         <div class="masonry-grid">
           <div
@@ -78,7 +24,6 @@
             :style="{
               '--note-bg': noteColor(r.id),
               '--note-accent': noteAccent(r.id),
-              '--note-rotate': noteRotate(r.id),
             }"
             @click="openDetail(r)"
           >
@@ -86,25 +31,22 @@
               <!-- Top accent bar -->
               <div class="note-accent-bar"></div>
 
-              <!-- Pin -->
-              <div class="note-pin"><font-awesome-icon icon="thumbtack" /></div>
-
               <!-- Header -->
-              <div class="px-5 pt-8 pb-0">
+              <div class="px-5 pt-4 pb-0">
                 <h3 class="text-base font-bold text-slate-800 leading-snug line-clamp-2">{{ displayTitle(r.title) }}</h3>
                 <div class="mt-1.5 text-xs text-slate-500 flex items-center gap-1.5">
                   <span
                     class="inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-bold text-white flex-shrink-0"
                     :style="{ backgroundColor: noteAccent(r.id) }"
                   >{{ (r.author.nickname || '?').charAt(0).toUpperCase() }}</span>
-                  <span class="font-medium text-slate-600 truncate">{{ r.author.nickname }}</span>
+                  <span class="font-medium text-slate-600 truncate">{{ displayAuthorName(r.author) }}</span>
                   <span class="text-slate-300">·</span>
                   <span class="flex-shrink-0">{{ formatDate(r.createdAt) }}</span>
                 </div>
               </div>
 
               <!-- Content preview -->
-              <p class="mt-3 px-5 text-sm text-slate-600 whitespace-pre-wrap leading-relaxed line-clamp-5">{{ r.content }}</p>
+              <p class="mt-3 px-5 text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{{ r.content }}</p>
 
               <!-- Footer actions -->
               <div class="mt-4 px-5 pb-5 flex items-center gap-4 text-xs text-slate-400">
@@ -176,7 +118,7 @@
                   class="inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold text-white flex-shrink-0"
                   :style="{ backgroundColor: noteAccent(detail.id) }"
                 >{{ (detail.author.nickname || '?').charAt(0).toUpperCase() }}</span>
-                <span class="font-medium text-slate-700">{{ detail.author.nickname }}</span>
+                <span class="font-medium text-slate-700">{{ displayAuthorName(detail.author) }}</span>
                 <span class="text-slate-300">·</span>
                 <span>{{ formatTime(detail.createdAt) }}</span>
               </div>
@@ -212,7 +154,7 @@
                       class="bg-white/50 backdrop-blur-sm rounded-xl p-3.5 text-sm"
                     >
                       <div class="text-xs text-slate-500 mb-1 flex items-center gap-2">
-                        <span class="font-medium text-slate-700">{{ c.author.nickname }}</span>
+                        <span class="font-medium text-slate-700">{{ displayAuthorName(c.author) }}</span>
                         <span class="text-slate-300">·</span>
                         <span>{{ formatTime(c.createdAt) }}</span>
                         <button
@@ -249,6 +191,46 @@
       </Transition>
     </Teleport>
 
+    <!-- Publish Dialog -->
+    <el-dialog v-model="showPublishForm" title="写下我的反思" width="500px" align-center>
+      <div v-if="!auth.isLoggedIn" class="text-center py-6">
+        <p class="text-sm text-slate-500 mb-4">登录后才能发布反思</p>
+        <button class="btn-primary" @click="showPublishForm = false; auth.requireLogin(router, '/reflections', 'publish')">前往登录</button>
+      </div>
+      <div v-else-if="auth.isLoggedIn && !auth.isAttendee" class="text-center py-6">
+        <p class="text-sm text-brand-red">当前账户未识别为参会人员，无法发布反思。请使用参会人员邮箱登录。</p>
+      </div>
+      <div v-else class="space-y-4">
+        <div>
+          <label class="text-sm text-slate-600">标题</label>
+          <input
+            v-model="form.title"
+            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue"
+            placeholder="给你的反思起个标题…"
+          />
+        </div>
+        <div>
+          <label class="text-sm text-slate-600">内容</label>
+          <textarea
+            v-model="form.content"
+            placeholder="写下你的思考…"
+            rows="5"
+            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue transition resize-none"
+          ></textarea>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-slate-500 cursor-pointer select-none">
+          <input type="checkbox" v-model="form.isAnonymous" class="accent-brand-blue" />
+          匿名发布
+        </label>
+      </div>
+      <template #footer v-if="auth.isLoggedIn && auth.isAttendee">
+        <button class="btn-secondary mr-2" @click="showPublishForm = false">取消</button>
+        <button class="btn-primary" :disabled="posting" @click="submit">
+          {{ posting ? '发布中...' : '发布反思' }}
+        </button>
+      </template>
+    </el-dialog>
+
     <!-- Floating action button (visible when scrolled past hero) -->
     <Transition name="fab-fade">
       <button
@@ -264,7 +246,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { reactive, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import dayjs from 'dayjs';
@@ -311,12 +293,6 @@ function noteAccent(id) {
   return NOTE_ACCENTS[Math.abs(idx) % NOTE_ACCENTS.length];
 }
 
-function noteRotate(id) {
-  const idx = typeof id === 'number' ? id : hashStr(String(id));
-  const rotations = [-1.2, 0.8, -0.6, 1, -0.4, 0.6, -1, 0.4, -0.8, 1.2];
-  return rotations[Math.abs(idx) % rotations.length] + 'deg';
-}
-
 function hashStr(s) {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
@@ -338,14 +314,26 @@ function formatTime(t) {
   return dayjs(t).format('YYYY-MM-DD HH:mm');
 }
 
-/* ── Publish form ── */
+/**
+ * Display author name using the same logic as auth store displayName:
+ * If nickname contains CJK characters, prefer emailPrefix; otherwise use nickname.
+ */
+function displayAuthorName(author) {
+  if (!author) return '用户';
+  if (author.isAnonymous) return '匿名';
+  const nick = author.nickname;
+  const emailPrefix = author.emailPrefix || '';
+  if (nick && !/[\u4e00-\u9fa5]/.test(nick)) return nick;
+  return emailPrefix || nick || '用户';
+}
+
+/* ── Publish dialog ── */
 function openPublish() {
   if (!auth.isLoggedIn) return auth.requireLogin(router, '/reflections', 'publish');
   showPublishForm.value = true;
-  nextTick(() => {
-    const el = document.querySelector('.max-w-2xl');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  form.title = '';
+  form.content = '';
+  form.isAnonymous = false;
 }
 
 /* ── Detail modal ── */
@@ -399,6 +387,7 @@ async function submit() {
   try {
     await api.post('/reflections', { ...form });
     ElMessage.success('发布成功');
+    showPublishForm.value = false;
     form.title = '';
     form.content = '';
     form.isAnonymous = false;
@@ -481,41 +470,56 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* ── Masonry Grid ── */
+/* ── Masonry Grid (matching GalleryView waterfall) ── */
 .masonry-grid {
-  columns: 1;
-  column-gap: 1.5rem;
+  columns: 2;
+  column-gap: 14px;
 }
-@media (min-width: 640px) {
-  .masonry-grid { columns: 2; }
-}
-@media (min-width: 1024px) {
-  .masonry-grid { columns: 3; }
-}
-@media (min-width: 1280px) {
-  .masonry-grid { columns: 4; }
-}
-
 .masonry-item {
   break-inside: avoid;
-  margin-bottom: 1.5rem;
-  display: inline-block;
-  width: 100%;
+  margin-bottom: 14px;
+}
+
+@media (min-width: 640px) {
+  .masonry-grid {
+    columns: 3;
+    column-gap: 16px;
+  }
+  .masonry-item {
+    margin-bottom: 16px;
+  }
+}
+@media (min-width: 1024px) {
+  .masonry-grid {
+    columns: 4;
+    column-gap: 18px;
+  }
+  .masonry-item {
+    margin-bottom: 18px;
+  }
+}
+@media (min-width: 1280px) {
+  .masonry-grid {
+    columns: 5;
+    column-gap: 20px;
+  }
+  .masonry-item {
+    margin-bottom: 20px;
+  }
 }
 
 /* ── Note Card ── */
 .note-card {
   position: relative;
   background: var(--note-bg);
-  border-radius: 1rem;
+  border-radius: 6px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
-  transform: rotate(var(--note-rotate, 0deg));
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .note-card:hover {
-  transform: rotate(0deg) translateY(-4px);
+  transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
@@ -527,32 +531,10 @@ onBeforeUnmount(() => {
   opacity: 0.8;
 }
 
-/* Pin decoration */
-.note-pin {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  font-size: 14px;
-  opacity: 0.7;
-  transform: rotate(15deg);
-  z-index: 2;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
-  transition: transform 0.3s;
-}
-.note-card:hover .note-pin {
-  transform: rotate(0deg) scale(1.1);
-}
-
 /* Line clamp */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.line-clamp-5 {
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -581,31 +563,4 @@ onBeforeUnmount(() => {
   animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ── Slide-down transition for publish form ── */
-.slide-down-enter-active {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.slide-down-leave-active {
-  transition: all 0.25s ease-in;
-}
-.slide-down-enter-from {
-  opacity: 0;
-  transform: translateY(-20px);
-  max-height: 0;
-}
-.slide-down-enter-to {
-  opacity: 1;
-  transform: translateY(0);
-  max-height: 600px;
-}
-.slide-down-leave-from {
-  opacity: 1;
-  transform: translateY(0);
-  max-height: 600px;
-}
-.slide-down-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-  max-height: 0;
-}
 </style>

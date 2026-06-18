@@ -5,6 +5,7 @@ const routes = [
   { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
   { path: '/schedule', name: 'schedule', component: () => import('../views/ScheduleView.vue') },
   { path: '/venue', name: 'venue', component: () => import('../views/VenueView.vue') },
+  { path: '/entry-guide', name: 'entry-guide', component: () => import('../views/EntryGuideView.vue') },
   { path: '/attendees', name: 'attendees', component: () => import('../views/AttendeesView.vue') },
   {
     path: '/reflections',

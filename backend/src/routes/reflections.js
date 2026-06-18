@@ -7,12 +7,39 @@ const {
   adminRequired,
   attendeeRequired,
 } = require('../middleware/auth');
+const sentimentService = require('../services/sentimentService');
+const tokenizer = require('../services/tokenizer');
+
+/**
+ * Compute sentiment + wordCount in background (best-effort; never throws).
+ */
+async function rescore(reflectionId, title, content) {
+  try {
+    const text = `${title}\n${content}`;
+    const sa = await sentimentService.analyze(text);
+    const wc = tokenizer.wordCount(text);
+    await prisma.reflection.update({
+      where: { id: reflectionId },
+      data: {
+        sentiment: sa.sentiment,
+        sentimentScore: sa.score,
+        sentimentEngine: sa.engine,
+        wordCount: wc,
+        analyzedAt: new Date(),
+      },
+    });
+  } catch (e) {
+    console.warn(`[reflections] sentiment scoring failed for #${reflectionId}:`, e.message);
+  }
+}
 
 function serializeAuthor(user, isAnonymous) {
   if (isAnonymous) return { nickname: '匿名', isAnonymous: true };
+  const emailPrefix = user?.email ? user.email.split('@')[0] : '';
   return {
     id: user?.id,
-    nickname: user?.nickname || (user?.email ? user.email.split('@')[0] : '用户'),
+    nickname: user?.nickname || emailPrefix || '用户',
+    emailPrefix,
     isAnonymous: false,
   };
 }
@@ -92,6 +119,8 @@ router.post('/', authRequired, attendeeRequired, async (req, res) => {
     },
     include: { author: true, _count: { select: { comments: true } } },
   });
+  // Fire and forget — sentiment + word count
+  rescore(r.id, r.title, r.content);
   res.status(201).json(serializeReflection(r, req.user.id));
 });
 
@@ -113,6 +142,10 @@ router.put('/:id', authRequired, async (req, res) => {
     },
     include: { author: true, _count: { select: { comments: true } } },
   });
+  // Re-score after edit
+  if (title !== undefined || content !== undefined) {
+    rescore(updated.id, updated.title, updated.content);
+  }
   res.json(serializeReflection(updated, req.user.id));
 });
 

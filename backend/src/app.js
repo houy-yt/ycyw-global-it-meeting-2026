@@ -33,14 +33,22 @@ app.use('/uploads', express.static(uploadDir));
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api', require('./routes/staticData')); // /api/schedule, /api/attendees
+app.use('/api', require('./routes/staticData')); // /api/schedule, /api/attendees, /api/meeting
+app.use('/api/talks', require('./routes/talks'));  // public talk detail (resources)
 app.use('/api/reflections', require('./routes/reflections'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/gallery', require('./routes/gallery'));
 app.use('/api/past-meetings', require('./routes/pastMeetings'));
 app.use('/api/preset-tags', require('./routes/presetTags'));
 app.use('/api/announcements', require('./routes/announcements'));
-app.use('/api/admin', require('./routes/admin'));
+
+// Admin namespace
+app.use('/api/admin', require('./routes/admin'));            // existing user/role admin
+app.use('/api/admin/meeting', require('./routes/meeting'));   // meeting info
+app.use('/api/admin/schedule', require('./routes/schedule')); // schedule CRUD + resources
+app.use('/api/admin', require('./routes/attendeesAdmin'));   // attendees/orgs/departments
+app.use('/api/admin/settings', require('./routes/settings'));// key-value settings
+app.use('/api/admin/analytics', require('./routes/analytics'));// reflection analytics
 
 // ---------- Static: Frontend (production) ----------
 const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');

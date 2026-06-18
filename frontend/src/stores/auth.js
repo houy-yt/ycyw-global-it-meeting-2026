@@ -14,8 +14,20 @@ export const useAuthStore = defineStore('auth', {
     isLoggedIn: (s) => !!s.token && !!s.user,
     isAdmin: (s) => !!s.user?.isAdmin,
     isAttendee: (s) => !!s.user?.isAttendee,
-    displayName: (s) =>
-      s.user?.nickname || (s.user?.email ? s.user.email.split('@')[0] : '游客'),
+    /**
+     * Display name for the currently logged-in user.
+     * Priority: nickname (which the backend keeps in sync with Attendee.nameEn)
+     *           → email prefix → '游客'.
+     * If the legacy nickname looks like a CJK string we drop back to the email
+     * prefix so the navbar shows e.g. "ying.hou" instead of "侯英".
+     */
+    displayName: (s) => {
+      const nick = s.user?.nickname;
+      const emailPrefix = s.user?.email ? s.user.email.split('@')[0] : '';
+      if (!s.user) return '游客';
+      if (nick && !/[\u4e00-\u9fa5]/.test(nick)) return nick;
+      return emailPrefix || nick || '游客';
+    },
   },
   actions: {
     hydrate() {

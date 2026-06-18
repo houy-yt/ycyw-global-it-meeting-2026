@@ -10,4 +10,4 @@ RUN npm install --omit=dev && npx prisma generate
 COPY . .
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && node prisma/seed.js && node src/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node prisma/seed.js && node prisma/clean-demo.js && node src/server.js"]

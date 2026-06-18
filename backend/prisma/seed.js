@@ -7,6 +7,9 @@
  *  - Preset tags
  *  - Past meetings (example: 2024, 2025)
  *  - One active welcome announcement
+ *  - Departments (IT / Logistics / HRD / FAD / CMD)
+ *  - Default SystemSettings (upload limits, sentiment engine)
+ *  - Triggers data migration (schedule + attendees → DB) on first run
  *
  * Run:  npm run db:seed
  */
@@ -37,21 +40,21 @@ function getEmail(att) {
 }
 
 function buildNickname(att) {
-  if (att.nameEn && att.nameCn) return `${att.nameEn} ${att.nameCn}`;
+  // Prefer English name for display in NavBar, comments and lists.
   return att.nameEn || att.nameCn || `User ${att.no}`;
 }
 
-async function main() {
-  console.log('🌱  Seeding database...');
-
-  // -------- Admin emails from .env --------
+async function seedUsersFromAttendeeJson() {
   const adminEmails = (process.env.ADMIN_EMAILS || '')
     .split(',')
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
-  // -------- 1. Attendees --------
   const attendeesPath = path.join(__dirname, '..', 'data', 'attendees.json');
+  if (!fs.existsSync(attendeesPath)) {
+    console.warn('⚠️  attendees.json not found, skip user import.');
+    return;
+  }
   const attendees = JSON.parse(fs.readFileSync(attendeesPath, 'utf-8'));
 
   for (const att of attendees) {
@@ -61,6 +64,7 @@ async function main() {
 
     await prisma.user.upsert({
       where: { email },
+      // Always overwrite nickname to keep User.nickname in sync with Attendee.nameEn
       update: { nickname, isAttendee: true, isAdmin: isAdmin || undefined },
       create: {
         email,
@@ -71,7 +75,6 @@ async function main() {
     });
   }
 
-  // Also ensure all ADMIN_EMAILS are present (even if not in attendees list).
   for (const email of adminEmails) {
     await prisma.user.upsert({
       where: { email },
@@ -84,10 +87,70 @@ async function main() {
       },
     });
   }
+  console.log(`✅ Users: ${attendees.length} attendees + admin emails synced (nickname uses English name).`);
+}
 
-  console.log(`✅ Users: ${attendees.length} attendees + admin emails synced.`);
+/**
+ * Sync User.nickname to Attendee.nameEn for any users whose Attendee record
+ * exists in the DB (covers historical OIDC-created users whose nickname was
+ * filled with Chinese name from OIDC userinfo.name).
+ */
+async function syncNicknamesFromAttendeeTable() {
+  const list = await prisma.attendee.findMany({ where: { isActive: true } });
+  let synced = 0;
+  for (const att of list) {
+    if (!att.email || !att.nameEn) continue;
+    const email = att.email.toLowerCase();
+    const u = await prisma.user.findUnique({ where: { email } });
+    if (u && u.nickname !== att.nameEn) {
+      await prisma.user.update({ where: { id: u.id }, data: { nickname: att.nameEn } });
+      synced++;
+    }
+  }
+  if (synced > 0) console.log(`✅ Nicknames synced to English for ${synced} existing user(s).`);
+}
 
-  // -------- 2. Preset Tags --------
+async function seedDepartments() {
+  const list = [
+    { code: 'IT',        name: 'IT',        nameCn: 'IT 部门',  color: '#0032a0', sortOrder: 1 },
+    { code: 'Logistics', name: 'Logistics', nameCn: '后勤部',   color: '#ff8200', sortOrder: 2 },
+    { code: 'HRD',       name: 'HRD',       nameCn: '人事部',   color: '#7c3aed', sortOrder: 3 },
+    { code: 'FAD',       name: 'FAD',       nameCn: '财务部',   color: '#3a8a4d', sortOrder: 4 },
+    { code: 'CMD',       name: 'CMD',       nameCn: '工程维保', color: '#ff0044', sortOrder: 5 },
+  ];
+  for (const d of list) {
+    await prisma.department.upsert({
+      where: { code: d.code },
+      update: { name: d.name, nameCn: d.nameCn, color: d.color, sortOrder: d.sortOrder },
+      create: d,
+    });
+  }
+  console.log(`✅ Departments: ${list.length} synced.`);
+}
+
+async function seedSystemSettings() {
+  const defaults = [
+    // ---- Upload limits (MB) ----
+    { key: 'upload.maxImageMB',     value: '10',   category: 'upload' },
+    { key: 'upload.maxVideoMB',     value: '100',  category: 'upload' },
+    { key: 'upload.maxResourceMB',  value: '100',  category: 'upload' },
+    // ---- Analytics / Sentiment ----
+    { key: 'analytics.sentimentEngine', value: 'local',  category: 'analytics' }, // local | openai | deepseek
+    { key: 'analytics.llmApiKey',       value: '',       category: 'analytics' },
+    { key: 'analytics.llmBaseUrl',      value: '',       category: 'analytics' },
+    { key: 'analytics.llmModel',        value: '',       category: 'analytics' },
+  ];
+  for (const s of defaults) {
+    await prisma.systemSetting.upsert({
+      where: { key: s.key },
+      update: {}, // do not overwrite admin edits on re-seed
+      create: s,
+    });
+  }
+  console.log(`✅ SystemSettings: ${defaults.length} defaults synced.`);
+}
+
+async function seedPresetTags() {
   const tags = [
     '开幕致辞',
     'IT Roadmap',
@@ -116,8 +179,9 @@ async function main() {
     });
   }
   console.log(`✅ Preset tags: ${tags.length} synced.`);
+}
 
-  // -------- 3. Past Meetings --------
+async function seedPastMeetings() {
   const pastMeetings = [
     {
       year: 2024,
@@ -142,8 +206,9 @@ async function main() {
     });
   }
   console.log(`✅ Past meetings: ${pastMeetings.length} synced.`);
+}
 
-  // -------- 4. Announcement --------
+async function seedAnnouncement() {
   const activeCount = await prisma.announcement.count({ where: { isActive: true } });
   if (activeCount === 0) {
     await prisma.announcement.create({
@@ -155,6 +220,37 @@ async function main() {
     });
     console.log('✅ Default announcement created.');
   }
+}
+
+/**
+ * Migrate static JSON (data/schedule.json & data/attendees.json) into the DB.
+ * Idempotent: skips if MeetingInfo / ScheduleDay / Attendee rows already exist.
+ * Uses in-process require() to avoid issues with spaces in the project path.
+ */
+async function migrateStaticData() {
+  try {
+    const migrator = require('./migrate-static-to-db');
+    if (typeof migrator.runMigration === 'function') {
+      await migrator.runMigration(prisma);
+    } else {
+      console.warn('⚠️  migrate-static-to-db.js does not export runMigration; falling back to no-op.');
+    }
+  } catch (e) {
+    console.warn('⚠️  Static migration failed:', e.message);
+  }
+}
+
+async function main() {
+  console.log('🌱  Seeding database...');
+
+  await seedUsersFromAttendeeJson();
+  await seedDepartments();
+  await seedSystemSettings();
+  await seedPresetTags();
+  await seedPastMeetings();
+  await seedAnnouncement();
+  await migrateStaticData();
+  await syncNicknamesFromAttendeeTable();
 
   console.log('🎉 Seeding finished.');
 }

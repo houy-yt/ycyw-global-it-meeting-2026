@@ -14,6 +14,24 @@
           共 <span class="font-bold text-brand-orange">{{ total }}</span> 位同仁，来自
           <span class="font-bold text-brand-orange">{{ orderedGroups.length }}</span> 所学校 / 部门
         </p>
+
+        <!-- Department Tabs -->
+        <div v-if="departments.length > 1" class="mt-6 flex flex-wrap justify-center gap-2">
+          <button
+            v-for="d in departments"
+            :key="d.code"
+            class="px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition"
+            :class="
+              currentDept === d.code
+                ? 'bg-brand-orange text-white shadow-soft'
+                : 'bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20'
+            "
+            @click="switchDept(d.code)"
+          >
+            {{ d.nameCn || d.name }}
+            <span class="ml-1 opacity-75">({{ d.count }})</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -138,6 +156,8 @@ const loading = ref(true);
 const loadError = ref('');
 const total = ref(0);
 const groups = ref([]); // [{ school, people: [] }]
+const departments = ref([]); // [{ code, name, nameCn, color, count }]
+const currentDept = ref('IT');
 const imgFail = reactive({}); // { [`${school}__${idx}`]: true }
 const previewPerson = ref(null);
 const previewModalVisible = computed({
@@ -146,44 +166,21 @@ const previewModalVisible = computed({
 });
 
 // ---------- ordering ----------
-const SCHOOL_ORDER = [
-  'CTO',
-  'YCIS-BJ',
-  'YCIS-SH',
-  'YCIS-CQ',
-  'YCIS-QD',
-  'YCIS-HK',
-  'YWIES-BJ',
-  'YWIES-SHLG',
-  'YWIES-GZ',
-  'YWIES-TX',
-  'YWIES-YT',
-  'YWAD',
-  'Yaotong-BJ',
-  'Yaotong-SH',
-];
-function schoolRank(name) {
-  // Case-insensitive matching
-  const nl = (name || '').toLowerCase();
-  const i = SCHOOL_ORDER.findIndex((s) => s.toLowerCase() === nl);
-  return i === -1 ? 999 : i;
-}
-const orderedGroups = computed(() => {
-  return [...groups.value].sort((a, b) => {
-    const r = schoolRank(a.school) - schoolRank(b.school);
-    if (r !== 0) return r;
-    return a.school.localeCompare(b.school);
-  });
-});
+// Groups are already sorted by backend (Organization.sortOrder).
+// orderedGroups simply reflects that order; the color comes from the API too.
+const orderedGroups = computed(() => groups.value);
 
 // ---------- visuals ----------
+// Color map built from API response (each group carries its org color).
+const _groupColorMap = computed(() => {
+  const m = {};
+  for (const g of groups.value) {
+    if (g.color) m[g.school] = g.color;
+  }
+  return m;
+});
 function schoolColor(name) {
-  const n = (name || '').toLowerCase();
-  if (n === 'cto') return '#0032a0';
-  if (n.includes('ycis')) return '#ff0044';
-  if (n.includes('ywies') || n.includes('ywad')) return '#ff8200';
-  if (n.includes('yaotong')) return '#0032a0';
-  return '#64748b'; // fallback slate
+  return _groupColorMap.value[name] || '#64748b';
 }
 const AVATAR_PALETTE = ['#0032a0', '#001e60', '#ff8200', '#ff0044', '#1f6feb', '#3a8a4d', '#7c3aed', '#0ea5e9'];
 function _hash(str) {
@@ -232,11 +229,25 @@ function handleKeydown(e) {
 }
 
 // ---------- load ----------
+async function loadDepartments() {
+  try {
+    const { data } = await api.get('/attendees/departments');
+    departments.value = data || [];
+  } catch {
+    departments.value = [];
+  }
+}
+
+function switchDept(code) {
+  currentDept.value = code;
+  load();
+}
+
 async function load() {
   loading.value = true;
   loadError.value = '';
   try {
-    const { data } = await api.get('/attendees');
+    const { data } = await api.get('/attendees', { params: { department: currentDept.value } });
     // eslint-disable-next-line no-console
     console.log('[attendees] response:', data);
 
@@ -253,11 +264,15 @@ async function load() {
       normalized = data.groups.map((g) => ({
         school: g.school || 'Other',
         people: g.people || [],
+        color: g.color || null,
+        sortOrder: g.sortOrder ?? 999,
       }));
     } else if (Array.isArray(data?.schools)) {
       normalized = data.schools.map((g) => ({
         school: g.name || g.school || 'Other',
         people: g.members || g.people || [],
+        color: g.color || null,
+        sortOrder: g.sortOrder ?? 999,
       }));
     }
 
@@ -274,8 +289,9 @@ async function load() {
   }
 }
 
-onMounted(() => {
-  load();
+onMounted(async () => {
+  await loadDepartments();
+  await load();
   window.addEventListener('keydown', handleKeydown);
 });
 onBeforeUnmount(() => {

@@ -45,6 +45,16 @@ import {
   faChevronRight,
   faCircleRight,
   faCirclePlay,
+  faQrcode,
+  faTriangleExclamation,
+  faCircleExclamation,
+  faBan,
+  faClipboardCheck,
+  faUserCheck,
+  faImages,
+  faMagnifyingGlassPlus,
+  faCircleInfo,
+  faUpload,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faHeart as farHeart,
@@ -92,6 +102,16 @@ library.add(
   faChevronRight,
   faCircleRight,
   faCirclePlay,
+  faQrcode,
+  faTriangleExclamation,
+  faCircleExclamation,
+  faBan,
+  faClipboardCheck,
+  faUserCheck,
+  faImages,
+  faMagnifyingGlassPlus,
+  faCircleInfo,
+  faUpload,
 );
 
 import App from './App.vue';

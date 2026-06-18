@@ -266,8 +266,30 @@ function isAttendeeEmail(email) {
   return prefix ? prefixes.has(prefix) : false;
 }
 
-async function findOrCreateUser(email, nickname) {
+/**
+ * Look up the Attendee row for a given email.
+ * Returns { nameEn, nameCn, photoUrl } or null.
+ */
+async function lookupAttendeeProfile(email) {
+  try {
+    const att = await prisma.attendee.findFirst({
+      where: { email: email.toLowerCase(), isActive: true },
+      select: { nameEn: true, nameCn: true, photoUrl: true },
+    });
+    return att || null;
+  } catch (_e) {
+    return null;
+  }
+}
+
+async function findOrCreateUser(email, oidcName) {
   const isAttendee = isAttendeeEmail(email);
+  const profile = await lookupAttendeeProfile(email);
+
+  // Display name priority: Attendee.nameEn > Attendee.nameCn > OIDC name > email prefix
+  const preferredNickname =
+    profile?.nameEn || profile?.nameCn || oidcName || email.split('@')[0];
+
   let user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
@@ -275,7 +297,7 @@ async function findOrCreateUser(email, nickname) {
     user = await prisma.user.create({
       data: {
         email,
-        nickname: nickname || email.split('@')[0],
+        nickname: preferredNickname,
         isAttendee,
         isAdmin,
       },
@@ -291,9 +313,17 @@ async function findOrCreateUser(email, nickname) {
     if (isAttendee && !user.isAttendee) {
       updates.isAttendee = true;
     }
-    // Update nickname if provided and user has default
-    if (nickname && user.nickname === user.email.split('@')[0]) {
-      updates.nickname = nickname;
+    // Force nickname to English name if the attendee record provides one
+    // (overrides historical Chinese names from OIDC userinfo.name)
+    if (profile?.nameEn && user.nickname !== profile.nameEn) {
+      updates.nickname = profile.nameEn;
+    } else if (
+      !profile &&
+      oidcName &&
+      user.nickname === user.email.split('@')[0]
+    ) {
+      // Non-attendee users: only set nickname on first OIDC login
+      updates.nickname = oidcName;
     }
 
     if (Object.keys(updates).length > 0) {

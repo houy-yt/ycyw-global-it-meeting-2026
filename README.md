@@ -44,7 +44,10 @@
 | **会议剪影** | `/gallery` | 图片 / 视频 / 第三方链接上传；预设标签筛选；分页网格展示 |
 | **往届会议** | `/past-meetings` | 历年会议记录浏览，支持外部链接跳转 |
 | **OIDC 回调** | `/auth/callback` | OIDC 认证完成后的前端回调页面，自动保存令牌并跳转 |
-| **后台管理** | `/admin` | 反思管理 / 剪影管理 / 往届会议 / 预设标签 / 公告管理（5 个 Tab） |
+| **后台管理** | `/admin` | 反思管理 / 剪影管理 / 往届会议 / 预设标签 / 公告 / **会议信息 / 日程 / 参会人员 / 组织 / 部门 / 系统设置 / 数据分析**（12 个 Tab） |
+| **数据分析** | `/admin → 数据分析` | 反思总览（情感分布、平均分、Top 点赞）、关键词云、时间趋势、贡献者排行、LLM 总结（OpenAI / DeepSeek 可选） |
+| **演讲资料** | `/schedule` 详情弹窗 | 每个 Talk 可挂载 PPT/PDF/视频/音频/图片/外链，前台支持内嵌预览（video/audio/image/YouTube 等） |
+| **参会人员（多部门）** | `/attendees` | 顶部部门 Tab 切换：IT / Logistics / HRD / FAD / CMD（数据由 `Attendee.department` 字段维护） |
 | **登录** | `/login` | 登录引导页面（根据 OIDC 模式自动切换行为） |
 
 ---
@@ -229,14 +232,26 @@ cp .env.example .env
 ```bash
 cd backend
 
-# 创建数据库迁移并应用
-npx prisma migrate dev --name init
-
-# 灌入基础种子数据（用户 / 标签 / 往届会议 / 公告）
-npm run db:seed
+# 🚀 一键命令：同步 schema 并灌入全部默认数据
+npm run db:init
 
 # （可选）灌入演示数据（10 篇反思 + 评论 + 点赞）
 npm run db:seed-demo
+```
+
+> `db:init` = `prisma db push --accept-data-loss` + `node prisma/seed.js`，会自动：
+>
+> 1. 把最新 `schema.prisma` 同步到 SQLite/Postgres（创建 `MeetingInfo / ScheduleDay / ScheduleItem / Talk / TalkResource / Attendee / Organization / Department / SystemSetting` 等新表）
+> 2. 灌入用户、标签、往届会议、公告、部门、默认设置
+> 3. 把 `data/schedule.json` 和 `data/attendees.json` 内容**自动迁入数据库**（首次执行时）
+>
+> 如果新表已存在但日程/参会人员是空的（比如你从 v1 升级上来），也可以在后台「日程安排」「参会人员」Tab 顶部点击 **「📥 从静态文件导入」** 按钮一键填充。
+
+如果想分开走传统流程：
+
+```bash
+npx prisma migrate dev --name init  # 用迁移文件管理
+npm run db:seed                     # 灌入种子数据（含静态文件迁移）
 ```
 
 > 种子脚本会：
