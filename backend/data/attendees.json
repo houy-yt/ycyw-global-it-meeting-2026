@@ -14,7 +14,7 @@
   { "no": 13, "school": "YCIS-SH",     "nameEn": "AJ Lu",        "nameCn": "卢剑锋",   "email": "aj.lu@ycis.com",              "photoUrl": "/attendees/Aj-lu.jpg" },
   { "no": 14, "school": "YCIS-SH",     "nameEn": "Alan Ge",      "nameCn": "葛俊",     "email": "alan.ge@ycis.com",            "photoUrl": "/attendees/Alan-ge.jpg" },
   { "no": 15, "school": "YCIS-SH",     "nameEn": "Reid Tang",    "nameCn": "汤琪",     "email": "reid.tang@ycis.com",          "photoUrl": "/attendees/Reid-tang.jpg" },
-  { "no": 16, "school": "YCIS-SHLG",   "nameEn": "MIKI Mahundi", "nameCn": "MIKI Mahundi", "email": "mikim@ycis.com",          "photoUrl": "/attendees/miki.jpg" },
+  { "no": 16, "school": "YCIS-SH",   "nameEn": "MIKI Mahundi", "nameCn": "MIKI Mahundi", "email": "mikim@ycis.com",          "photoUrl": "/attendees/miki.jpg" },
   { "no": 17, "school": "YCIS-HK",     "nameEn": "Wayne",        "nameCn": "梁宏炜",   "email": "waynel@ycef.com",             "photoUrl": "/attendees/Wayne-liang.jpg" },
   { "no": 18, "school": "YCIS-HK",     "nameEn": "Jack Lai",     "nameCn": "赖思沛",   "email": "jack.lai@ycef.com",           "photoUrl": "/attendees/Jack-lai.jpg" },
   { "no": 19, "school": "YCIS-HK",     "nameEn": "CY Wan",       "nameCn": "温志阳",   "email": "cy.wan@ycef.com",             "photoUrl": "/attendees/CY-wan.jpg" },
