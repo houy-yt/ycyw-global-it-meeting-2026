@@ -1,21 +1,27 @@
 <template>
   <div>
     <!-- hero -->
-    <section class="hero-bg text-white py-16 sm:py-20">
-      <div class="container-x text-center">
-        <div class="chip-orange bg-white/10 !text-brand-orange ring-1 ring-white/20">
-          <font-awesome-icon icon="location-dot" class="mr-1" />
-          会议地点
-        </div>
-        <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">耀华国际教育学校</h1>
-        <p class="mt-3 text-white/70 text-sm sm:text-base">亦庄校区</p>
-        <div class="mt-5 flex flex-wrap justify-center gap-3">
-          <router-link to="/schedule" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
-            <font-awesome-icon icon="calendar-days" /> 日程安排
-          </router-link>
-          <router-link to="/meeting-guide" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
-            <font-awesome-icon icon="circle-info" /> 会议须知
-          </router-link>
+    <section class="hero-bg text-white py-14 sm:py-16">
+      <div class="container-x">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div class="flex-1 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase">
+              <font-awesome-icon icon="location-dot" class="mr-1" />
+              {{ heroLabel }}
+            </div>
+            <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">{{ venueLocation }}</h1>
+            <div class="mt-4 flex flex-wrap gap-3 lg:justify-start justify-center">
+              <router-link to="/schedule" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
+                <font-awesome-icon icon="calendar-days" /> 日程安排
+              </router-link>
+              <router-link to="/meeting-guide" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
+                <font-awesome-icon icon="circle-info" /> 会议须知
+              </router-link>
+            </div>
+          </div>
+          <div class="flex-shrink-0 flex justify-center lg:justify-end">
+            <WeatherCard />
+          </div>
         </div>
       </div>
     </section>
@@ -32,12 +38,12 @@
               </h2>
               <div class="space-y-2 text-slate-600 text-sm sm:text-base">
                 <p>
-                  <span class="font-semibold text-slate-700">学校：</span>
-                  耀华国际教育学校（亦庄校区）
+                  <span class="font-semibold text-slate-700">会场：</span>
+                  {{ venueLocation }}
                 </p>
                 <p>
                   <span class="font-semibold text-slate-700">地址：</span>
-                  北京市大兴区经济技术开发区凉水河二街29号院
+                  {{ venueAddress }}
                 </p>
               </div>
             </div>
@@ -87,14 +93,54 @@
 </template>
 
 <script setup>
-const venueName = '耀华国际教育学校亦庄校区';
+import { ref, computed, onMounted } from 'vue';
+import api from '../api';
+import WeatherCard from '../components/WeatherCard.vue';
+
+const meetingInfo = ref(null);
+
+// Hero text from nav
+const heroLabel = ref('会议地点');
+
+const venueLocation = computed(() => meetingInfo.value?.location || '耀华国际教育学校（亦庄校区）');
+const venueAddress = computed(() => meetingInfo.value?.address || '北京市大兴区经济技术开发区凉水河二街29号院');
 
 // Baidu Map search URL (for opening in new tab)
-const mapSearchUrl = `https://map.baidu.com/search/${encodeURIComponent(venueName)}`;
+const mapSearchUrl = computed(() =>
+  `https://map.baidu.com/search/${encodeURIComponent(venueLocation.value)}`
+);
 
-// Baidu Map embed URL for iframe — use POI share URL to center precisely on the school
-const mapEmbedUrl = `https://map.baidu.com/poi/${encodeURIComponent('耀华国际教育学校(亦庄校区)')}/@12972201.41,4804985.05,19z?uid=d78a4c8e525ae4cf9ff77921&ugc_type=3&ugc_ver=1&device_ratio=2&compat=1&pcevaname=pc4.1&querytype=detailConInfo&da_src=shareurl`;
+// Baidu Map embed URL for iframe
+const mapEmbedUrl = computed(() =>
+  `https://map.baidu.com/poi/${encodeURIComponent(venueLocation.value)}/@12972201.41,4804985.05,19z?uid=d78a4c8e525ae4cf9ff77921&ugc_type=3&ugc_ver=1&device_ratio=2&compat=1&pcevaname=pc4.1&querytype=detailConInfo&da_src=shareurl`
+);
 
-// Baidu Map navigation URL — opens Baidu Map app on mobile or web navigation
-const navUrl = `https://api.map.baidu.com/direction?destination=${encodeURIComponent(venueName)}&mode=driving&output=html&src=webapp`;
+// Baidu Map navigation URL
+const navUrl = computed(() =>
+  `https://api.map.baidu.com/direction?destination=${encodeURIComponent(venueLocation.value)}&mode=driving&output=html&src=webapp`
+);
+
+async function load() {
+  try {
+    const { data } = await api.get('/meeting');
+    if (data) meetingInfo.value = data;
+  } catch (e) {
+    console.error('[VenueView] failed to load meeting info', e);
+  }
+}
+
+async function loadHero() {
+  try {
+    const { data } = await api.get('/nav');
+    const link = (data?.links || []).find(l => l.to === '/venue');
+    if (link) {
+      heroLabel.value = link.label || '会议地点';
+    }
+  } catch { /* use defaults */ }
+}
+
+onMounted(() => {
+  load();
+  loadHero();
+});
 </script>

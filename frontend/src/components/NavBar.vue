@@ -13,7 +13,7 @@
       <!-- desktop nav -->
       <nav class="hidden md:flex items-center gap-1">
         <router-link
-          v-for="l in links.filter(x => !x.hidden)"
+          v-for="l in navLinks"
           :key="l.to"
           :to="l.to"
           class="px-3 py-2 text-sm font-medium text-slate-600 rounded-full hover:bg-brand-blue/5 hover:text-brand-blue transition relative"
@@ -89,7 +89,7 @@
       <div v-if="mobileOpen" class="md:hidden border-t border-slate-200 bg-white">
         <nav class="w-full px-4 sm:px-6 py-3 grid gap-1">
           <router-link
-            v-for="l in links.filter(x => !x.hidden)"
+            v-for="l in navLinks"
             :key="l.to"
             :to="l.to"
             class="px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-brand-blue/5"
@@ -113,9 +113,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import api from '../api';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -134,16 +135,36 @@ function handleLogout() {
   router.push('/');
 }
 
-const links = [
-  { to: '/', label: '首页' },
-  { to: '/schedule', label: '日程安排' },
-  { to: '/venue', label: '会议地点' },
-  { to: '/meeting-guide', label: '参会须知' },
-  { to: '/attendees', label: '参会人员' },
-  { to: '/reflections', label: '会后反思' },
-  { to: '/gallery', label: '会议剪影' },
-  { to: '/past-meetings', label: '往届会议', hidden: true },
+// Default fallback links
+const defaultLinks = [
+  { to: '/', label: '首页', showInNav: true, showInFooter: false, heroTitle: '', heroSubtitle: '' },
+  { to: '/schedule', label: '日程安排', showInNav: true, showInFooter: true, heroTitle: '日程安排', heroSubtitle: '' },
+  { to: '/venue', label: '会议地点', showInNav: true, showInFooter: false, heroTitle: '', heroSubtitle: '' },
+  { to: '/meeting-guide', label: '参会须知', showInNav: true, showInFooter: false, heroTitle: 'Meeting Guide', heroSubtitle: '参会前请仔细阅读以下信息，做好出行准备' },
+  { to: '/attendees', label: '参会人员', showInNav: true, showInFooter: true, heroTitle: 'Meet the Team', heroSubtitle: '' },
+  { to: '/reflections', label: '会后反思', showInNav: true, showInFooter: true, heroTitle: '会后反思', heroSubtitle: '记录你的收获、想法与建议' },
+  { to: '/gallery', label: '会议剪影', showInNav: true, showInFooter: true, heroTitle: 'Gallery', heroSubtitle: '照片 · 视频 · 第三方链接' },
+  { to: '/past-meetings', label: '往届会议', showInNav: false, showInFooter: true, heroTitle: 'Past Meetings', heroSubtitle: '回顾每一届 YCYW Global IT Meeting' },
+  { to: '/entry-guide', label: '入校指引', showInNav: false, showInFooter: false, heroTitle: 'Campus Entry Guide', heroSubtitle: '参会访客入校申请填写指引，请使用微信扫描右侧二维码完成申请' },
 ];
+
+const allLinks = ref([...defaultLinks]);
+
+// Only show links where showInNav is true
+const navLinks = computed(() => allLinks.value.filter(l => l.showInNav));
+
+async function loadNav() {
+  try {
+    const { data } = await api.get('/nav');
+    if (data?.links?.length) {
+      allLinks.value = data.links;
+    }
+  } catch (e) {
+    console.error('[NavBar] failed to load nav', e);
+  }
+}
+
+onMounted(loadNav);
 
 const initial = computed(() => {
   const n = auth.displayName || '';

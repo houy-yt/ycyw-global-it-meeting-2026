@@ -41,6 +41,7 @@ app.use('/api/gallery', require('./routes/gallery'));
 app.use('/api/past-meetings', require('./routes/pastMeetings'));
 app.use('/api/preset-tags', require('./routes/presetTags'));
 app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/weather', require('./routes/weather'));
 app.use('/api/meeting-guide', require('./routes/meetingGuide').publicRouter);
 
 // Admin namespace

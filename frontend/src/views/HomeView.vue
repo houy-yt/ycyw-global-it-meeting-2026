@@ -2,7 +2,13 @@
   <div>
     <!-- ============ HERO ============ -->
     <section class="relative overflow-hidden hero-banner text-white md:min-h-[90vh] flex items-center">
+      <!-- Weather card: desktop absolute top-right of Hero section -->
+      <div class="hidden md:block absolute top-8 right-6 z-10">
+        <WeatherCard />
+      </div>
+
       <div class="container-x relative py-12 sm:py-20 md:py-28 w-full text-center md:text-left">
+
         <div class="max-w-none md:max-w-2xl">
           <div
             class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest text-white/90 uppercase"
@@ -35,7 +41,7 @@
             <span class="text-white/30 hidden md:inline">|</span>
             <span class="inline-flex items-center gap-1.5">
               <font-awesome-icon icon="location-dot" class="text-white/50" />
-              北京亦庄
+              {{ meetingInfo?.region || '北京亦庄' }}
             </span>
           </div>
 
@@ -47,6 +53,11 @@
 
         <div class="mt-14 max-w-xl mx-auto md:mx-0">
           <Countdown :start="meta.start" :end="meta.end" />
+        </div>
+
+        <!-- Weather card: mobile inline (below countdown) -->
+        <div class="mt-6 md:hidden flex justify-center">
+          <WeatherCard />
         </div>
       </div>
     </section>
@@ -379,6 +390,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import api from '../api';
 import Countdown from '../components/Countdown.vue';
+import WeatherCard from '../components/WeatherCard.vue';
 
 const meta = { start: '2026-07-13', end: '2026-07-16' };
 

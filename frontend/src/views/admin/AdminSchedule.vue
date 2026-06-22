@@ -121,7 +121,7 @@
     </el-dialog>
 
     <!-- Day dialog -->
-    <el-dialog v-model="dayDialog.show" :title="dayDialog.id ? '编辑日期' : '新增日期'" width="480px" align-center>
+    <el-dialog v-model="dayDialog.show" :title="dayDialog.id ? '编辑日期' : '新增日期'" width="90vw" style="max-width: 800px" top="5vh" align-center>
       <div class="space-y-3">
         <div>
           <label class="text-sm text-slate-600 font-medium">日期 *</label>
@@ -134,6 +134,10 @@
         <div>
           <label class="text-sm text-slate-600 font-medium">排序</label>
           <input v-model.number="dayDialog.form.sortOrder" type="number" class="form-input" />
+        </div>
+        <div>
+          <label class="text-sm text-slate-600 font-medium">日程页通知文字（富文本，留空则不显示）</label>
+          <TinyEditor v-model="dayDialog.form.notice" :height="editorHeight" class="mt-1" />
         </div>
       </div>
       <template #footer>
@@ -261,15 +265,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import api from '../../api';
+import TinyEditor from '../../components/TinyEditor.vue';
 
 const days = ref([]);
 const activeDays = ref([]);
 const loading = ref(false);
+
+// Dynamic TinyEditor height based on viewport
+const editorHeight = computed(() => Math.max(200, window.innerHeight - 420));
 
 function formatDate(d) { return dayjs(d).format('YYYY-MM-DD'); }
 function categoryType(c) {
@@ -283,7 +291,7 @@ const talkDialog = reactive({
   form: blankTalk(),
   resources: [],
 });
-function blankDay() { return { date: '', dayLabel: '', sortOrder: 0 }; }
+function blankDay() { return { date: '', dayLabel: '', sortOrder: 0, notice: '' }; }
 function blankItem() { return { startTime: '', endTime: '', sectionTitle: '', category: 'session', description: '', sortOrder: 0 }; }
 function blankTalk() { return { title: '', speaker: '', abstract: '', sortOrder: 0 }; }
 
@@ -390,7 +398,7 @@ async function importStatic() {
 
 // ───── Day ─────
 function openDayDialog(d) {
-  if (d) Object.assign(dayDialog, { show: true, id: d.id, form: { date: formatDate(d.date), dayLabel: d.dayLabel, sortOrder: d.sortOrder } });
+  if (d) Object.assign(dayDialog, { show: true, id: d.id, form: { date: formatDate(d.date), dayLabel: d.dayLabel, sortOrder: d.sortOrder, notice: d.notice || '' } });
   else Object.assign(dayDialog, { show: true, id: null, form: blankDay() });
 }
 async function saveDay() {

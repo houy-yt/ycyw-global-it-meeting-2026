@@ -3,15 +3,15 @@
     <!-- ============ HERO with QR Code ============ -->
     <section class="hero-bg text-white py-14 sm:py-16">
       <div class="container-x">
-        <div class="flex flex-col lg:flex-row items-center gap-6 lg:gap-10">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div class="flex-1 text-center lg:text-left">
-            <div class="chip-orange bg-white/10 !text-brand-orange ring-1 ring-white/20">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase">
               <font-awesome-icon icon="circle-info" class="mr-1" />
-              参会须知
+              {{ heroLabel }}
             </div>
-            <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">Meeting Guide</h1>
-            <p class="mt-3 text-white/70 text-sm sm:text-base lg:whitespace-nowrap">
-              参会前请仔细阅读以下信息，做好出行准备
+            <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">{{ heroTitle }}</h1>
+            <p v-if="heroSubtitle" class="mt-3 text-white/70 text-sm sm:text-base lg:whitespace-nowrap">
+              {{ heroSubtitle }}
             </p>
             <div class="mt-4 flex flex-wrap gap-3 lg:justify-start justify-center">
               <router-link to="/schedule" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
@@ -22,7 +22,8 @@
               </router-link>
             </div>
           </div>
-          <div class="flex-shrink-0">
+          <!-- Right: QR Code + Weather -->
+          <div class="flex-shrink-0 flex items-center gap-5 lg:gap-10 justify-center">
             <div class="cursor-pointer" @click="previewQrcode">
               <div class="bg-white rounded-[6px] p-1 shadow-lg">
                 <img
@@ -33,6 +34,8 @@
               </div>
               <p class="text-white/80 text-xs text-center mt-2">扫码填写进校申请</p>
             </div>
+            <div class="hidden lg:block w-px self-stretch bg-white/20"></div>
+            <WeatherCard />
           </div>
         </div>
       </div>
@@ -168,12 +171,18 @@
 import { ref, onMounted } from 'vue';
 import api from '../api';
 import PhotoPreviewModal from '../components/PhotoPreviewModal.vue';
+import WeatherCard from '../components/WeatherCard.vue';
 
 const DEFAULT_QRCODE = '/fksq-qrcode.jpg';
 const qrcodeUrl = ref(DEFAULT_QRCODE);
 const guideItems = ref([]);
 const loading = ref(true);
 const activeTab = ref('info');
+
+// Hero text from nav
+const heroLabel = ref('参会须知');
+const heroTitle = ref('Meeting Guide');
+const heroSubtitle = ref('参会前请仔细阅读以下信息，做好出行准备');
 
 const previewVisible = ref(false);
 const previewSrc = ref('');
@@ -204,7 +213,22 @@ async function loadData() {
   }
 }
 
-onMounted(loadData);
+async function loadHero() {
+  try {
+    const { data } = await api.get('/nav');
+    const link = (data?.links || []).find(l => l.to === '/meeting-guide');
+    if (link) {
+      heroLabel.value = link.label || '参会须知';
+      heroTitle.value = link.heroTitle || link.label || 'Meeting Guide';
+      if (link.heroSubtitle) heroSubtitle.value = link.heroSubtitle;
+    }
+  } catch { /* use defaults */ }
+}
+
+onMounted(() => {
+  loadData();
+  loadHero();
+});
 </script>
 
 <style scoped>

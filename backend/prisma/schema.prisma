@@ -116,7 +116,10 @@ model MeetingInfo {
   taglineEn String?  // English theme
   startDate DateTime
   endDate   DateTime
-  location  String   @default("北京")
+  region    String   @default("北京亦庄")           // 会议所在地区/学校
+  location  String   @default("北京")              // 会场
+  address   String   @default("")                  // 详细地址
+  organizer String   @default("YCYW Education")    // 主办方
   updatedAt DateTime @updatedAt
 }
 
@@ -128,6 +131,7 @@ model ScheduleDay {
   date      DateTime       @unique
   dayLabel  String
   sortOrder Int            @default(0)
+  notice    String?        // 每天的通知文字（富文本HTML），前台日期Tab下方显示
   items     ScheduleItem[]
 }
 

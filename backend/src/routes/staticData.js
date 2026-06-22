@@ -115,6 +115,7 @@ router.get('/schedule', async (req, res) => {
         id: d.id,
         date: d.date.toISOString().slice(0, 10),
         dayLabel: d.dayLabel,
+        notice: d.notice || '',
         items: d.items.map(serializeItem),
       })),
     });
@@ -139,11 +140,62 @@ router.get('/meeting', async (req, res) => {
       taglineEn: meeting.taglineEn || '',
       startDate: meeting.startDate.toISOString().slice(0, 10),
       endDate: meeting.endDate.toISOString().slice(0, 10),
+      region: meeting.region || '',
       location: meeting.location,
+      address: meeting.address || '',
+      organizer: meeting.organizer || 'YCYW Education',
     });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/nav — public endpoint for navigation links + meeting info
+ * Used by both NavBar and Footer to render dynamic navigation.
+ * Returns: { links: [...], meetingInfo: {...} }
+ */
+router.get('/nav', async (req, res) => {
+  try {
+    // 1. Get nav links from SystemSetting
+    const navSetting = await prisma.systemSetting.findUnique({ where: { key: 'nav.links' } });
+    let links = [];
+    if (navSetting) {
+      try { links = JSON.parse(navSetting.value); } catch { links = []; }
+    }
+    // If no links configured, return default links
+    if (!links || links.length === 0) {
+      links = [
+        { label: '首页',     to: '/',               showInNav: true,  showInFooter: false, heroTitle: '',                  heroSubtitle: '' },
+        { label: '日程安排', to: '/schedule',        showInNav: true,  showInFooter: true,  heroTitle: '日程安排',           heroSubtitle: '' },
+        { label: '会议地点', to: '/venue',           showInNav: true,  showInFooter: false, heroTitle: '',                  heroSubtitle: '' },
+        { label: '参会须知', to: '/meeting-guide',   showInNav: true,  showInFooter: false, heroTitle: 'Meeting Guide',     heroSubtitle: '参会前请仔细阅读以下信息，做好出行准备' },
+        { label: '参会人员', to: '/attendees',       showInNav: true,  showInFooter: true,  heroTitle: 'Meet the Team',     heroSubtitle: '' },
+        { label: '会后反思', to: '/reflections',     showInNav: true,  showInFooter: true,  heroTitle: '会后反思',           heroSubtitle: '记录你的收获、想法与建议' },
+        { label: '会议剪影', to: '/gallery',         showInNav: true,  showInFooter: true,  heroTitle: 'Gallery',           heroSubtitle: '照片 · 视频 · 第三方链接' },
+        { label: '往届会议', to: '/past-meetings',   showInNav: false, showInFooter: true,  heroTitle: 'Past Meetings',     heroSubtitle: '回顾每一届 YCYW Global IT Meeting' },
+        { label: '入校指引', to: '/entry-guide',     showInNav: false, showInFooter: false, heroTitle: 'Campus Entry Guide', heroSubtitle: '参会访客入校申请填写指引，请使用微信扫描右侧二维码完成申请' },
+      ];
+    }
+
+    // 2. Get meeting info
+    const meeting = await prisma.meetingInfo.findUnique({ where: { id: 1 } });
+    const meetingInfo = meeting ? {
+      name: meeting.name,
+      tagline: meeting.tagline || '',
+      taglineEn: meeting.taglineEn || '',
+      startDate: meeting.startDate.toISOString().slice(0, 10),
+      endDate: meeting.endDate.toISOString().slice(0, 10),
+      location: meeting.location,
+      address: meeting.address || '',
+      organizer: meeting.organizer || 'YCYW Education',
+    } : null;
+
+    res.json({ links, meetingInfo });
+  } catch (e) {
+    console.error('[nav] error', e);
+    res.status(500).json({ message: 'Failed to load nav' });
   }
 });
 

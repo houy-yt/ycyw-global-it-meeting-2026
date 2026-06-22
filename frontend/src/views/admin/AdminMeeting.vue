@@ -25,8 +25,20 @@
         </div>
       </div>
       <div>
-        <label class="text-sm text-slate-600 font-medium">地点</label>
-        <input v-model="form.location" class="form-input" />
+        <label class="text-sm text-slate-600 font-medium">会议所在地区/学校</label>
+        <input v-model="form.region" class="form-input" placeholder="例：北京亦庄" />
+      </div>
+      <div>
+        <label class="text-sm text-slate-600 font-medium">会场</label>
+        <input v-model="form.location" class="form-input" placeholder="例：耀华国际教育学校（亦庄校区）" />
+      </div>
+      <div>
+        <label class="text-sm text-slate-600 font-medium">详细地址</label>
+        <input v-model="form.address" class="form-input" placeholder="例：北京市大兴区经济技术开发区凉水河二街29号院" />
+      </div>
+      <div>
+        <label class="text-sm text-slate-600 font-medium">主办方</label>
+        <input v-model="form.organizer" class="form-input" placeholder="例：YCYW Education" />
       </div>
       <div class="pt-2">
         <el-button type="primary" :loading="saving" @click="save">保存</el-button>
@@ -47,7 +59,10 @@ const form = reactive({
   taglineEn: '',
   startDate: '',
   endDate: '',
+  region: '',
   location: '',
+  address: '',
+  organizer: '',
 });
 
 async function load() {
@@ -59,7 +74,10 @@ async function load() {
     form.taglineEn = data.taglineEn || '';
     form.startDate = (data.startDate || '').slice(0, 10);
     form.endDate = (data.endDate || '').slice(0, 10);
+    form.region = data.region || '';
     form.location = data.location || '';
+    form.address = data.address || '';
+    form.organizer = data.organizer || '';
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '加载失败');
   }

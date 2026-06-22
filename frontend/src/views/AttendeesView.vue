@@ -2,35 +2,42 @@
   <div>
     <!-- ============ HERO ============ -->
     <section class="hero-bg text-white py-14 sm:py-16">
-      <div class="container-x text-center">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase">
-          <span class="h-1.5 w-1.5 rounded-full bg-brand-orange"></span>
-          参会人员 · Attendees
-        </div>
-        <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">
-          Meet the Team
-        </h1>
-        <p class="mt-3 text-white/80 text-sm sm:text-base">
-          共 <span class="font-bold text-brand-orange">{{ total }}</span> 位同仁，来自
-          <span class="font-bold text-brand-orange">{{ orderedGroups.length }}</span> 所学校 / 部门
-        </p>
+      <div class="container-x">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div class="flex-1 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase">
+              <font-awesome-icon icon="users" class="mr-1" />
+              {{ heroLabel }}
+            </div>
+            <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">
+              {{ heroTitle }}
+            </h1>
+            <p class="mt-3 text-white/80 text-sm sm:text-base">
+              共 <span class="font-bold text-brand-orange">{{ total }}</span> 位同仁，来自
+              <span class="font-bold text-brand-orange">{{ orderedGroups.length }}</span> 所学校 / 部门
+            </p>
 
-        <!-- Department Tabs -->
-        <div v-if="departments.length > 1" class="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            v-for="d in departments"
-            :key="d.code"
-            class="px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition"
-            :class="
-              currentDept === d.code
-                ? 'bg-brand-orange text-white shadow-soft'
-                : 'bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20'
-            "
-            @click="switchDept(d.code)"
-          >
-            {{ d.nameCn || d.name }}
-            <span class="ml-1 opacity-75">({{ d.count }})</span>
-          </button>
+            <!-- Department Tabs -->
+            <div v-if="departments.length > 1" class="mt-4 flex flex-wrap gap-2 lg:justify-start justify-center">
+              <button
+                v-for="d in departments"
+                :key="d.code"
+                class="px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition"
+                :class="
+                  currentDept === d.code
+                    ? 'bg-brand-orange text-white shadow-soft'
+                    : 'bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20'
+                "
+                @click="switchDept(d.code)"
+              >
+                {{ d.nameCn || d.name }}
+                <span class="ml-1 opacity-75">({{ d.count }})</span>
+              </button>
+            </div>
+          </div>
+          <div class="flex-shrink-0 flex justify-center lg:justify-end">
+            <WeatherCard />
+          </div>
         </div>
       </div>
     </section>
@@ -150,6 +157,11 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import api from '../api';
 import PhotoPreviewModal from '../components/PhotoPreviewModal.vue';
+import WeatherCard from '../components/WeatherCard.vue';
+
+// ---------- Hero text from nav ----------
+const heroLabel = ref('参会人员');
+const heroTitle = ref('Meet the Team');
 
 // ---------- state ----------
 const loading = ref(true);
@@ -289,8 +301,19 @@ async function load() {
   }
 }
 
+async function loadHero() {
+  try {
+    const { data } = await api.get('/nav');
+    const link = (data?.links || []).find(l => l.to === '/attendees');
+    if (link) {
+      heroLabel.value = link.label || '参会人员';
+      heroTitle.value = link.heroTitle || link.label || 'Meet the Team';
+    }
+  } catch { /* use defaults */ }
+}
+
 onMounted(async () => {
-  await loadDepartments();
+  await Promise.all([loadDepartments(), loadHero()]);
   await load();
   window.addEventListener('keydown', handleKeydown);
 });

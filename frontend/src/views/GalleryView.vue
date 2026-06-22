@@ -1,13 +1,20 @@
 <template>
   <div>
-    <section class="hero-bg text-white py-16">
-      <div class="container-x flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-        <div>
-          <div class="chip-orange bg-white/10 !text-brand-orange ring-1 ring-white/20">会议剪影</div>
-          <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">Gallery</h1>
-          <p class="mt-3 text-white/70 text-sm">照片 · 视频 · 第三方链接</p>
+    <section class="hero-bg text-white py-14 sm:py-16">
+      <div class="container-x">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div class="flex-1 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase"><font-awesome-icon icon="images" class="mr-1" />{{ heroLabel }}</div>
+            <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">{{ heroTitle }}</h1>
+            <p v-if="heroSubtitle" class="mt-3 text-white/70 text-sm">{{ heroSubtitle }}</p>
+          </div>
+          <div class="flex-shrink-0 flex flex-wrap gap-3 justify-center">
+            <button class="btn-orange" @click="openUpload"><font-awesome-icon icon="plus" class="mr-1" /> 上传剪影</button>
+          </div>
+          <div class="flex-shrink-0 flex justify-center lg:justify-end lg:pl-8 lg:border-l lg:border-white/20">
+            <WeatherCard />
+          </div>
         </div>
-        <button class="btn-orange" @click="openUpload"><font-awesome-icon icon="plus" class="mr-1" /> 上传剪影</button>
       </div>
     </section>
 
@@ -242,10 +249,16 @@ import api from '../api';
 import { useAuthStore } from '../stores/auth';
 import PhotoPreviewModal from '../components/PhotoPreviewModal.vue';
 import { getEmbedInfo, getThumbnailUrl } from '../utils/videoEmbed';
+import WeatherCard from '../components/WeatherCard.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
 const route = useRoute();
+
+// Hero text from nav
+const heroLabel = ref('会议剪影');
+const heroTitle = ref('Gallery');
+const heroSubtitle = ref('照片 · 视频 · 第三方链接');
 
 const items = ref([]);
 const total = ref(0);
@@ -380,9 +393,21 @@ async function del(g) {
   }
 }
 
+async function loadHero() {
+  try {
+    const { data } = await api.get('/nav');
+    const link = (data?.links || []).find(l => l.to === '/gallery');
+    if (link) {
+      heroLabel.value = link.label || '会议剪影';
+      heroTitle.value = link.heroTitle || link.label || 'Gallery';
+      if (link.heroSubtitle) heroSubtitle.value = link.heroSubtitle;
+    }
+  } catch { /* use defaults */ }
+}
+
 onMounted(async () => {
   window.addEventListener('scroll', handleScroll, { passive: true });
-  await Promise.all([loadTags(), load(true)]);
+  await Promise.all([loadTags(), load(true), loadHero()]);
   // Auto-open upload dialog if redirected back from login with action=upload
   if (route.query.action === 'upload' && auth.isLoggedIn) {
     openUpload();

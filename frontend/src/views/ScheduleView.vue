@@ -1,20 +1,27 @@
 <template>
   <div>
     <!-- header -->
-    <section class="hero-bg text-white py-16 sm:py-20">
-      <div class="container-x text-center">
-        <div class="chip-orange bg-white/10 !text-brand-orange ring-1 ring-white/20">四天行程</div>
-        <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">日程安排</h1>
-        <p class="mt-3 text-white/70 text-sm sm:text-base">
-          {{ meta?.startDate }} - {{ meta?.endDate }} · {{ meta?.location }}
-        </p>
-        <div class="mt-5 flex flex-wrap justify-center gap-3">
-          <router-link to="/venue" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
-            <font-awesome-icon icon="location-dot" /> 会议地点
-          </router-link>
-          <router-link to="/meeting-guide" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
-            <font-awesome-icon icon="circle-info" /> 会议须知
-          </router-link>
+    <section class="hero-bg text-white py-14 sm:py-16">
+      <div class="container-x">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div class="flex-1 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase"><font-awesome-icon icon="calendar-days" class="mr-1" />{{ heroLabel }}</div>
+            <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">{{ heroTitle }}</h1>
+            <p class="mt-3 text-white/70 text-sm sm:text-base">
+              {{ meta?.startDate }} - {{ meta?.endDate }} · {{ meta?.location }}
+            </p>
+            <div class="mt-4 flex flex-wrap gap-3 lg:justify-start justify-center">
+              <router-link to="/venue" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
+                <font-awesome-icon icon="location-dot" /> 会议地点
+              </router-link>
+              <router-link to="/meeting-guide" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
+                <font-awesome-icon icon="circle-info" /> 会议须知
+              </router-link>
+            </div>
+          </div>
+          <div class="flex-shrink-0 flex justify-center lg:justify-end">
+            <WeatherCard />
+          </div>
         </div>
       </div>
     </section>
@@ -22,20 +29,31 @@
     <section class="section-y">
       <div class="container-x">
         <!-- tabs -->
-        <div class="flex flex-wrap justify-center gap-2 mb-8">
+        <div class="flex flex-nowrap sm:flex-wrap justify-center gap-2 mb-8 overflow-x-auto sm:overflow-visible">
           <button
             v-for="(d, i) in dates"
             :key="d.date"
             @click="active = i"
-            class="px-5 py-2.5 rounded-full text-sm font-medium transition"
+            class="flex-shrink-0 px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-full text-sm font-medium transition"
             :class="
               active === i
                 ? 'bg-brand-blue text-white shadow-soft'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-brand-blue hover:text-brand-blue'
             "
           >
-            {{ d.dayLabel }}
+            <!-- Desktop: single line -->
+            <span class="hidden sm:inline">{{ d.dayLabel }}</span>
+            <!-- Mobile: date on top, weekday below, smaller font -->
+            <span class="sm:hidden flex flex-col items-center text-xs leading-tight">
+              <span>{{ splitDayLabel(d.dayLabel)[0] }}</span>
+              <span class="text-[10px] opacity-70">{{ splitDayLabel(d.dayLabel)[1] }}</span>
+            </span>
           </button>
+        </div>
+
+        <!-- Day notice (rich text from backend, per day) -->
+        <div v-if="dates[active]?.notice" class="mb-6">
+          <div class="schedule-notice" v-html="dates[active].notice"></div>
         </div>
 
         <div v-if="dates.length === 0" class="text-center text-slate-500 py-10">加载中…</div>
@@ -197,11 +215,22 @@
 import { ref, reactive, onMounted } from 'vue';
 import api from '../api';
 import { getEmbedUrl } from '../utils/videoEmbed';
+import WeatherCard from '../components/WeatherCard.vue';
 
 const meta = ref(null);
 const dates = ref([]);
 const active = ref(0);
 const talkModal = reactive({ show: false, talk: null });
+
+// Hero text from nav data
+const heroInfo = ref(null);
+const heroLabel = ref('日程安排');
+const heroTitle = ref('日程安排');
+
+function splitDayLabel(label) {
+  const parts = label.split(/[，,]\s*/);
+  return parts.length >= 2 ? parts : [label, ''];
+}
 
 function getIconType(title) {
   if (!title) return '';
@@ -228,10 +257,25 @@ function openResource(r, talk) {
   openTalk(talk);
 }
 
+async function loadHero() {
+  try {
+    const { data } = await api.get('/nav');
+    const link = (data?.links || []).find(l => l.to === '/schedule');
+    if (link) {
+      heroInfo.value = link;
+      heroLabel.value = link.label || '日程安排';
+      heroTitle.value = link.heroTitle || link.label || '日程安排';
+    }
+  } catch { /* use defaults */ }
+}
+
 onMounted(async () => {
-  const { data } = await api.get('/schedule');
-  meta.value = data.meeting;
-  dates.value = data.dates || [];
+  const [scheduleRes] = await Promise.all([
+    api.get('/schedule'),
+    loadHero(),
+  ]);
+  meta.value = scheduleRes.data.meeting;
+  dates.value = scheduleRes.data.dates || [];
 });
 </script>
 
@@ -377,5 +421,11 @@ onMounted(async () => {
   background: #e0f2fe;
   border-color: var(--brand-blue);
   color: var(--brand-blue);
+}
+
+/* Notice area: images max-width 100%, format controlled by backend */
+.schedule-notice :deep(img) {
+  max-width: 100%;
+  height: auto;
 }
 </style>

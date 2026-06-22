@@ -31,45 +31,56 @@
       show-icon
     />
 
-    <el-table ref="tableRef" :data="items" border stripe size="small" max-height="600" row-key="id">
-      <el-table-column width="50" align="center">
-        <template #header>
-          <span class="text-xs text-slate-400" title="拖拽排序">↕</span>
+    <!-- Grouped by school/organization -->
+    <el-collapse v-model="activeGroups" class="attendee-groups">
+      <el-collapse-item v-for="group in groupedItems" :key="group.school" :name="group.school">
+        <template #title>
+          <div class="flex items-center gap-3 w-full pr-2">
+            <span class="text-brand-deep font-semibold text-sm">{{ group.school || '(未分配)' }}</span>
+            <el-tag size="small" type="info">{{ group.members.length }} 人</el-tag>
+          </div>
         </template>
-        <template #default>
-          <span class="drag-handle cursor-move text-slate-400 hover:text-brand-blue text-lg select-none">≡</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="no" label="#" width="60" />
-      <el-table-column label="照片" width="70">
-        <template #default="{ row }">
-          <img v-if="row.photoUrl" :src="row.photoUrl" class="w-9 h-9 rounded-full object-cover" />
-          <div v-else class="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-500">N/A</div>
-        </template>
-      </el-table-column>
-      <el-table-column prop="nameEn" label="英文名" min-width="120" />
-      <el-table-column prop="nameCn" label="中文名" width="100" />
-      <el-table-column label="部门" width="100">
-        <template #default="{ row }">
-          <el-tag :color="depColor(row.department)" effect="dark" size="small">{{ row.department }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="school" label="学校/组织" min-width="130" />
-      <el-table-column prop="title" label="职务" min-width="120" />
-      <el-table-column prop="email" label="邮箱" min-width="180" />
-      <el-table-column label="状态" width="80">
-        <template #default="{ row }">
-          <el-tag v-if="row.isActive" type="success" size="small">在职</el-tag>
-          <el-tag v-else type="info" size="small">隐藏</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="140" fixed="right">
-        <template #default="{ row }">
-          <el-button size="small" type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button size="small" type="danger" @click="del(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+
+        <el-table :ref="(el) => setGroupTableRef(group.school, el)" :data="group.members" border stripe size="small" row-key="id" class="group-table">
+          <el-table-column width="44" align="center">
+            <template #header>
+              <span class="text-xs text-slate-400" title="拖拽排序">↕</span>
+            </template>
+            <template #default>
+              <span class="drag-handle cursor-move text-slate-400 hover:text-brand-blue text-lg select-none">≡</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="no" label="#" width="50" />
+          <el-table-column label="照片" width="60">
+            <template #default="{ row }">
+              <img v-if="row.photoUrl" :src="row.photoUrl" class="w-8 h-8 rounded-full object-cover" />
+              <div v-else class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-500">N/A</div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="nameEn" label="英文名" min-width="110" />
+          <el-table-column prop="nameCn" label="中文名" width="90" />
+          <el-table-column label="部门" width="80">
+            <template #default="{ row }">
+              <el-tag :color="depColor(row.department)" effect="dark" size="small">{{ row.department }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="title" label="职务" min-width="110" />
+          <el-table-column prop="email" label="邮箱" min-width="160" />
+          <el-table-column label="状态" width="70">
+            <template #default="{ row }">
+              <el-tag v-if="row.isActive" type="success" size="small">在职</el-tag>
+              <el-tag v-else type="info" size="small">隐藏</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="130" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" type="primary" @click="openEdit(row)">编辑</el-button>
+              <el-button size="small" type="danger" @click="del(row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-collapse-item>
+    </el-collapse>
 
     <!-- Excel/CSV import dialog -->
     <el-dialog v-model="excelDialog.show" title="导入 Excel / CSV 文件" width="860px" align-center>
@@ -189,7 +200,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import Sortable from 'sortablejs';
 import * as XLSX from 'xlsx';
@@ -199,7 +210,31 @@ const items = ref([]);
 const departments = ref([]);
 const organizations = ref([]);
 const filter = reactive({ department: '', school: '', q: '' });
-const tableRef = ref(null);
+const activeGroups = ref([]);
+
+// Group items by school
+const groupedItems = computed(() => {
+  const map = new Map();
+  for (const item of items.value) {
+    const key = item.school || '';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(item);
+  }
+  // Sort groups alphabetically, each group's members by sortOrder
+  const groups = [];
+  for (const [school, members] of map) {
+    members.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+    groups.push({ school, members });
+  }
+  groups.sort((a, b) => a.school.localeCompare(b.school));
+  return groups;
+});
+
+// Track group table refs for sortable
+const groupTableRefs = {};
+function setGroupTableRef(school, el) {
+  if (el) groupTableRefs[school] = el;
+}
 
 const dialog = reactive({
   show: false,
@@ -221,7 +256,7 @@ function blankForm() {
     title: '',
     phone: '',
     bio: '',
-    sortOrder: 0,
+    sortOrder: -1, // New members go to top of their group
     isActive: true,
   };
 }
@@ -298,7 +333,6 @@ function handleExcelFile(uploadFile) {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
-      // Map columns
       excelDialog.rows = raw.map((row) => {
         const mapped = {};
         for (const [key, val] of Object.entries(row)) {
@@ -325,7 +359,6 @@ async function doExcelImport() {
         `将先清空已有的 ${items.value.length} 条参会人员再导入，确定吗？`,
         '确认清空', { type: 'warning' }
       );
-      // Delete all existing
       for (const item of items.value) {
         await api.delete(`/admin/attendees/${item.id}`);
       }
@@ -398,38 +431,57 @@ async function uploadPhoto({ file }) {
   }
 }
 
-// ───── Drag sort ─────
-let sortableInstance = null;
-function initSortable() {
-  if (sortableInstance) { sortableInstance.destroy(); sortableInstance = null; }
-  const el = tableRef.value?.$el?.querySelector('.el-table__body-wrapper tbody');
-  if (!el) return;
-  sortableInstance = Sortable.create(el, {
-    handle: '.drag-handle',
-    animation: 180,
-    ghostClass: 'sortable-ghost',
-    onEnd: async ({ oldIndex, newIndex }) => {
-      if (oldIndex === newIndex) return;
-      const moved = items.value.splice(oldIndex, 1)[0];
-      items.value.splice(newIndex, 0, moved);
-      const payload = items.value.map((item, idx) => ({ id: item.id, sortOrder: idx }));
-      try {
-        await api.put('/admin/attendees/sort', payload);
-        items.value.forEach((item, idx) => { item.sortOrder = idx; });
-        ElMessage.success('排序已保存');
-      } catch {
-        ElMessage.error('排序保存失败');
-        load();
-      }
-    },
-  });
+// ───── Drag sort (per group) ─────
+const sortableInstances = {};
+
+function initAllSortables() {
+  // Destroy existing
+  for (const key of Object.keys(sortableInstances)) {
+    sortableInstances[key]?.destroy();
+    delete sortableInstances[key];
+  }
+  // Create for each group
+  for (const group of groupedItems.value) {
+    const tableEl = groupTableRefs[group.school];
+    if (!tableEl) continue;
+    const tbody = tableEl.$el?.querySelector('.el-table__body-wrapper tbody');
+    if (!tbody) continue;
+    sortableInstances[group.school] = Sortable.create(tbody, {
+      handle: '.drag-handle',
+      animation: 180,
+      ghostClass: 'sortable-ghost',
+      onEnd: async ({ oldIndex, newIndex }) => {
+        if (oldIndex === newIndex) return;
+        const members = group.members;
+        const moved = members.splice(oldIndex, 1)[0];
+        members.splice(newIndex, 0, moved);
+        const payload = members.map((item, idx) => ({ id: item.id, sortOrder: idx }));
+        try {
+          await api.put('/admin/attendees/sort', payload);
+          members.forEach((item, idx) => { item.sortOrder = idx; });
+          ElMessage.success('排序已保存');
+        } catch {
+          ElMessage.error('排序保存失败');
+          load();
+        }
+      },
+    });
+  }
 }
+
+// Re-init sortables when groups change
+watch(groupedItems, async () => {
+  await nextTick();
+  initAllSortables();
+}, { flush: 'post' });
 
 onMounted(async () => {
   await loadMeta();
   await load();
+  // Expand all groups by default
+  activeGroups.value = groupedItems.value.map(g => g.school);
   await nextTick();
-  initSortable();
+  initAllSortables();
 });
 </script>
 
@@ -452,5 +504,20 @@ onMounted(async () => {
 }
 :deep(.sortable-ghost td) {
   background: #e0ecff !important;
+}
+
+/* Collapse panel styling */
+.attendee-groups :deep(.el-collapse-item__header) {
+  font-size: 14px;
+  height: 44px;
+  line-height: 44px;
+  background: #f8fafc;
+  padding-left: 12px;
+}
+.attendee-groups :deep(.el-collapse-item__content) {
+  padding: 8px 0 0 0;
+}
+.group-table {
+  margin-bottom: 4px;
 }
 </style>

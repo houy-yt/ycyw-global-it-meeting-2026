@@ -203,7 +203,7 @@ router.post('/days', authRequired, adminRequired, async (req, res) => {
 
 router.put('/days/:id', authRequired, adminRequired, async (req, res) => {
   const id = Number(req.params.id);
-  const { date, dayLabel, sortOrder } = req.body || {};
+  const { date, dayLabel, sortOrder, notice } = req.body || {};
   try {
     const d = await prisma.scheduleDay.update({
       where: { id },
@@ -211,6 +211,7 @@ router.put('/days/:id', authRequired, adminRequired, async (req, res) => {
         ...(date !== undefined ? { date: new Date(date) } : {}),
         ...(dayLabel !== undefined ? { dayLabel: String(dayLabel) } : {}),
         ...(sortOrder !== undefined ? { sortOrder: Number(sortOrder) } : {}),
+        ...(notice !== undefined ? { notice: notice || null } : {}),
       },
     });
     res.json(d);

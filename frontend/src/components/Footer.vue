@@ -6,37 +6,38 @@
           <img src="/logo.gif" alt="YCYW" class="h-10 w-auto bg-white rounded p-1" />
           <div>
             <div class="text-base font-semibold">YCYW</div>
-            <div class="text-xs text-white/70">2026 Global IT Meeting</div>
+            <div class="text-xs text-white/70">{{ meetingInfo?.name || '2026 Global IT Meeting' }}</div>
           </div>
         </div>
         <p class="mt-4 text-sm text-white/70 leading-relaxed">
-          连接 · 创新 · 未来。一年一度的 YCYW 全球 IT 同仁聚会。
+          {{ meetingInfo?.tagline || '连接 · 创新 · 未来。一年一度的 YCYW 全球 IT 同仁聚会。' }}
+        </p>
+        <p v-if="meetingInfo?.taglineEn" class="mt-1 text-xs text-white/50">
+          {{ meetingInfo.taglineEn }}
         </p>
       </div>
 
       <div>
         <div class="text-sm font-semibold mb-3">快速导航</div>
         <ul class="text-sm space-y-2 text-white/80">
-          <li><router-link to="/schedule" class="hover:text-brand-orange">日程安排</router-link></li>
-          <li><router-link to="/attendees" class="hover:text-brand-orange">参会人员</router-link></li>
-          <li><router-link to="/reflections" class="hover:text-brand-orange">会后反思</router-link></li>
-          <li><router-link to="/gallery" class="hover:text-brand-orange">会议剪影</router-link></li>
-          <li><router-link to="/past-meetings" class="hover:text-brand-orange">往届会议</router-link></li>
+          <li v-for="l in footerLinks" :key="l.to">
+            <router-link :to="l.to" class="hover:text-brand-orange">{{ l.label }}</router-link>
+          </li>
         </ul>
       </div>
 
       <div>
         <div class="text-sm font-semibold mb-3">联系</div>
         <ul class="text-sm space-y-2 text-white/80">
-          <li>会议时间：2026 年 7 月 14 - 16 日</li>
-          <li>会议地点：北京</li>
-          <li>主办方：YCYW Education</li>
+          <li>会议时间：{{ formattedDateRange }}</li>
+          <li>会议地点：{{ meetingInfo?.location || '北京' }}</li>
+          <li>主办方：{{ meetingInfo?.organizer || 'YCYW Education' }}</li>
         </ul>
       </div>
     </div>
     <div class="border-t border-white/10">
       <div class="container-x py-4 text-xs text-white/60 flex flex-col sm:flex-row justify-between gap-2">
-        <div>© {{ year }} YCYW Education. All rights reserved.</div>
+        <div>© {{ year }} {{ meetingInfo?.organizer || 'YCYW Education' }}. All rights reserved.</div>
         <div>Powered by Vue 3 · Express · Prisma</div>
       </div>
     </div>
@@ -44,5 +45,62 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue';
+import api from '../api';
+
 const year = new Date().getFullYear();
+
+const meetingInfo = ref(null);
+const allLinks = ref([]);
+
+// Default fallback links for footer
+const defaultFooterLinks = [
+  { label: '日程安排', to: '/schedule', heroTitle: '日程安排', heroSubtitle: '' },
+  { label: '参会人员', to: '/attendees', heroTitle: 'Meet the Team', heroSubtitle: '' },
+  { label: '会后反思', to: '/reflections', heroTitle: '会后反思', heroSubtitle: '记录你的收获、想法与建议' },
+  { label: '会议剪影', to: '/gallery', heroTitle: 'Gallery', heroSubtitle: '照片 · 视频 · 第三方链接' },
+  { label: '往届会议', to: '/past-meetings', heroTitle: 'Past Meetings', heroSubtitle: '回顾每一届 YCYW Global IT Meeting' },
+];
+
+const footerLinks = computed(() => {
+  const filtered = allLinks.value.filter(l => l.showInFooter);
+  return filtered.length > 0 ? filtered : defaultFooterLinks;
+});
+
+/**
+ * Format startDate / endDate into a human-friendly Chinese date range.
+ * e.g. "2026-07-14" + "2026-07-16" → "2026 年 7 月 14 - 16 日"
+ */
+const formattedDateRange = computed(() => {
+  if (!meetingInfo.value?.startDate || !meetingInfo.value?.endDate) {
+    return '2026 年 7 月 14 - 16 日';
+  }
+  const s = new Date(meetingInfo.value.startDate);
+  const e = new Date(meetingInfo.value.endDate);
+  const sy = s.getFullYear();
+  const sm = s.getMonth() + 1;
+  const sd = s.getDate();
+  const em = e.getMonth() + 1;
+  const ed = e.getDate();
+  if (sm === em) {
+    return `${sy} 年 ${sm} 月 ${sd} - ${ed} 日`;
+  }
+  return `${sy} 年 ${sm} 月 ${sd} 日 - ${em} 月 ${ed} 日`;
+});
+
+async function loadNav() {
+  try {
+    const { data } = await api.get('/nav');
+    if (data?.links?.length) {
+      allLinks.value = data.links;
+    }
+    if (data?.meetingInfo) {
+      meetingInfo.value = data.meetingInfo;
+    }
+  } catch (e) {
+    console.error('[Footer] failed to load nav', e);
+  }
+}
+
+onMounted(loadNav);
 </script>

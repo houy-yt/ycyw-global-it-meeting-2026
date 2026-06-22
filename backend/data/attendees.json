@@ -42,6 +42,7 @@
   { "no": 41, "school": "Yaotong-SH",  "nameEn": "Ethan",        "nameCn": "邓玉祥",   "email": "ethan.deng@ycyw.cn",          "photoUrl": "/attendees/Ethan-deng.jpg" },
   { "no": 42, "school": "Yaotong-SH",  "nameEn": "Sarah",        "nameCn": "傅娟",     "email": "sarah.fu@ycyw.cn",            "photoUrl": "/attendees/Sarah-fu.jpg" },
   { "no": 43, "school": "Yaotong-BJ",  "nameEn": "Victor",       "nameCn": "朱强",     "email": "zhuq@ycyw.cn",                "photoUrl": "/attendees/Victor-zhu.jpg" },
+  { "no": 43, "school": "Yaotong-BJ",  "nameEn": "Victor",       "nameCn": "谢小国",     "email": "xxg@ycyw.cn",                "photoUrl": "/attendees/xxg.jpg" },
   { "no": 44, "school": "Yaotong-BJ",  "nameEn": "",             "nameCn": "孙晓杰",   "email": "sunxiaojie@ycyw.cn",          "photoUrl": "/attendees/sxj.jpg" },
   { "no": 45, "school": "Yaotong-BJ",  "nameEn": "",             "nameCn": "杨芳芳",   "email": "fangfang.yang@ycyw.cn",       "photoUrl": "/attendees/yff.jpg" },
   { "no": 46, "school": "Yaotong-BJ",  "nameEn": "",             "nameCn": "张双良",   "email": "zhangshuangliang@ycyw.cn",    "photoUrl": "/attendees/zsl.jpg" },

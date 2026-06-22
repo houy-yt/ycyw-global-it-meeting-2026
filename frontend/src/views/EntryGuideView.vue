@@ -3,23 +3,23 @@
     <!-- ============ HERO with QR Code ============ -->
     <section class="hero-bg text-white py-14 sm:py-16">
       <div class="container-x">
-        <div class="flex flex-col lg:flex-row items-center gap-6 lg:gap-10">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <!-- Left: Text -->
           <div class="flex-1 text-center lg:text-left">
-            <div class="chip-orange bg-white/10 !text-brand-orange ring-1 ring-white/20">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase">
               <font-awesome-icon icon="shield-halved" class="mr-1" />
-              入校指引
+              {{ heroLabel }}
             </div>
             <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">
-              Campus Entry Guide
+              {{ heroTitle }}
             </h1>
-            <p class="mt-3 text-white/70 text-sm sm:text-base lg:whitespace-nowrap">
-              参会访客入校申请填写指引，请使用微信扫描右侧二维码完成申请
+            <p v-if="heroSubtitle" class="mt-3 text-white/70 text-sm sm:text-base lg:whitespace-nowrap">
+              {{ heroSubtitle }}
             </p>
           </div>
 
-          <!-- Right: QR Code Card -->
-          <div class="flex-shrink-0">
+          <!-- Right: QR Code + Weather -->
+          <div class="flex-shrink-0 flex items-center gap-5 lg:gap-10 justify-center">
             <div class="cursor-pointer" @click="previewQrcode">
               <div class="bg-white rounded-[6px] p-1 shadow-lg">
                 <img
@@ -30,6 +30,7 @@
               </div>
               <p class="text-white/80 text-xs text-center mt-2">扫码填写进校申请</p>
             </div>
+            <WeatherCard />
           </div>
         </div>
       </div>
@@ -135,10 +136,16 @@
 import { ref, onMounted } from 'vue';
 import api from '../api';
 import PhotoPreviewModal from '../components/PhotoPreviewModal.vue';
+import WeatherCard from '../components/WeatherCard.vue';
 
 const DEFAULT_QRCODE = '/fksq-qrcode.jpg';
 const qrcodeUrl = ref(DEFAULT_QRCODE);
 const customContent = ref('');
+
+// Hero text from nav
+const heroLabel = ref('入校指引');
+const heroTitle = ref('Campus Entry Guide');
+const heroSubtitle = ref('参会访客入校申请填写指引，请使用微信扫描右侧二维码完成申请');
 
 // Preview modal
 const previewVisible = ref(false);
@@ -166,5 +173,20 @@ async function loadSettings() {
   }
 }
 
-onMounted(loadSettings);
+async function loadHero() {
+  try {
+    const { data } = await api.get('/nav');
+    const link = (data?.links || []).find(l => l.to === '/entry-guide');
+    if (link) {
+      heroLabel.value = link.label || '入校指引';
+      heroTitle.value = link.heroTitle || link.label || 'Campus Entry Guide';
+      if (link.heroSubtitle) heroSubtitle.value = link.heroSubtitle;
+    }
+  } catch { /* use defaults */ }
+}
+
+onMounted(() => {
+  loadSettings();
+  loadHero();
+});
 </script>

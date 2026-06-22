@@ -19,6 +19,11 @@ const routes = [
     name: 'past-meetings',
     component: () => import('../views/PastMeetingsView.vue'),
   },
+  {
+    path: '/weather',
+    name: 'weather',
+    component: () => import('../views/WeatherView.vue'),
+  },
   { path: '/login', name: 'login', component: () => import('../views/LoginView.vue') },
   {
     path: '/auth/callback',

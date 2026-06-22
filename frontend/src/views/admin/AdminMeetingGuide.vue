@@ -94,20 +94,13 @@
         <font-awesome-icon icon="signs-post" class="mr-1 text-green-600" />
         入校指引
       </h3>
-      <p class="text-xs text-slate-400 mb-3">编辑入校指引的自定义内容（支持 HTML），保存后将展示在前台入校指引页面底部。</p>
-      <el-input
+      <p class="text-xs text-slate-400 mb-3">使用下方富文本编辑器编辑入校指引内容，保存后将展示在前台入校指引页面底部。</p>
+      <TinyEditor
         v-model="entryGuideContent"
-        type="textarea"
-        :rows="12"
-        placeholder="输入入校指引的 HTML 内容..."
+        :height="400"
+        placeholder="请输入入校指引内容..."
         class="mb-3"
       />
-      <div v-if="entryGuideContent" class="mb-4">
-        <label class="text-sm text-slate-500 font-medium mb-2 block">内容预览</label>
-        <div class="w-full border border-slate-200 rounded-lg p-4 bg-slate-50">
-          <div class="guide-content text-sm text-slate-600 leading-relaxed" v-html="entryGuideContent"></div>
-        </div>
-      </div>
       <el-button type="primary" :loading="entryGuideSaving" @click="saveEntryGuide">
         <font-awesome-icon icon="cloud" class="mr-1" />
         保存入校指引
@@ -115,7 +108,7 @@
     </div>
 
     <!-- Edit/Create Dialog -->
-    <el-dialog v-model="dlgVisible" :title="isEdit ? '编辑卡片' : '新增卡片'" width="800px" destroy-on-close>
+    <el-dialog v-model="dlgVisible" :title="isEdit ? '编辑卡片' : '新增卡片'" width="800px" destroy-on-close align-center class="card-edit-dialog">
       <el-form :model="form" label-width="80px" label-position="top">
         <div class="grid grid-cols-2 gap-4">
           <el-form-item label="Key（唯一标识）">
@@ -150,18 +143,12 @@
             <el-switch v-model="form.visible" />
           </el-form-item>
         </div>
-        <el-form-item label="内容（HTML）">
-          <el-input
+        <el-form-item label="内容">
+          <TinyEditor
             v-model="form.content"
-            type="textarea"
-            :rows="10"
-            placeholder="支持 HTML 标签，可用 class: info / warn / warn-title / note / code"
+            :height="300"
+            placeholder="请输入卡片内容..."
           />
-        </el-form-item>
-        <el-form-item label="内容预览">
-          <div class="w-full border border-slate-200 rounded-lg p-4 bg-slate-50 guide-preview">
-            <div class="guide-content text-sm text-slate-600 leading-relaxed" v-html="form.content"></div>
-          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -177,6 +164,7 @@ import { ref, onMounted, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import Sortable from 'sortablejs';
 import api from '../../api';
+import TinyEditor from '../../components/TinyEditor.vue';
 
 const tableRef = ref(null);
 let sortableInstance = null;
@@ -412,4 +400,12 @@ onMounted(() => {
 .guide-content :deep(.warn-title::before) { content: '⚠️ '; }
 .guide-content :deep(.note) { margin-top: 0.75rem; padding: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 0.75rem; color: #64748b; line-height: 1.6; }
 .guide-content :deep(.note::before) { content: 'ℹ️ '; }
+
+/* ========== Card edit dialog: centered + scrollable body ========== */
+:global(.card-edit-dialog .el-dialog__body) {
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
 </style>

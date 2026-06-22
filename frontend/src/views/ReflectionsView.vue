@@ -1,14 +1,21 @@
 <template>
   <div>
     <!-- Hero -->
-    <section class="hero-bg text-white py-16">
-      <div class="container-x flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-        <div>
-          <div class="chip-orange bg-white/10 !text-brand-orange ring-1 ring-white/20">会后反思</div>
-          <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">Reflections</h1>
-          <p class="mt-3 text-white/70 text-sm">分享你在会议中的所学、所思、所悟</p>
+    <section class="hero-bg text-white py-14 sm:py-16">
+      <div class="container-x">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div class="flex-1 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase"><font-awesome-icon icon="lightbulb" class="mr-1" />{{ heroLabel }}</div>
+            <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">{{ heroTitle }}</h1>
+            <p v-if="heroSubtitle" class="mt-3 text-white/70 text-sm">{{ heroSubtitle }}</p>
+          </div>
+          <div class="flex-shrink-0 flex flex-wrap gap-3 justify-center">
+            <button class="btn-orange" @click="openPublish"><font-awesome-icon icon="pen-to-square" class="mr-1" /> 写下我的反思</button>
+          </div>
+          <div class="flex-shrink-0 flex justify-center lg:justify-end lg:pl-8 lg:border-l lg:border-white/20">
+            <WeatherCard />
+          </div>
         </div>
-        <button class="btn-orange" @click="openPublish"><font-awesome-icon icon="pen-to-square" class="mr-1" /> 写下我的反思</button>
       </div>
     </section>
 
@@ -252,10 +259,16 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import dayjs from 'dayjs';
 import api from '../api';
 import { useAuthStore } from '../stores/auth';
+import WeatherCard from '../components/WeatherCard.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
 const route = useRoute();
+
+// Hero text from nav
+const heroLabel = ref('会后反思');
+const heroTitle = ref('Reflections');
+const heroSubtitle = ref('分享你在会议中的所学、所思、所悟');
 
 const items = ref([]);
 const total = ref(0);
@@ -455,8 +468,21 @@ async function del(r) {
   }
 }
 
+async function loadHero() {
+  try {
+    const { data } = await api.get('/nav');
+    const link = (data?.links || []).find(l => l.to === '/reflections');
+    if (link) {
+      heroLabel.value = link.label || '会后反思';
+      heroTitle.value = link.heroTitle || link.label || 'Reflections';
+      if (link.heroSubtitle) heroSubtitle.value = link.heroSubtitle;
+    }
+  } catch { /* use defaults */ }
+}
+
 onMounted(async () => {
   window.addEventListener('scroll', handleScroll, { passive: true });
+  loadHero();
   await load(true);
   // Auto-open publish form if redirected back from login with action=publish
   if (route.query.action === 'publish' && auth.isLoggedIn) {
