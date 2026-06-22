@@ -175,8 +175,10 @@ adminRouter.put('/:id', authRequired, adminRequired, async (req, res) => {
       },
     });
     res.json(item);
-  } catch {
-    res.status(404).json({ message: 'Not found' });
+  } catch (e) {
+    console.error('[meeting-guide PUT /:id]', e.message || e);
+    if (e.code === 'P2025') return res.status(404).json({ message: 'Not found' });
+    res.status(500).json({ message: e.message || 'Server error' });
   }
 });
 

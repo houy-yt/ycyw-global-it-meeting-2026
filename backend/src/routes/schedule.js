@@ -215,8 +215,10 @@ router.put('/days/:id', authRequired, adminRequired, async (req, res) => {
       },
     });
     res.json(d);
-  } catch {
-    res.status(404).json({ message: 'Not found' });
+  } catch (e) {
+    console.error('[schedule PUT /days/:id]', e.message || e);
+    if (e.code === 'P2025') return res.status(404).json({ message: 'Not found' });
+    res.status(500).json({ message: e.message || 'Server error' });
   }
 });
 

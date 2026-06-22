@@ -20,7 +20,7 @@ app.use(
 );
 
 //app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 

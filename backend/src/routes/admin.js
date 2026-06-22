@@ -1,9 +1,38 @@
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 const prisma = require('../utils/prisma');
+const storage = require('../services/storageService');
 const { authRequired, adminRequired } = require('../middleware/auth');
 
+// multer for TinyMCE image uploads (memory storage, 10MB limit)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('仅支持上传图片文件'));
+  },
+});
+
 router.use(authRequired, adminRequired);
+
+// ─── TinyMCE image upload ───
+// POST /api/admin/upload-image
+// Accepts multipart/form-data with field "file"
+// Returns { location: '/uploads/xxx.png' } (TinyMCE standard response format)
+router.post('/upload-image', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: '请上传图片文件' });
+    const { url } = await storage.upload(req.file);
+    // TinyMCE expects { location: '...' } from images_upload_url,
+    // but our custom handler reads the full response, so we return both.
+    res.json({ location: url, url });
+  } catch (e) {
+    console.error('[admin/upload-image]', e);
+    res.status(500).json({ message: e.message || '图片上传失败' });
+  }
+});
 
 // GET /api/admin/reflections?q=keyword
 router.get('/reflections', async (req, res) => {

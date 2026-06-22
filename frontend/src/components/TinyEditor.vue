@@ -133,13 +133,37 @@ const editorInit = computed(() => ({
   branding: false,
   promotion: false,
 
-  // Image upload (basic — converts to base64 by default)
+  // Image upload — upload to server, return URL (not base64)
   automatic_uploads: true,
   images_upload_handler: (blobInfo) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(blobInfo.blob());
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+      const token = localStorage.getItem('token');
+      fetch('/api/admin/upload-image', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      })
+        .then((resp) => {
+          if (!resp.ok) {
+            return resp.json().then((data) => {
+              reject(data.message || `上传失败 (${resp.status})`);
+            }).catch(() => reject(`上传失败 (${resp.status})`));
+          }
+          return resp.json();
+        })
+        .then((data) => {
+          if (data && data.location) {
+            resolve(data.location);
+          } else {
+            reject('上传返回数据异常');
+          }
+        })
+        .catch((err) => {
+          reject(typeof err === 'string' ? err : (err.message || '图片上传失败'));
+        });
     });
   },
 
