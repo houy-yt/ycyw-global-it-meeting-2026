@@ -72,6 +72,7 @@
               <AdminTags v-if="tab === 'tags'" />
               <AdminAnnouncements v-if="tab === 'announce'" />
               <AdminSettings v-if="tab === 'settings'" />
+              <AdminFaIcons v-if="tab === 'faIcons'" />
             </div>
           </main>
         </div>
@@ -95,6 +96,7 @@ import AdminPast from './admin/AdminPast.vue';
 import AdminTags from './admin/AdminTags.vue';
 import AdminAnnouncements from './admin/AdminAnnouncements.vue';
 import AdminSettings from './admin/AdminSettings.vue';
+import AdminFaIcons from './admin/AdminFaIcons.vue';
 
 const tab = ref('meeting');
 const sidebarOpen = ref(false);
@@ -131,6 +133,7 @@ const menuGroups = [
       { key: 'analytics', label: '数据分析',  icon: 'chart-bar' },
       { key: 'tags',      label: '预设标签',  icon: 'tags' },
       { key: 'settings',  label: '系统设置',  icon: 'gear' },
+      { key: 'faIcons',   label: 'FA图标库',  icon: 'icons' },
     ],
   },
 ];

@@ -69,6 +69,7 @@ import {
   faSliders,
   faBars,
   faGripVertical,
+  faIcons,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faHeart as farHeart,
@@ -140,6 +141,7 @@ library.add(
   faSliders,
   faBars,
   faGripVertical,
+  faIcons,
 );
 
 import App from './App.vue';
