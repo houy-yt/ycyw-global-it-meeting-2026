@@ -112,7 +112,8 @@ model Announcement {
 model MeetingInfo {
   id        Int      @id @default(1)
   name      String   @default("YCYW 2026 Global IT Meeting")
-  tagline   String?
+  tagline   String?  // 中文主题
+  taglineEn String?  // English theme
   startDate DateTime
   endDate   DateTime
   location  String   @default("北京")
@@ -216,5 +217,22 @@ model SystemSetting {
   value     String
   // category for grouping in admin UI: 'upload' / 'analytics' / 'general'
   category  String   @default("general")
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// Meeting Guide: editable info cards (hotel, transport, wifi, etc.)
+// ============================================================================
+model MeetingGuideItem {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique          // "hotel" / "transport" / "dining" / "preparation" / "wifi"
+  icon      String   @default("circle-info")  // FA icon name
+  iconColor String   @default("text-brand-blue")
+  iconBg    String   @default("bg-brand-blue/10")
+  title     String                    // Card title, e.g. "住宿安排"
+  content   String                    // HTML rich content
+  sortOrder Int      @default(0)
+  colSpan   Int      @default(1)      // 1 = half width, 2 = full width
+  visible   Boolean  @default(true)
   updatedAt DateTime @updatedAt
 }

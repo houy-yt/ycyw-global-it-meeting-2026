@@ -3,11 +3,19 @@
     <!-- header -->
     <section class="hero-bg text-white py-16 sm:py-20">
       <div class="container-x text-center">
-        <div class="chip-orange bg-white/10 !text-brand-orange ring-1 ring-white/20">三天议程</div>
+        <div class="chip-orange bg-white/10 !text-brand-orange ring-1 ring-white/20">四天行程</div>
         <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">日程安排</h1>
         <p class="mt-3 text-white/70 text-sm sm:text-base">
           {{ meta?.startDate }} - {{ meta?.endDate }} · {{ meta?.location }}
         </p>
+        <div class="mt-5 flex flex-wrap justify-center gap-3">
+          <router-link to="/venue" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
+            <font-awesome-icon icon="location-dot" /> 会议地点
+          </router-link>
+          <router-link to="/meeting-guide" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
+            <font-awesome-icon icon="circle-info" /> 会议须知
+          </router-link>
+        </div>
       </div>
     </section>
 
@@ -72,7 +80,7 @@
                 <svg v-else-if="getIconType(it.title) === 'checkin'" class="sch-dot-svg" viewBox="0 0 384 512" fill="white">
                   <path d="M336 64h-80c0-35.3-28.7-64-64-64s-64 28.7-64 64H48C21.5 64 0 85.5 0 112v352c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48zM192 40c13.3 0 24 10.7 24 24s-10.7 24-24 24-24-10.7-24-24 10.7-24 24-24zm121.2 231.8l-143 141.8a15.6 15.6 0 01-21.9 0l-63.6-63.2a15.6 15.6 0 010-22.1l22.1-21.9a15.6 15.6 0 0121.9 0l30.5 30.3 109.9-109c6.1-6.1 16-6.1 22.1 0l21.9 22.1c6.1 6.1 6.1 16 .1 22z"/>
                 </svg>
-                <!-- FA bus (transit) -->
+                <!-- FA bus (transit / school bus) -->
                 <svg v-else-if="getIconType(it.title) === 'transit'" class="sch-dot-svg" viewBox="0 0 512 512" fill="white">
                   <path d="M488 128h-8V80c0-44.8-99.2-80-224-80S32 35.2 32 80v48h-8c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24h8v160c0 17.7 14.3 32 32 32v32c0 17.7 14.3 32 32 32h32c17.7 0 32-14.3 32-32v-32h192v32c0 17.7 14.3 32 32 32h32c17.7 0 32-14.3 32-32v-32c17.7 0 32-14.3 32-32V224h8c13.3 0 24-10.7 24-24v-48c0-13.3-10.7-24-24-24zM160 72h192c4.4 0 8 3.6 8 8s-3.6 8-8 8H160c-4.4 0-8-3.6-8-8s3.6-8 8-8zm-48 328c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm288 0c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm32-120H80V176h352v104z"/>
                 </svg>
@@ -83,8 +91,11 @@
             <div class="sch-right">
               <!-- Meals/breaks/checkin/transit: simple text, no card -->
               <template v-if="getIconType(it.title)">
-                <div class="flex items-center sch-meal-row">
-                  <span class="text-sm sm:text-base font-medium text-slate-500">{{ it.title }}</span>
+                <div>
+                  <div class="flex items-center sch-meal-row">
+                    <span class="text-sm sm:text-base font-medium text-slate-500">{{ it.title }}</span>
+                  </div>
+                  <div v-if="it.description" class="text-xs text-slate-400 mt-0.5">{{ it.description }}</div>
                 </div>
               </template>
               <!-- Normal agenda: card style with talks -->
@@ -137,6 +148,7 @@
             </div>
           </div>
         </div>
+
       </div>
     </section>
 
@@ -198,6 +210,7 @@ function getIconType(title) {
   if (title.includes('茶歇')) return 'tea';
   if (title.includes('签到')) return 'checkin';
   if (title.includes('前往')) return 'transit';
+  if (title.includes('校车')) return 'transit';
   return '';
 }
 

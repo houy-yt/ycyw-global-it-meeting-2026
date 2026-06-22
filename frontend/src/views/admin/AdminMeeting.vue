@@ -7,8 +7,12 @@
         <input v-model="form.name" class="form-input" />
       </div>
       <div>
-        <label class="text-sm text-slate-600 font-medium">标语</label>
+        <label class="text-sm text-slate-600 font-medium">主题（中文）</label>
         <input v-model="form.tagline" class="form-input" placeholder="例：连接 · 创新 · 未来" />
+      </div>
+      <div>
+        <label class="text-sm text-slate-600 font-medium">主题（英文） / Theme (EN)</label>
+        <input v-model="form.taglineEn" class="form-input" placeholder="e.g. Connect · Innovate · Empower" />
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -40,6 +44,7 @@ const saving = ref(false);
 const form = reactive({
   name: '',
   tagline: '',
+  taglineEn: '',
   startDate: '',
   endDate: '',
   location: '',
@@ -51,6 +56,7 @@ async function load() {
     if (!data) return;
     form.name = data.name || '';
     form.tagline = data.tagline || '';
+    form.taglineEn = data.taglineEn || '';
     form.startDate = (data.startDate || '').slice(0, 10);
     form.endDate = (data.endDate || '').slice(0, 10);
     form.location = data.location || '';

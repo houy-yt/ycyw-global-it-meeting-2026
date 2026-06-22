@@ -2,44 +2,7 @@
   <div class="max-w-2xl">
     <h3 class="text-lg font-semibold text-brand-deep mb-4">系统设置</h3>
 
-    <el-divider content-position="left"><b>入校指引 — 二维码管理</b></el-divider>
-    <div class="space-y-4">
-      <div>
-        <label class="text-sm text-slate-600 font-medium block mb-2">当前访客申请二维码</label>
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0">
-            <img
-              :src="qrcodePreview || '/fksq-qrcode.jpg'"
-              alt="当前二维码"
-              class="w-32 h-32 rounded-lg border border-slate-200 object-contain bg-white shadow-sm"
-            />
-          </div>
-          <div class="space-y-2">
-            <p class="text-xs text-slate-400">支持 JPG / PNG 格式，建议尺寸 500×500 以上，最大 5MB</p>
-            <el-upload
-              :auto-upload="false"
-              :show-file-list="false"
-              accept="image/*"
-              :on-change="onQrcodeFileChange"
-            >
-              <el-button size="small" type="primary">
-                <font-awesome-icon icon="upload" class="mr-1" />
-                选择新二维码
-              </el-button>
-            </el-upload>
-            <div v-if="qrcodeFile" class="text-xs text-slate-500">
-              已选择: {{ qrcodeFile.name }}
-              <el-button size="small" type="success" :loading="qrcodeUploading" class="ml-2" @click="uploadQrcode">
-                确认上传
-              </el-button>
-              <el-button size="small" @click="cancelQrcode">取消</el-button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <el-divider content-position="left" class="mt-6"><b>上传限制（MB）</b></el-divider>
+    <el-divider content-position="left"><b>上传限制（MB）</b></el-divider>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div>
         <label class="text-sm text-slate-600 font-medium">图片上限 (MB)</label>
@@ -92,50 +55,6 @@ import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '../../api';
 
-// ── QR Code management ──
-const qrcodePreview = ref('');
-const qrcodeFile = ref(null);
-const qrcodeUploading = ref(false);
-
-function onQrcodeFileChange(uploadFile) {
-  const raw = uploadFile.raw || uploadFile;
-  qrcodeFile.value = raw;
-  // Create preview URL
-  qrcodePreview.value = URL.createObjectURL(raw);
-}
-
-function cancelQrcode() {
-  qrcodeFile.value = null;
-  qrcodePreview.value = '';
-  loadQrcodePreview();
-}
-
-async function uploadQrcode() {
-  if (!qrcodeFile.value) return;
-  qrcodeUploading.value = true;
-  try {
-    const fd = new FormData();
-    fd.append('file', qrcodeFile.value);
-    const { data } = await api.post('/admin/settings/entry-guide-qrcode', fd);
-    qrcodePreview.value = data.qrcodeUrl;
-    qrcodeFile.value = null;
-    ElMessage.success('二维码已更新');
-  } catch (e) {
-    ElMessage.error(e.response?.data?.message || '上传失败');
-  } finally {
-    qrcodeUploading.value = false;
-  }
-}
-
-async function loadQrcodePreview() {
-  try {
-    const { data } = await api.get('/entry-guide/settings');
-    if (data?.qrcodeUrl) qrcodePreview.value = data.qrcodeUrl;
-  } catch {
-    // ignore
-  }
-}
-
 // ── General settings ──
 const saving = ref(false);
 const form = reactive({
@@ -173,7 +92,6 @@ async function save() {
 
 onMounted(() => {
   load();
-  loadQrcodePreview();
 });
 </script>
 

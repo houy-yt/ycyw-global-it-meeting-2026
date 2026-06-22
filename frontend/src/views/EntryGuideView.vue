@@ -93,7 +93,7 @@
 
         <!-- Form example image (single column) -->
         <div
-          class="bg-white rounded-[6px] shadow-soft border border-slate-100 overflow-hidden cursor-pointer group"
+          class="bg-white rounded-[6px] border border-slate-200 overflow-hidden cursor-pointer group"
           @click="previewImage('/fkzn.jpg', '访客申请表单示例')"
         >
           <div class="relative">
@@ -113,6 +113,11 @@
           <font-awesome-icon icon="image" class="mr-1" />
           申请表单示例（点击可放大查看）
         </p>
+
+        <!-- Custom content from backend -->
+        <div v-if="customContent" class="mt-10">
+          <div class="entry-content text-sm text-slate-600 leading-relaxed" v-html="customContent"></div>
+        </div>
       </div>
     </section>
 
@@ -133,6 +138,7 @@ import PhotoPreviewModal from '../components/PhotoPreviewModal.vue';
 
 const DEFAULT_QRCODE = '/fksq-qrcode.jpg';
 const qrcodeUrl = ref(DEFAULT_QRCODE);
+const customContent = ref('');
 
 // Preview modal
 const previewVisible = ref(false);
@@ -149,17 +155,16 @@ function previewQrcode() {
   previewImage(qrcodeUrl.value, '访客申请二维码');
 }
 
-// Load QR code URL from backend settings
-async function loadQrcodeUrl() {
+// Load settings from backend
+async function loadSettings() {
   try {
     const { data } = await api.get('/entry-guide/settings');
-    if (data?.qrcodeUrl) {
-      qrcodeUrl.value = data.qrcodeUrl;
-    }
+    if (data?.qrcodeUrl) qrcodeUrl.value = data.qrcodeUrl;
+    if (data?.customContent) customContent.value = data.customContent;
   } catch {
-    // fallback to default
+    // fallback to defaults
   }
 }
 
-onMounted(loadQrcodeUrl);
+onMounted(loadSettings);
 </script>

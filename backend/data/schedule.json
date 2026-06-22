@@ -1,33 +1,79 @@
 {
   "meeting": {
     "name": "YCYW 2026 Global IT Meeting",
-    "tagline": "连接 · 创新 · 未来",
-    "startDate": "2026-07-14",
+    "tagline": "科技驱动、智联未来：全球校区IT标准化与AI创新",
+    "startDate": "2026-07-13",
     "endDate": "2026-07-16",
-    "location": "北京"
+    "location": "北京耀华"
   },
   "dates": [
+    {
+      "date": "2026-07-13",
+      "dayLabel": "7月13日，周一",
+      "items": [
+        {
+          "time": "全天",
+          "title": "",
+          "talks": [
+            {
+              "title": "各地同事到达北京，入住酒店",
+              "speaker": "",
+              "abstract": "入住酒店：亦庄智选假日酒店\n温馨提示：大兴机场到酒店的交通时间相对短"
+            }
+          ]
+        }
+      ]
+    },
     {
       "date": "2026-07-14",
       "dayLabel": "7月14日，周二",
       "items": [
-        { "time": "8:00 - 8:30",   "title": "签到入校", "talks": [] },
-        { "time": "8:40 - 9:20",   "title": "", "talks": [{ "title": "开幕致辞、IT Roadmap", "speaker": "Joyce" }] },
-        { "time": "9:20 - 10:20",  "title": "", "talks": [{ "title": "", "speaker": "Michael" }] },
-        { "time": "10:30 - 11:30", "title": "", "talks": [{ "title": "", "speaker": "Wayne" }] },
-        { "time": "11:30 - 12:10", "title": "午餐", "talks": [] },
-        { "time": "12:15 - 13:30", "title": "前往 ClassIN", "talks": [] },
-        { "time": "13:30 - 17:30", "title": "", "talks": [{ "title": "ClassIN 参观", "speaker": "全体" }] },
-        { "time": "18:30 - 20:00", "title": "团队晚餐", "talks": [] }
+        { "time": "8:00 - 8:05", "title": "校车从酒店出发到学校", "talks": [] },
+        { "time": "8:15 - 8:30", "title": "签到入校", "talks": [] },
+        {
+          "time": "8:40 - 9:00",
+          "title": "",
+          "talks": [{ "title": "开幕致辞、IT Roadmap", "speaker": "Joyce" }]
+        },
+        {
+          "time": "9:00 - 10:30",
+          "title": "",
+          "talks": [{ "title": "总结25-26学年标准化项目及26-27项目落地计划", "speaker": "Michael" }]
+        },
+        { "time": "10:30 - 10:50", "title": "茶歇", "talks": [] },
+        {
+          "time": "10:50 - 12:00",
+          "title": "",
+          "talks": [{ "title": "Microsoft Intune on Mac OS and iOS 项目在地化经验分享", "speaker": "Wayne CY / Alex Fu" }]
+        },
+        { "time": "12:00 - 13:00", "title": "午餐", "talks": [] },
+        {
+          "time": "13:00 - 13:30",
+          "title": "",
+          "talks": [{ "title": "Microsoft Intune 簡介", "speaker": "Anthony" }]
+        },
+        {
+          "time": "13:30 - 14:00",
+          "title": "",
+          "talks": [{ "title": "破局与进化：香港家校沟通工具数字化蜕变", "speaker": "Erin Wu" }]
+        },
+        { "time": "14:00 - 15:30", "title": "前往 CLASS IN 参观", "talks": [] },
+        {
+          "time": "15:30 - 17:30",
+          "title": "",
+          "talks": [{ "title": "CLASS IN 参观", "speaker": "" }]
+        },
+        { "time": "18:00 - 20:00", "title": "团队晚餐，地点待定", "talks": [] }
       ]
     },
     {
       "date": "2026-07-15",
       "dayLabel": "7月15日，周三",
       "items": [
+        { "time": "8:00 - 8:05", "title": "校车从酒店出发到学校", "talks": [] },
         {
           "time": "8:30 - 10:00",
-          "title": "",
+          "title": "AI 应用分享",
           "talks": [
             { "title": "OpenClaw, Claude Code", "speaker": "蒲守理" },
             { "title": "AI Coding", "speaker": "阮志龙" },
@@ -36,7 +82,7 @@
         },
         { "time": "10:00 - 10:20", "title": "茶歇", "talks": [] },
         {
-          "time": "10:20 - 12:10",
+          "time": "10:20 - 12:00",
           "title": "",
           "talks": [
             { "title": "AI 多模态", "speaker": "侯英" },
@@ -44,29 +90,77 @@
             { "title": "Teams App 消息通知的应用", "speaker": "王光辉" }
           ]
         },
-        { "time": "12:10 - 13:30", "title": "午餐", "talks": [] },
-        { "time": "13:30 - 14:40", "title": "", "talks": [{ "title": "Veeam 产品安装部署技术分享", "speaker": "Veeam 厂家" }] },
-        { "time": "14:40 - 15:00", "title": "茶歇", "talks": [] },
-        { "time": "15:00 - 17:30", "title": "", "talks": [{ "title": "后勤部与 IT 部门联合讲座", "speaker": "" }] },
-        { "time": "18:30 - 20:30", "title": "联合晚餐", "talks": [] }
+        { "time": "12:00 - 13:00", "title": "午餐", "talks": [] },
+        {
+          "time": "13:10 - 15:40",
+          "title": "联合会议时间",
+          "talks": [
+            { "title": "后勤应用表单分享", "speaker": "KK" },
+            { "title": "从数据流探讨用友系统", "speaker": "Sarah" }
+          ]
+        },
+        { "time": "15:40 - 16:00", "title": "茶歇", "talks": [] },
+        {
+          "time": "16:00 - 17:30",
+          "title": "",
+          "description": "以下两个环节同时进行，请根据安排选择参加",
+          "talks": [
+            { "title": "工程部、后勤部、IT部 头脑风暴", "speaker": "Joyce、Alex 及各校 IT Heads" },
+            { "title": "校园参观", "speaker": "不参加三部门联合会议的同事" }
+          ]
+        },
+        { "time": "18:00 - 20:30", "title": "联合晚餐，地点待定", "talks": [] }
       ]
     },
     {
       "date": "2026-07-16",
       "dayLabel": "7月16日，周四",
       "items": [
-        { "time": "8:30 - 9:15",   "title": "", "talks": [{ "title": "", "speaker": "YCCECE" }] },
-        { "time": "9:15 - 10:00",  "title": "", "talks": [{ "title": "", "speaker": "Erin" }] },
+        { "time": "8:00 - 8:05", "title": "校车从酒店出发到学校", "talks": [] },
+        {
+          "time": "8:30 - 9:00",
+          "title": "",
+          "talks": [{ "title": "Mosyle Manager 管理平台试用分享", "speaker": "Ethan Duan" }]
+        },
+        {
+          "time": "9:00 - 9:30",
+          "title": "",
+          "talks": [{ "title": "图书馆系统分享", "speaker": "KK" }]
+        },
+        {
+          "time": "9:30 - 10:00",
+          "title": "",
+          "talks": [{ "title": "一些 AI Agent 的使用经验分享", "speaker": "Koala" }]
+        },
         { "time": "10:00 - 10:20", "title": "茶歇", "talks": [] },
-        { "time": "10:20 - 10:50", "title": "", "talks": [{ "title": "图书馆系统分享", "speaker": "KK" }] },
-        { "time": "11:00 - 12:00", "title": "", "talks": [{ "title": "", "speaker": "Jason / Alan" }] },
+        {
+          "time": "10:20 - 11:20",
+          "title": "",
+          "talks": [{ "title": "AI 攻防博弈新纪元——防御体系升级与主动对抗实践", "speaker": "Peter" }]
+        },
+        {
+          "time": "11:20 - 11:50",
+          "title": "",
+          "talks": [{ "title": "AI 合规性（网信和公安）法规解读", "speaker": "Alex" }]
+        },
         { "time": "12:00 - 13:30", "title": "午餐", "talks": [] },
-        { "time": "13:30 - 14:00", "title": "", "talks": [{ "title": "Mosyle Manager 管理平台试用分享", "speaker": "Ethan Duan" }] },
-        { "time": "14:10 - 15:10", "title": "", "talks": [{ "title": "AI 攻防博弈新纪元——防御体系升级与主动对抗实践", "speaker": "Peter" }] },
-        { "time": "15:10 - 15:30", "title": "茶歇", "talks": [] },
-        { "time": "15:30 - 16:10", "title": "", "talks": [{ "title": "用友答疑（提前搜集问题）", "speaker": "Sarah" }] },
-        { "time": "16:10 - 16:40", "title": "", "talks": [{ "title": "AI 合规性（网信和公安）法规解读", "speaker": "Alex" }] },
-        { "time": "16:40 - 17:30", "title": "", "talks": [{ "title": "总结", "speaker": "" }] }
+        {
+          "time": "13:30 - 15:00",
+          "title": "",
+          "talks": [{ "title": "Veeam 产品安装部署技术分享及答疑交流", "speaker": "Veeam 厂家" }]
+        },
+        { "time": "15:00 - 15:20", "title": "茶歇", "talks": [] },
+        {
+          "time": "15:30 - 16:30",
+          "title": "",
+          "description": "提前搜集问题",
+          "talks": [{ "title": "用友系统架构及与其他系统对接等问题答疑", "speaker": "Sarah" }]
+        },
+        {
+          "time": "16:30 - 17:00",
+          "title": "",
+          "talks": [{ "title": "会议总结", "speaker": "" }]
+        }
       ]
     }
   ]

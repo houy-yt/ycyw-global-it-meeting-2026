@@ -21,13 +21,16 @@
           <div class="mt-6 w-14 h-[3px] rounded bg-white/50 mx-auto md:mx-0"></div>
 
           <p class="mt-5 text-lg sm:text-xl text-white/80 tracking-wide">
-            Connect <span class="mx-2 text-white/40">|</span> Innovate <span class="mx-2 text-white/40">|</span> Empower
+            {{ meetingInfo?.tagline || '连接 · 创新 · 赋能' }}
+          </p>
+          <p v-if="meetingInfo?.taglineEn" class="mt-1 text-sm text-white/50 tracking-wide whitespace-nowrap">
+            {{ meetingInfo.taglineEn }}
           </p>
 
           <div class="mt-4 flex flex-col md:flex-row items-center gap-2 text-sm sm:text-base text-white/70 flex-wrap justify-center md:justify-start">
             <span class="inline-flex items-center gap-1.5">
               <font-awesome-icon icon="calendar-days" class="text-white/50" />
-              2026 年 7 月 14 日 – 16 日
+              2026 年 7 月 13 日 – 16 日
             </span>
             <span class="text-white/30 hidden md:inline">|</span>
             <span class="inline-flex items-center gap-1.5">
@@ -38,7 +41,7 @@
 
           <div class="mt-8 flex flex-wrap gap-3 justify-center md:justify-start">
             <router-link to="/schedule" class="btn-orange">查看完整日程 <font-awesome-icon icon="circle-right" /></router-link>
-            <router-link to="/attendees" class="btn-secondary !bg-[rgba(0,50,160,0.65)] !text-white !ring-white/40 hover:!ring-white hover:!bg-white/10">参会人员</router-link>
+            <router-link to="/meeting-guide" class="btn-secondary !bg-[rgba(0,50,160,0.65)] !text-white !ring-white/40 hover:!ring-white hover:!bg-white/10">会议须知</router-link>
           </div>
         </div>
 
@@ -377,14 +380,15 @@ import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import api from '../api';
 import Countdown from '../components/Countdown.vue';
 
-const meta = { start: '2026-07-14', end: '2026-07-16' };
+const meta = { start: '2026-07-13', end: '2026-07-16' };
 
 const announcement = ref(null);
+const meetingInfo = ref(null);
 const pastList = ref([]);
 const statRefs = ref([]);
 
 const quickLinks = [
-  { to: '/schedule', title: '日程安排', desc: '三天议程一目了然', bg: 'bg-brand-blue', icon: 'calendar-days' },
+  { to: '/schedule', title: '日程安排', desc: '四天行程一目了然', bg: 'bg-brand-blue', icon: 'calendar-days' },
   { to: '/attendees', title: '参会人员', desc: '57+ 同仁，19 所学校', bg: 'bg-brand-deep', icon: 'users' },
   { to: '/reflections', title: '会后反思', desc: '记录所学所思', bg: 'bg-brand-orange', icon: 'pen-to-square' },
   { to: '/gallery', title: '会议剪影', desc: '照片 · 视频 · 回忆', bg: 'bg-brand-red', icon: 'camera' },
@@ -529,12 +533,14 @@ function animateCounter(el) {
 
 async function load() {
   try {
-    const [a, p] = await Promise.all([
+    const [a, p, m] = await Promise.all([
       api.get('/announcements/active'),
       api.get('/past-meetings'),
+      api.get('/meeting'),
     ]);
     announcement.value = a.data;
     pastList.value = p.data || [];
+    meetingInfo.value = m.data || null;
   } catch (e) {
     console.error(e);
   }

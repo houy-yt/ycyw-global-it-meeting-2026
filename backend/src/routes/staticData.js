@@ -105,6 +105,7 @@ router.get('/schedule', async (req, res) => {
       meeting: {
         name: meeting.name,
         tagline: meeting.tagline || '',
+        taglineEn: meeting.taglineEn || '',
         // keep YYYY-MM-DD shape used by frontend
         startDate: meeting.startDate.toISOString().slice(0, 10),
         endDate: meeting.endDate.toISOString().slice(0, 10),
@@ -135,6 +136,7 @@ router.get('/meeting', async (req, res) => {
       id: meeting.id,
       name: meeting.name,
       tagline: meeting.tagline || '',
+      taglineEn: meeting.taglineEn || '',
       startDate: meeting.startDate.toISOString().slice(0, 10),
       endDate: meeting.endDate.toISOString().slice(0, 10),
       location: meeting.location,
@@ -270,10 +272,11 @@ router.get('/attendees/departments', async (req, res) => {
 router.get('/entry-guide/settings', async (req, res) => {
   try {
     const qrcodeUrl = await settingsService.get('entryGuide.qrcodeUrl', '/fksq-qrcode.jpg');
-    res.json({ qrcodeUrl });
+    const customContent = await settingsService.get('entryGuide.customContent', '');
+    res.json({ qrcodeUrl, customContent });
   } catch (e) {
     console.error('[entry-guide] error', e);
-    res.json({ qrcodeUrl: '/fksq-qrcode.jpg' });
+    res.json({ qrcodeUrl: '/fksq-qrcode.jpg', customContent: '' });
   }
 });
 

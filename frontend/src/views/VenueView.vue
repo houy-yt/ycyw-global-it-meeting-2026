@@ -9,6 +9,14 @@
         </div>
         <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">耀华国际教育学校</h1>
         <p class="mt-3 text-white/70 text-sm sm:text-base">亦庄校区</p>
+        <div class="mt-5 flex flex-wrap justify-center gap-3">
+          <router-link to="/schedule" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
+            <font-awesome-icon icon="calendar-days" /> 日程安排
+          </router-link>
+          <router-link to="/meeting-guide" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
+            <font-awesome-icon icon="circle-info" /> 会议须知
+          </router-link>
+        </div>
       </div>
     </section>
 

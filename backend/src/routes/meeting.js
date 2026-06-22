@@ -1,7 +1,7 @@
 /**
  * Admin endpoints to manage MeetingInfo (single-row table, id=1).
  *   GET  /api/admin/meeting       (admin)  full record
- *   PUT  /api/admin/meeting       (admin)  upsert name/tagline/startDate/endDate/location
+ *   PUT  /api/admin/meeting       (admin)  upsert name/tagline/taglineEn/startDate/endDate/location
  */
 const express = require('express');
 const router = express.Router();
@@ -14,10 +14,11 @@ router.get('/', authRequired, adminRequired, async (req, res) => {
 });
 
 router.put('/', authRequired, adminRequired, async (req, res) => {
-  const { name, tagline, startDate, endDate, location } = req.body || {};
+  const { name, tagline, taglineEn, startDate, endDate, location } = req.body || {};
   const data = {};
   if (name !== undefined) data.name = String(name);
   if (tagline !== undefined) data.tagline = tagline ? String(tagline) : null;
+  if (taglineEn !== undefined) data.taglineEn = taglineEn ? String(taglineEn) : null;
   if (startDate !== undefined) data.startDate = new Date(startDate);
   if (endDate !== undefined) data.endDate = new Date(endDate);
   if (location !== undefined) data.location = String(location);
@@ -29,6 +30,7 @@ router.put('/', authRequired, adminRequired, async (req, res) => {
       id: 1,
       name: data.name || 'YCYW Meeting',
       tagline: data.tagline || null,
+      taglineEn: data.taglineEn || null,
       startDate: data.startDate || new Date(),
       endDate: data.endDate || new Date(),
       location: data.location || '北京',

@@ -41,6 +41,7 @@ app.use('/api/gallery', require('./routes/gallery'));
 app.use('/api/past-meetings', require('./routes/pastMeetings'));
 app.use('/api/preset-tags', require('./routes/presetTags'));
 app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/meeting-guide', require('./routes/meetingGuide').publicRouter);
 
 // Admin namespace
 app.use('/api/admin', require('./routes/admin'));            // existing user/role admin
@@ -49,6 +50,7 @@ app.use('/api/admin/schedule', require('./routes/schedule')); // schedule CRUD +
 app.use('/api/admin', require('./routes/attendeesAdmin'));   // attendees/orgs/departments
 app.use('/api/admin/settings', require('./routes/settings'));// key-value settings
 app.use('/api/admin/analytics', require('./routes/analytics'));// reflection analytics
+app.use('/api/admin/meeting-guide', require('./routes/meetingGuide').adminRouter);
 
 // ---------- Static: Frontend (production) ----------
 const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
