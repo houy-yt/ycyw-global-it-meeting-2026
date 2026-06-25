@@ -391,15 +391,15 @@ onMounted(() => {
 .guide-content :deep(em) { color: #94a3b8; font-style: italic; }
 .guide-content :deep(ul) { list-style: none; padding: 0; margin: 0; }
 .guide-content :deep(li) { margin-bottom: 0.75rem; padding-left: 1.25rem; position: relative; }
-.guide-content :deep(li::before) { content: '✓'; position: absolute; left: 0; color: #0032a0; font-weight: 700; font-size: 0.75rem; }
+.guide-content :deep(li::before) { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 0; color: #0032a0; font-size: 0.75rem; }
 .guide-content :deep(li:last-child) { margin-bottom: 0; }
 .guide-content :deep(.info) { display: flex; align-items: center; gap: 0.375rem; color: #0032a0; }
-.guide-content :deep(.info::before) { content: 'ℹ️'; }
+.guide-content :deep(.info::before) { content: '\f05a'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
 .guide-content :deep(.warn) { margin-top: 0.75rem; padding: 0.75rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 0.5rem; font-size: 0.75rem; color: #92400e; line-height: 1.6; }
 .guide-content :deep(.warn-title) { font-weight: 600; margin-bottom: 0.25rem; }
-.guide-content :deep(.warn-title::before) { content: '⚠️ '; }
+.guide-content :deep(.warn-title::before) { content: '\f071  '; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
 .guide-content :deep(.note) { margin-top: 0.75rem; padding: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 0.75rem; color: #64748b; line-height: 1.6; }
-.guide-content :deep(.note::before) { content: 'ℹ️ '; }
+.guide-content :deep(.note::before) { content: '\f05a  '; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
 
 /* ========== Card edit dialog: centered + scrollable body ========== */
 :global(.card-edit-dialog .el-dialog__body) {

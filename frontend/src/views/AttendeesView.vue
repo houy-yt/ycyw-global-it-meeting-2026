@@ -491,14 +491,11 @@ onBeforeUnmount(() => {
 }
 .person-card {
   cursor: pointer;
-  max-width: 150px;
 }
 .person-card .photo {
   width: 100%;
   aspect-ratio: 3 / 4;
   border-radius: 4px;
-  max-height: 200px;
-  max-width: 150px;
 }
 @media (min-width: 640px) {
   .people-grid {

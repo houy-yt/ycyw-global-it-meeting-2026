@@ -150,7 +150,7 @@
                           @click="openResource(r, tk)"
                           :title="r.title || resourceLabel(r.type)"
                         >
-                          <span>{{ resourceIcon(r.type) }}</span>
+                          <font-awesome-icon :icon="resourceIcon(r.type)" class="text-sm" />
                           <span class="truncate max-w-[100px]">{{ r.title || resourceLabel(r.type) }}</span>
                         </button>
                       </div>
@@ -182,7 +182,7 @@
           <div class="space-y-2">
             <div v-for="r in talkModal.talk.resources" :key="r.id" class="border rounded-lg p-3 bg-slate-50">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-xl">{{ resourceIcon(r.type) }}</span>
+                <font-awesome-icon :icon="resourceIcon(r.type)" class="text-xl text-brand-blue" />
                 <span class="font-medium text-brand-deep">{{ r.title || resourceLabel(r.type) }}</span>
                 <span class="ml-auto chip !text-[10px]">{{ r.type }}</span>
               </div>
@@ -243,9 +243,9 @@ function getIconType(title) {
   return '';
 }
 
-const RES_ICONS = { ppt: '📊', pdf: '📄', video: '🎬', audio: '🎧', image: '🖼️', link: '🔗' };
+const RES_ICONS = { ppt: 'file-powerpoint', pdf: 'file-pdf', video: 'film', audio: 'headphones', image: 'image', link: 'link' };
 const RES_LABELS = { ppt: 'PPT', pdf: 'PDF', video: '视频', audio: '音频', image: '图片', link: '链接' };
-function resourceIcon(t) { return RES_ICONS[t] || '📎'; }
+function resourceIcon(t) { return RES_ICONS[t] || 'paperclip'; }
 function resourceLabel(t) { return RES_LABELS[t] || t; }
 
 function openTalk(t) {

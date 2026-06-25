@@ -10,7 +10,8 @@
           v-if="i > 0"
           class="flex items-stretch bg-white/10"
         >
-          <div class="w-px bg-white/20 my-4"></div>
+          <div class="w-px bg-black/15 my-4"></div>
+          <div class="w-px bg-white/10 my-4"></div>
         </div>
         <!-- block -->
         <div

@@ -5,10 +5,10 @@
       <h3 class="text-base font-semibold text-brand-deep">日程管理</h3>
       <div class="flex gap-2">
         <el-button :type="days.length === 0 ? 'warning' : 'default'" :icon="null" @click="importStatic">
-          📥 从 schedule.json 导入
+          <font-awesome-icon icon="file-import" class="mr-1" /> 从 schedule.json 导入
         </el-button>
         <el-button type="success" @click="excelDialog.show = true">
-          📤 导入 Excel/CSV
+          <font-awesome-icon icon="file-arrow-up" class="mr-1" /> 导入 Excel/CSV
         </el-button>
         <el-button type="primary" @click="openDayDialog(null)">+ 新增日期</el-button>
       </div>
@@ -21,7 +21,7 @@
       :closable="false"
       class="mb-4"
       title="暂无日程数据"
-      description="您可以点击右上角「📥 从 schedule.json 导入」一键导入 backend/data/schedule.json 中的默认日程，或手动「+ 新增日期」开始维护。"
+      description="您可以点击右上角「从 schedule.json 导入」一键导入 backend/data/schedule.json 中的默认日程，或手动「+ 新增日期」开始维护。"
       show-icon
     />
 

@@ -55,7 +55,7 @@
               :title="c.label"
               @click="dialog.form.color = c.value"
             >
-              <span v-if="dialog.form.color === c.value" class="text-white text-xs font-bold">✓</span>
+              <font-awesome-icon v-if="dialog.form.color === c.value" icon="check" class="text-white text-xs font-bold" />
             </button>
             <input v-model="dialog.form.color" class="form-input !mt-0 !w-32" placeholder="#0032a0" />
             <span

@@ -301,11 +301,12 @@ onMounted(() => {
   position: relative;
 }
 .guide-content :deep(li::before) {
-  content: '✓';
+  content: '\f00c';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
   position: absolute;
   left: 0;
   color: var(--brand-blue, #0032a0);
-  font-weight: 700;
   font-size: 0.75rem;
 }
 .guide-content :deep(li:last-child) {
@@ -319,7 +320,9 @@ onMounted(() => {
   color: var(--brand-blue, #0032a0);
 }
 .guide-content :deep(.info::before) {
-  content: 'ℹ️';
+  content: '\f05a';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
 }
 /* Warning box */
 .guide-content :deep(.warn) {
@@ -337,7 +340,9 @@ onMounted(() => {
   margin-bottom: 0.25rem;
 }
 .guide-content :deep(.warn-title::before) {
-  content: '⚠️ ';
+  content: '\f071  ';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
 }
 /* Note box */
 .guide-content :deep(.note) {
@@ -351,6 +356,8 @@ onMounted(() => {
   line-height: 1.6;
 }
 .guide-content :deep(.note::before) {
-  content: 'ℹ️ ';
+  content: '\f05a  ';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
 }
 </style>

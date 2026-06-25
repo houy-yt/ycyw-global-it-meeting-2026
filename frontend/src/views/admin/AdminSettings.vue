@@ -47,7 +47,7 @@
             class="text-slate-400 hover:text-brand-red text-sm px-1"
             @click="removeLink(idx)"
             title="删除"
-          >✕</button>
+          ><font-awesome-icon icon="xmark" /></button>
         </div>
         <div class="flex items-center gap-2 pl-7">
           <input

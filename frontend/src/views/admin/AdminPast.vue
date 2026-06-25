@@ -13,7 +13,7 @@
           <a v-if="row.linkUrl" :href="row.linkUrl" target="_blank" class="text-brand-blue underline truncate">{{ row.linkUrl }}</a>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="160">
+      <el-table-column label="操作" width="160" fixed="right">
         <template #default="{ row }">
           <el-button size="small" @click="open(row)">编辑</el-button>
           <el-button type="danger" size="small" @click="del(row)">删除</el-button>

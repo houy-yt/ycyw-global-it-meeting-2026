@@ -48,7 +48,7 @@
             @click="toggleSub(cat.name + '.' + sub.key)"
           >
             <div class="flex items-center gap-2">
-              <span class="text-base">{{ sub.emoji }}</span>
+              <font-awesome-icon :icon="sub.icon" class="text-sm text-blue-500" />
               <span class="font-semibold text-slate-600 text-sm">{{ sub.label }}</span>
               <span class="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full font-medium">
                 {{ sub.icons.length }}
@@ -241,7 +241,7 @@ library.add(fas, far, fab);
 const SUBCATEGORY_DEFS = [
   {
     key: 'food-dining',
-    emoji: '🍽️',
+    icon: 'utensils',
     label: '餐饮食物',
     keywords: [
       'utensils', 'pizza', 'burger', 'coffee', 'mug', 'beer',
@@ -258,7 +258,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'transport',
-    emoji: '🚗',
+    icon: 'car',
     label: '交通出行',
     keywords: [
       'car', 'bus', 'truck', 'plane', 'train', 'bicycle', 'bike',
@@ -274,7 +274,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'building',
-    emoji: '🏢',
+    icon: 'building',
     label: '建筑场所',
     keywords: [
       'building', 'house', 'hospital', 'school', 'hotel', 'church',
@@ -290,7 +290,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'user-people',
-    emoji: '👤',
+    icon: 'user',
     label: '用户人物',
     keywords: [
       'user', 'person', 'people', 'child', 'baby', 'children',
@@ -310,7 +310,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'tech-device',
-    emoji: '💻',
+    icon: 'laptop',
     label: '技术设备',
     keywords: [
       'computer', 'laptop', 'tablet', 'keyboard', 'desktop',
@@ -329,7 +329,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'business-chart',
-    emoji: '📊',
+    icon: 'chart-bar',
     label: '商业图表',
     keywords: [
       'chart', 'money', 'dollar', 'euro', 'pound', 'yen',
@@ -353,7 +353,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'media',
-    emoji: '🎵',
+    icon: 'music',
     label: '音乐媒体',
     keywords: [
       'music', 'film', 'video', 'camera', 'image', 'photo',
@@ -371,7 +371,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'tools-settings',
-    emoji: '⚙️',
+    icon: 'gear',
     label: '工具设置',
     keywords: [
       'gear', 'gears', 'wrench', 'screwdriver', 'hammer', 'toolbox',
@@ -385,7 +385,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'weather-nature',
-    emoji: '🌤️',
+    icon: 'cloud-sun',
     label: '天气自然',
     keywords: [
       'sun', 'moon', 'cloud', 'rain', 'snow', 'wind', 'tree',
@@ -408,7 +408,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'edit-document',
-    emoji: '✏️',
+    icon: 'pen-to-square',
     label: '编辑文档',
     keywords: [
       'pen', 'pencil', 'edit', 'file', 'folder', 'clipboard', 'book',
@@ -440,7 +440,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'security',
-    emoji: '🔒',
+    icon: 'lock',
     label: '安全标识',
     keywords: [
       'lock', 'unlock', 'shield', 'key', 'eye', 'ban',
@@ -460,7 +460,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'social-emotion',
-    emoji: '❤️',
+    icon: 'heart',
     label: '社交情感',
     keywords: [
       'heart', 'star', 'thumbs', 'comment', 'share',
@@ -493,7 +493,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'medical',
-    emoji: '🏥',
+    icon: 'hospital',
     label: '医疗健康',
     keywords: [
       'stethoscope', 'pills', 'capsules', 'syringe', 'vial', 'vials',
@@ -517,7 +517,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'gaming',
-    emoji: '🎮',
+    icon: 'gamepad',
     label: '游戏娱乐',
     keywords: [
       'gamepad', 'dice', 'puzzle', 'chess', 'trophy', 'medal',
@@ -540,7 +540,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'arrows-direction',
-    emoji: '🧭',
+    icon: 'compass',
     label: '箭头方向',
     keywords: [
       'arrow', 'chevron', 'angle', 'caret', 'sort',
@@ -573,7 +573,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'text-typography',
-    emoji: '🔤',
+    icon: 'font',
     label: '文字排版',
     keywords: [
       'font', 'text', 'bold', 'italic', 'underline', 'strikethrough',
@@ -588,7 +588,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'map-location',
-    emoji: '📍',
+    icon: 'location-dot',
     label: '地图定位',
     keywords: [
       'map', 'location', 'globe', 'earth', 'compass', 'flag',
@@ -606,7 +606,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'science-education',
-    emoji: '🔬',
+    icon: 'microscope',
     label: '科学教育',
     keywords: [
       'atom', 'flask', 'vial', 'vials', 'microscope', 'dna',
@@ -622,7 +622,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'shopping',
-    emoji: '🛒',
+    icon: 'cart-shopping',
     label: '购物电商',
     keywords: [
       'cart', 'basket', 'gift', 'box', 'barcode', 'qrcode',
@@ -639,7 +639,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'communication',
-    emoji: '💬',
+    icon: 'comment-dots',
     label: '通讯沟通',
     keywords: [
       'phone', 'envelope', 'comment', 'comments', 'message',
@@ -657,7 +657,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'time-calendar',
-    emoji: '📅',
+    icon: 'calendar-days',
     label: '时间日历',
     keywords: [
       'clock', 'calendar', 'hourglass', 'timer', 'stopwatch',
@@ -671,7 +671,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'brands-social',
-    emoji: '📱',
+    icon: 'share-nodes',
     label: '社交媒体',
     keywords: [
       'facebook', 'twitter', 'instagram', 'linkedin', 'youtube',
@@ -689,7 +689,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'brands-dev',
-    emoji: '🛠️',
+    icon: 'screwdriver-wrench',
     label: '开发工具',
     keywords: [
       'github', 'gitlab', 'bitbucket', 'docker', 'jenkins',
@@ -714,7 +714,7 @@ const SUBCATEGORY_DEFS = [
   },
   {
     key: 'brands-company',
-    emoji: '🏛️',
+    icon: 'building-columns',
     label: '品牌公司',
     keywords: [
       'microsoft', 'apple', 'google', 'amazon', 'meta',
@@ -807,7 +807,7 @@ function buildSubcategorized(icons, catName) {
     if (subMap[def.key] && subMap[def.key].length > 0) {
       result.push({
         key: def.key,
-        emoji: def.emoji,
+        icon: def.icon,
         label: def.label,
         icons: subMap[def.key],
       });
@@ -818,7 +818,7 @@ function buildSubcategorized(icons, catName) {
   if (unmatched.length > 0) {
     result.push({
       key: 'other',
-      emoji: '📦',
+      icon: 'box-archive',
       label: '其他',
       icons: unmatched,
     });

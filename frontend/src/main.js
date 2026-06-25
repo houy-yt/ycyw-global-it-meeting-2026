@@ -86,6 +86,22 @@ import {
   faDroplet,
   faMoon,
   faQuestion,
+  /* ── admin emoji → FA replacements ── */
+  faFileImport,
+  faFileArrowUp,
+  faCheck,
+  faMusic,
+  faUser,
+  faCar,
+  faHospital,
+  faGamepad,
+  faCompass,
+  faFont,
+  faFlask,
+  faCartShopping,
+  faShareNodes,
+  faBuildingColumns,
+  faBox,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faHeart as farHeart,
@@ -174,6 +190,22 @@ library.add(
   faDroplet,
   faMoon,
   faQuestion,
+  /* ── admin emoji → FA replacements ── */
+  faFileImport,
+  faFileArrowUp,
+  faCheck,
+  faMusic,
+  faUser,
+  faCar,
+  faHospital,
+  faGamepad,
+  faCompass,
+  faFont,
+  faFlask,
+  faCartShopping,
+  faShareNodes,
+  faBuildingColumns,
+  faBox,
 );
 
 import App from './App.vue';

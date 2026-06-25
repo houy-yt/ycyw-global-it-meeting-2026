@@ -12,10 +12,10 @@
       <button class="btn-primary !py-2 !px-4 !text-xs" @click="load">搜索</button>
       <div class="flex-1"></div>
       <el-button :type="items.length === 0 ? 'warning' : 'default'" @click="importStatic">
-        📥 从 attendees.json 导入
+        <font-awesome-icon icon="file-import" class="mr-1" /> 从 attendees.json 导入
       </el-button>
       <el-button type="success" @click="excelDialog.show = true">
-        📤 导入 Excel/CSV
+        <font-awesome-icon icon="file-arrow-up" class="mr-1" /> 导入 Excel/CSV
       </el-button>
       <el-button type="primary" @click="openAdd">+ 新增参会人员</el-button>
     </div>
@@ -27,7 +27,7 @@
       :closable="false"
       class="mb-4"
       title="暂无参会人员"
-      description="您可以点击右上角「📥 从 attendees.json 导入」一键导入 backend/data/attendees.json 中的全部 IT 部门人员，或手动「+ 新增参会人员」录入其他部门成员。"
+      description="您可以点击右上角「从 attendees.json 导入」一键导入 backend/data/attendees.json 中的全部 IT 部门人员，或手动「+ 新增参会人员」录入其他部门成员。"
       show-icon
     />
 
@@ -53,8 +53,8 @@
           <el-table-column prop="no" label="#" width="50" />
           <el-table-column label="照片" width="60">
             <template #default="{ row }">
-              <img v-if="row.photoUrl" :src="row.photoUrl" class="w-8 h-8 rounded-full object-cover" />
-              <div v-else class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-500">N/A</div>
+              <img v-if="row.photoUrl" :src="row.photoUrl" class="w-8 rounded object-cover" style="aspect-ratio:3/4" />
+              <div v-else class="w-8 rounded bg-slate-200 flex items-center justify-center text-xs text-slate-500" style="aspect-ratio:3/4">N/A</div>
             </template>
           </el-table-column>
           <el-table-column prop="nameEn" label="英文名" min-width="110" />
@@ -226,7 +226,12 @@ const groupedItems = computed(() => {
     members.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
     groups.push({ school, members });
   }
-  groups.sort((a, b) => a.school.localeCompare(b.school));
+  // Sort groups by Organization sortOrder (matching AdminOrganizations page order)
+  const orgSortMap = {};
+  for (const o of organizations.value) {
+    orgSortMap[o.code] = o.sortOrder ?? 999;
+  }
+  groups.sort((a, b) => (orgSortMap[a.school] ?? 999) - (orgSortMap[b.school] ?? 999) || a.school.localeCompare(b.school));
   return groups;
 });
 
