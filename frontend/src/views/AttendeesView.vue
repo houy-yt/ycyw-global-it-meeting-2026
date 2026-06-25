@@ -124,12 +124,12 @@
                       class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent opacity-0 group-hover:opacity-100 transition"
                     ></div>
                   </div>
-                  <div class="mt-2.5 text-sm font-semibold text-brand-deep truncate text-center">
+                  <div class="mt-2.5 text-sm font-semibold text-brand-deep whitespace-nowrap text-center person-name-primary">
                     {{ primaryName(p) }}
                   </div>
                   <div
                     v-if="secondaryName(p)"
-                    class="text-xs text-slate-500 truncate mt-0.5 text-center"
+                    class="text-xs text-slate-500 whitespace-nowrap mt-0.5 text-center person-name-secondary"
                   >
                     {{ secondaryName(p) }}
                   </div>
@@ -491,11 +491,27 @@ onBeforeUnmount(() => {
 }
 .person-card {
   cursor: pointer;
+  min-width: 0;
 }
 .person-card .photo {
   width: 100%;
   aspect-ratio: 3 / 4;
   border-radius: 4px;
+}
+@media (max-width: 639px) {
+  .people-grid {
+    grid-template-columns: repeat(3, 90px);
+    gap: 20px 10px;
+  }
+  .person-card {
+    overflow: visible;
+  }
+  .person-name-primary {
+    font-size: 12px !important;
+  }
+  .person-name-secondary {
+    font-size: 10px !important;
+  }
 }
 @media (min-width: 640px) {
   .people-grid {
