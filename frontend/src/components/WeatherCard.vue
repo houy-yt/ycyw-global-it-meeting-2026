@@ -10,12 +10,12 @@
     </div>
 
     <!-- Weather data -->
-    <div v-else-if="weather" class="space-y-1.5">
+    <div v-else-if="weather" class="space-y-2.5">
       <!-- Main row: icon + temp + text + details -->
       <div class="flex items-center gap-2.5">
         <!-- Weather icon -->
         <div
-          class="h-8 w-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
+          class="h-8 w-8 rounded-sm flex items-center justify-center text-base flex-shrink-0"
           :class="iconBgClass"
         >
           <font-awesome-icon :icon="weather.icon" class="text-white" />
@@ -27,14 +27,14 @@
         </div>
 
         <!-- Divider -->
-        <div class="h-5 w-px bg-white/20 flex-shrink-0"></div>
+        <div class="h-8 w-px bg-white/20 flex-shrink-0"></div>
 
         <!-- Location & text -->
         <div class="min-w-0">
           <div class="text-sm font-medium text-white leading-tight">
             {{ weather.location }} · {{ weather.text }}
           </div>
-          <div class="text-xs text-white/60 leading-tight mt-0.5 hidden md:block">
+          <div class="text-xs text-white/75 leading-tight mt-0.5 hidden md:block">
             体感 {{ weather.feelsLike }}°C · 湿度 {{ weather.humidity }}% · {{ weather.windDir }} {{ weather.windScale }}级
           </div>
           <!-- Mobile: simpler details -->
