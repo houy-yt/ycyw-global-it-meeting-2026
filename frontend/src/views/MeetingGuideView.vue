@@ -302,7 +302,7 @@ onMounted(() => {
 }
 .guide-content :deep(li::before) {
   content: '\f00c';
-  font-family: 'Font Awesome 6 Free';
+  font-family: 'Font Awesome 7 Free';
   font-weight: 900;
   position: absolute;
   left: 0;
@@ -321,7 +321,7 @@ onMounted(() => {
 }
 .guide-content :deep(.info::before) {
   content: '\f05a';
-  font-family: 'Font Awesome 6 Free';
+  font-family: 'Font Awesome 7 Free';
   font-weight: 900;
 }
 /* Warning box */
@@ -341,7 +341,7 @@ onMounted(() => {
 }
 .guide-content :deep(.warn-title::before) {
   content: '\f071  ';
-  font-family: 'Font Awesome 6 Free';
+  font-family: 'Font Awesome 7 Free';
   font-weight: 900;
 }
 /* Note box */
@@ -357,7 +357,7 @@ onMounted(() => {
 }
 .guide-content :deep(.note::before) {
   content: '\f05a  ';
-  font-family: 'Font Awesome 6 Free';
+  font-family: 'Font Awesome 7 Free';
   font-weight: 900;
 }
 </style>

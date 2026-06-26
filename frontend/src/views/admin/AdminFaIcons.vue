@@ -93,7 +93,8 @@
     <el-dialog
       v-model="detailVisible"
       :title="detailIcon ? 'fa-' + detailIcon.iconName : ''"
-      width="680px"
+      width="90%"
+      align-center
       destroy-on-close
       class="icon-detail-dialog"
     >
@@ -206,6 +207,105 @@
                   <el-button size="small" text @click="copyText(cssUsageCode)">复制</el-button>
                 </div>
                 <pre><code>{{ cssUsageCode }}</code></pre>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <!-- Webfont 字体方案 -->
+          <el-tab-pane label="Webfont 字体方案" name="webfont">
+            <div class="usage-section">
+              <p class="usage-desc">通过 npm 安装 <code>@fortawesome/fontawesome-free</code> 包引入 Webfont 字体文件，支持 <code>&lt;i&gt;</code> 标签和 CSS 伪元素两种用法。</p>
+
+              <div class="code-block">
+                <div class="code-header">
+                  <span>1. npm 安装</span>
+                  <el-button size="small" text @click="copyText(webfontInstallCode)">复制</el-button>
+                </div>
+                <pre><code>{{ webfontInstallCode }}</code></pre>
+              </div>
+
+              <div class="code-block mt-3">
+                <div class="code-header">
+                  <span>2. 在入口文件中引入 CSS</span>
+                  <el-button size="small" text @click="copyText(webfontImportCode)">复制</el-button>
+                </div>
+                <pre><code>{{ webfontImportCode }}</code></pre>
+              </div>
+
+              <div class="code-block mt-3">
+                <div class="code-header">
+                  <span>3. 在模板中使用（&lt;i&gt; 标签）</span>
+                  <el-button size="small" text @click="copyText(webfontHtmlCode)">复制</el-button>
+                </div>
+                <pre><code>{{ webfontHtmlCode }}</code></pre>
+              </div>
+
+              <div class="code-block mt-3">
+                <div class="code-header">
+                  <span>4. CSS 伪元素用法</span>
+                  <el-button size="small" text @click="copyText(webfontCssCode)">复制</el-button>
+                </div>
+                <pre><code>{{ webfontCssCode }}</code></pre>
+              </div>
+
+              <div class="code-block mt-3">
+                <div class="code-header">
+                  <span>5. CDN 引入（替代 npm）</span>
+                  <el-button size="small" text @click="copyText(webfontCdnCode)">复制</el-button>
+                </div>
+                <pre><code>{{ webfontCdnCode }}</code></pre>
+              </div>
+
+              <!-- Download links -->
+              <div class="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <h4 class="text-sm font-bold text-slate-700 mb-3">
+                  <font-awesome-icon icon="cloud" class="text-brand-blue mr-1" />
+                  相关文件下载地址
+                </h4>
+                <div class="space-y-2">
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="inline-flex items-center justify-center w-16 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold flex-shrink-0">完整包</span>
+                    <span class="text-slate-500 flex-1 min-w-0">CSS / JS / 字体 / SVG 全部文件（zip）</span>
+                    <a href="https://github.com/FortAwesome/Font-Awesome/releases" target="_blank" class="text-brand-blue hover:underline flex-shrink-0">
+                      <font-awesome-icon icon="arrow-up-right-from-square" class="mr-0.5" />GitHub Releases
+                    </a>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="inline-flex items-center justify-center w-16 px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-semibold flex-shrink-0">npm</span>
+                    <span class="text-slate-500 flex-1 min-w-0">@fortawesome/fontawesome-free</span>
+                    <a href="https://www.npmjs.com/package/@fortawesome/fontawesome-free" target="_blank" class="text-brand-blue hover:underline flex-shrink-0">
+                      <font-awesome-icon icon="arrow-up-right-from-square" class="mr-0.5" />npmjs.com
+                    </a>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="inline-flex items-center justify-center w-16 px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-semibold flex-shrink-0">CSS</span>
+                    <span class="text-slate-500 flex-1 min-w-0">all.min.css / fontawesome.min.css / solid.min.css</span>
+                    <a href="https://cdnjs.com/libraries/font-awesome" target="_blank" class="text-brand-blue hover:underline flex-shrink-0">
+                      <font-awesome-icon icon="arrow-up-right-from-square" class="mr-0.5" />cdnjs
+                    </a>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="inline-flex items-center justify-center w-16 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-semibold flex-shrink-0">JS</span>
+                    <span class="text-slate-500 flex-1 min-w-0">all.min.js / fontawesome.min.js / solid.min.js</span>
+                    <a href="https://cdnjs.com/libraries/font-awesome" target="_blank" class="text-brand-blue hover:underline flex-shrink-0">
+                      <font-awesome-icon icon="arrow-up-right-from-square" class="mr-0.5" />cdnjs
+                    </a>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="inline-flex items-center justify-center w-16 px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 font-semibold flex-shrink-0">字体</span>
+                    <span class="text-slate-500 flex-1 min-w-0">fa-solid-900.woff2 / fa-regular-400.woff2 / fa-brands-400.woff2</span>
+                    <a href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.0/webfonts/" target="_blank" class="text-brand-blue hover:underline flex-shrink-0">
+                      <font-awesome-icon icon="arrow-up-right-from-square" class="mr-0.5" />webfonts
+                    </a>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="inline-flex items-center justify-center w-16 px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-semibold flex-shrink-0">官网</span>
+                    <span class="text-slate-500 flex-1 min-w-0">Font Awesome 官方文档与图标搜索</span>
+                    <a href="https://fontawesome.com/download" target="_blank" class="text-brand-blue hover:underline flex-shrink-0">
+                      <font-awesome-icon icon="arrow-up-right-from-square" class="mr-0.5" />fontawesome.com
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </el-tab-pane>
@@ -950,10 +1050,10 @@ function htmlClassPrefix(prefix) {
 }
 
 function fontFamily(prefix) {
-  if (prefix === 'fas') return "'Font Awesome 6 Free'";
-  if (prefix === 'far') return "'Font Awesome 6 Free'";
-  if (prefix === 'fab') return "'Font Awesome 6 Brands'";
-  return "'Font Awesome 6 Free'";
+  if (prefix === 'fas') return "'Font Awesome 7 Free'";
+  if (prefix === 'far') return "'Font Awesome 7 Free'";
+  if (prefix === 'fab') return "'Font Awesome 7 Brands'";
+  return "'Font Awesome 7 Free'";
 }
 
 function fontWeight(prefix) {
@@ -1011,6 +1111,32 @@ const cssUsageCode = computed(() => {
   const ic = detailIcon.value;
   const uc = ic.unicode || '?';
   return `.icon-${ic.iconName}::before {\n  font-family: ${fontFamily(ic.prefix)};\n  font-weight: ${fontWeight(ic.prefix)};\n  content: "\\${uc}";\n}`;
+});
+
+// ── Webfont 字体方案 code snippets ──
+const webfontInstallCode = computed(() => {
+  return `npm install @fortawesome/fontawesome-free`;
+});
+
+const webfontImportCode = computed(() => {
+  return `// main.js / main.ts 入口文件\nimport '@fortawesome/fontawesome-free/css/all.min.css';\n\n// 或者按需引入（减小体积）\nimport '@fortawesome/fontawesome-free/css/fontawesome.min.css';\nimport '@fortawesome/fontawesome-free/css/solid.min.css';    // fas 实心图标\nimport '@fortawesome/fontawesome-free/css/regular.min.css';  // far 线框图标\nimport '@fortawesome/fontawesome-free/css/brands.min.css';   // fab 品牌图标`;
+});
+
+const webfontHtmlCode = computed(() => {
+  if (!detailIcon.value) return '';
+  const ic = detailIcon.value;
+  return `<!-- 基本用法 -->\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName}"></i>\n\n<!-- 设置大小 -->\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName} fa-lg"></i>\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName} fa-2x"></i>\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName} fa-3x"></i>\n\n<!-- 设置颜色 -->\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName}" style="color: #0032a0;"></i>`;
+});
+
+const webfontCssCode = computed(() => {
+  if (!detailIcon.value) return '';
+  const ic = detailIcon.value;
+  const uc = ic.unicode || '?';
+  return `/* CSS 伪元素用法（需要先引入 webfont CSS） */\n.icon-${ic.iconName}::before {\n  font-family: ${fontFamily(ic.prefix)};\n  font-weight: ${fontWeight(ic.prefix)};\n  content: "\\${uc}";\n}`;
+});
+
+const webfontCdnCode = computed(() => {
+  return `<!-- 方式一：CSS 字体方案（推荐） -->\n<link rel="stylesheet"\n  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.0/css/all.min.css"\n  integrity="sha384-..." crossorigin="anonymous" />\n\n<!-- 方式二：JS 方案（自动将 <i> 替换为 SVG） -->\n<script defer\n  src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.0/js/all.min.js"\n  integrity="sha384-..." crossorigin="anonymous"><\/script>`;
 });
 
 async function copyText(text) {
@@ -1161,5 +1287,16 @@ async function copyText(text) {
 /* Border left for subcategory */
 .border-l-3 {
   border-left-width: 3px;
+}
+
+/* ========== Icon Detail Dialog: responsive size + scrollable body ========== */
+:global(.icon-detail-dialog) {
+  max-width: 900px;
+}
+:global(.icon-detail-dialog .el-dialog__body) {
+  max-height: calc(90vh - 120px);
+  overflow-y: auto;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 </style>
