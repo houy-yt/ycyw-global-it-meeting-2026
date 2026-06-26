@@ -5,8 +5,9 @@
       <div>
         <h3 class="text-lg font-semibold text-brand-deep">FA图标库</h3>
         <p class="text-sm text-slate-500 mt-1">
-          Font Awesome 免费图标合集，共
-          <span class="font-semibold text-brand-blue">{{ totalCount }}</span> 个图标
+          Font Awesome 7.3.0 免费图标合集，共
+          <span class="font-semibold text-brand-blue">{{ totalCount }}</span> 个图标，
+          <span class="font-semibold text-slate-600">{{ categoryData.length }}</span> 个分类
           <span class="text-xs ml-2 text-slate-400">（点击图标查看详情与用法）</span>
         </p>
       </div>
@@ -19,65 +20,51 @@
       />
     </div>
 
-    <!-- Category sections (Solid / Regular / Brands) -->
-    <div v-for="cat in filteredCategories" :key="cat.name" class="mb-6">
-      <!-- Top-level Category Header -->
+    <!-- Category sections -->
+    <div v-for="cat in filteredCategories" :key="cat.key" class="mb-4">
+      <!-- Category Header -->
       <div
         class="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-slate-100 to-slate-50 rounded-lg cursor-pointer select-none hover:from-slate-200 hover:to-slate-100 transition-all border border-slate-200/60"
-        @click="toggleCategory(cat.name)"
+        @click="toggleCategory(cat.key)"
       >
         <div class="flex items-center gap-2.5">
-          <font-awesome-icon :icon="topCategoryIcon(cat.name)" class="text-brand-blue" />
-          <span class="font-bold text-slate-700 text-base">{{ cat.label }}</span>
+          <font-awesome-icon :icon="getCategoryIcon(cat.key)" class="text-brand-blue" />
+          <span class="font-bold text-slate-700 text-base">{{ getCategoryLabel(cat.key) }}</span>
+          <span class="text-xs text-slate-400 ml-0.5">{{ cat.label }}</span>
           <span class="text-xs text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-full font-medium">
-            {{ cat.totalIconCount }}
+            {{ cat.iconCount }}
           </span>
         </div>
         <font-awesome-icon
-          :icon="expanded[cat.name] ? 'chevron-up' : 'chevron-right'"
+          :icon="expanded[cat.key] ? 'chevron-up' : 'chevron-right'"
           class="text-xs text-slate-400 transition-transform"
         />
       </div>
 
-      <!-- Subcategories -->
-      <div v-show="expanded[cat.name]" class="mt-2 ml-2">
-        <div v-for="sub in cat.subcategories" :key="sub.key" class="mb-3">
-          <!-- Subcategory Header -->
-          <div
-            class="flex items-center justify-between px-3 py-2 bg-white rounded-md cursor-pointer select-none hover:bg-blue-50/50 transition-colors border-l-3 border-blue-400/40"
-            @click="toggleSub(cat.name + '.' + sub.key)"
-          >
-            <div class="flex items-center gap-2">
-              <font-awesome-icon :icon="sub.icon" class="text-sm text-blue-500" />
-              <span class="font-semibold text-slate-600 text-sm">{{ sub.label }}</span>
-              <span class="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full font-medium">
-                {{ sub.icons.length }}
-              </span>
-            </div>
-            <font-awesome-icon
-              :icon="expandedSub[cat.name + '.' + sub.key] ? 'chevron-up' : 'chevron-right'"
-              class="text-[10px] text-slate-300 transition-transform"
-            />
+      <!-- Icons Grid -->
+      <div
+        v-show="expanded[cat.key]"
+        class="icon-grid mt-2 ml-4"
+      >
+        <div
+          v-for="ic in cat.icons"
+          :key="ic.displayPrefix + '-' + ic.name"
+          class="icon-card"
+          :title="ic.displayPrefix + ' fa-' + ic.name"
+          @click="openDetail(ic)"
+        >
+          <div class="icon-preview">
+            <font-awesome-icon :icon="[ic.displayPrefix, ic.name]" />
           </div>
-
-          <!-- Icons Grid -->
-          <div
-            v-show="expandedSub[cat.name + '.' + sub.key]"
-            class="icon-grid mt-2 ml-4"
-          >
-            <div
-              v-for="ic in sub.icons"
-              :key="ic.prefix + '-' + ic.iconName"
-              class="icon-card"
-              :title="ic.prefix + ' fa-' + ic.iconName"
-              @click="openDetail(ic)"
-            >
-              <div class="icon-preview">
-                <font-awesome-icon :icon="[ic.prefix, ic.iconName]" />
-              </div>
-              <div class="icon-name">{{ ic.iconName }}</div>
-              <div class="icon-unicode">{{ ic.unicode }}</div>
-            </div>
+          <div class="icon-name">{{ ic.name }}</div>
+          <div class="icon-meta">
+            <span class="icon-unicode">{{ ic.unicode }}</span>
+            <span
+              v-for="s in ic.styles"
+              :key="s"
+              class="style-badge"
+              :class="styleBadgeClass(s)"
+            >{{ styleShort(s) }}</span>
           </div>
         </div>
       </div>
@@ -92,7 +79,7 @@
     <!-- Icon Detail Dialog -->
     <el-dialog
       v-model="detailVisible"
-      :title="detailIcon ? 'fa-' + detailIcon.iconName : ''"
+      :title="detailIcon ? 'fa-' + detailIcon.name : ''"
       width="90%"
       align-center
       destroy-on-close
@@ -102,20 +89,36 @@
         <!-- Preview & Info -->
         <div class="flex items-start gap-6 mb-6">
           <div class="detail-preview-box">
-            <font-awesome-icon :icon="[detailIcon.prefix, detailIcon.iconName]" class="detail-preview-icon" />
+            <font-awesome-icon :icon="[currentPrefix, detailIcon.name]" class="detail-preview-icon" />
           </div>
           <div class="flex-1 min-w-0">
-            <h3 class="text-xl font-bold text-slate-800 mb-1">{{ detailIcon.iconName }}</h3>
+            <h3 class="text-xl font-bold text-slate-800 mb-1">{{ detailIcon.name }}</h3>
             <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500 mb-3">
-              <el-tag size="small" type="info">{{ prefixLabel(detailIcon.prefix) }}</el-tag>
+              <el-tag
+                v-for="s in detailIcon.styles"
+                :key="s"
+                size="small"
+                :type="s === 'solid' ? '' : s === 'regular' ? 'info' : 'warning'"
+              >{{ prefixLabel(styleToPrefixShort(s)) }}</el-tag>
               <span class="font-mono text-xs text-slate-400">Unicode: {{ detailIcon.unicode || 'N/A' }}</span>
+            </div>
+            <!-- Style switcher -->
+            <div v-if="detailIcon.styles.length > 1" class="mb-3">
+              <span class="text-xs text-slate-500 mr-2">切换风格：</span>
+              <el-radio-group v-model="detailStyle" size="small">
+                <el-radio-button
+                  v-for="s in detailIcon.styles"
+                  :key="s"
+                  :value="s"
+                >{{ prefixLabel(styleToPrefixShort(s)) }}</el-radio-button>
+              </el-radio-group>
             </div>
             <!-- Action buttons -->
             <div class="flex flex-wrap gap-2">
-              <el-button size="small" type="primary" @click="copyText('fa-' + detailIcon.iconName)">
+              <el-button size="small" type="primary" @click="copyText('fa-' + detailIcon.name)">
                 <font-awesome-icon icon="clipboard-check" class="mr-1" /> 复制类名
               </el-button>
-              <el-button size="small" @click="copyText(detailIcon.prefix + ' fa-' + detailIcon.iconName)">
+              <el-button size="small" @click="copyText(currentHtmlClass + ' fa-' + detailIcon.name)">
                 <font-awesome-icon icon="clipboard-check" class="mr-1" /> 复制完整类名
               </el-button>
               <el-button size="small" type="success" tag="a" :href="faOfficialUrl(detailIcon)" target="_blank">
@@ -316,707 +319,217 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, shallowRef } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
 import { fab } from '@fortawesome/free-brands-svg-icons';
 import { ElMessage } from 'element-plus';
 import { Search as SearchIcon } from '@element-plus/icons-vue';
+import rawCategories from '@/data/fa-categories.json';
 
 // ── Register ALL free icons into the FA library ──
 library.add(fas, far, fab);
 
 // ══════════════════════════════════════════════════════
-// Subcategory definitions with keyword matchers
-// An icon can appear in multiple subcategories.
-//
-// Matching rules:
-// - Keywords are matched against icon name SEGMENTS (split by "-")
-// - Single-word keyword: must match a whole segment exactly
-//   e.g. "glass" matches "wine-glass" (segment "glass") but NOT "hourglass" (single segment)
-// - Multi-word keyword (contains "-"): must match a contiguous run of segments
-//   e.g. "wine-glass" matches "wine-glass-empty" but NOT "magnifying-glass"
+// Category Chinese labels & representative icons
 // ══════════════════════════════════════════════════════
-const SUBCATEGORY_DEFS = [
-  {
-    key: 'food-dining',
-    icon: 'utensils',
-    label: '餐饮食物',
-    keywords: [
-      'utensils', 'pizza', 'burger', 'coffee', 'mug', 'beer',
-      'lemon', 'pepper', 'egg', 'bread', 'cheese', 'cake', 'cookie',
-      'ice-cream', 'candy', 'bowl', 'plate', 'spoon', 'kitchen', 'blender',
-      'carrot', 'drumstick', 'hotdog', 'champagne', 'bottle', 'wheat',
-      'bacon', 'stroopwafel', 'jar', 'olive',
-      'wine-glass', 'wine-bottle', 'martini-glass', 'whiskey-glass',
-      'champagne-glasses', 'glass-water', 'beer-mug',
-      'mug-hot', 'mug-saucer', 'pizza-slice', 'pepper-hot',
-      'candy-cane', 'bowl-food', 'bowl-rice', 'cookie-bite',
-      'ice-cream', 'apple-whole', 'seedling',
-    ],
-  },
-  {
-    key: 'transport',
-    icon: 'car',
-    label: '交通出行',
-    keywords: [
-      'car', 'bus', 'truck', 'plane', 'train', 'bicycle', 'bike',
-      'ship', 'taxi', 'helicopter', 'rocket', 'shuttle', 'van',
-      'motorcycle', 'subway', 'ferry', 'jet', 'sailboat', 'anchor',
-      'gas-pump', 'road', 'route', 'trailer', 'suitcase', 'passport',
-      'luggage', 'transit', 'car-side', 'car-rear', 'car-tunnel',
-      'car-burst', 'car-battery', 'truck-fast', 'truck-medical',
-      'truck-monster', 'truck-pickup', 'plane-departure', 'plane-arrival',
-      'plane-up', 'train-subway', 'train-tram',
-      'cart-flatbed', 'cart-flatbed-suitcase',
-    ],
-  },
-  {
-    key: 'building',
-    icon: 'building',
-    label: '建筑场所',
-    keywords: [
-      'building', 'house', 'hospital', 'school', 'hotel', 'church',
-      'warehouse', 'city', 'mosque', 'synagogue', 'landmark', 'monument',
-      'industry', 'factory', 'garage', 'barn', 'tent', 'igloo',
-      'cabin', 'castle', 'palace', 'temple', 'kaaba', 'torii-gate',
-      'gopuram', 'vihara', 'dungeon', 'archway',
-      'house-chimney', 'house-medical', 'house-user', 'house-flag',
-      'house-flood-water', 'house-fire', 'house-laptop',
-      'building-columns', 'building-flag', 'building-shield',
-      'store-slash', 'shop-slash', 'shop-lock',
-    ],
-  },
-  {
-    key: 'user-people',
-    icon: 'user',
-    label: '用户人物',
-    keywords: [
-      'user', 'person', 'people', 'child', 'baby', 'children',
-      'skull', 'handshake', 'wheelchair', 'accessibility',
-      'universal-access', 'restroom', 'mars', 'venus', 'transgender',
-      'neuter', 'head-side', 'person-walking', 'person-running',
-      'person-biking', 'person-swimming', 'person-hiking',
-      'person-skating', 'person-skiing', 'person-snowboarding',
-      'person-praying', 'person-dress', 'person-cane',
-      'person-pregnant', 'person-breastfeeding', 'person-shelter',
-      'users', 'user-group', 'user-plus', 'user-minus',
-      'user-check', 'user-xmark', 'user-pen', 'user-gear',
-      'user-shield', 'user-lock', 'user-tag', 'user-tie',
-      'user-nurse', 'user-doctor', 'user-astronaut', 'user-ninja',
-      'user-secret', 'user-injured', 'user-graduate',
-    ],
-  },
-  {
-    key: 'tech-device',
-    icon: 'laptop',
-    label: '技术设备',
-    keywords: [
-      'computer', 'laptop', 'tablet', 'keyboard', 'desktop',
-      'server', 'database', 'hard-drive', 'microchip', 'memory',
-      'ethernet', 'wifi', 'satellite', 'robot', 'code', 'terminal',
-      'display', 'screen', 'monitor', 'tv', 'floppy', 'disk',
-      'usb', 'print', 'hdd', 'ssd', 'network',
-      'mobile', 'sim-card', 'sd-card',
-      'laptop-code', 'laptop-file', 'laptop-medical',
-      'computer-mouse', 'phone-flip', 'phone-slash',
-      'mobile-screen', 'mobile-button', 'mobile-retro',
-      'satellite-dish', 'tower-cell', 'tower-broadcast',
-      'code-branch', 'code-commit', 'code-compare',
-      'code-fork', 'code-merge', 'code-pull-request',
-    ],
-  },
-  {
-    key: 'business-chart',
-    icon: 'chart-bar',
-    label: '商业图表',
-    keywords: [
-      'chart', 'money', 'dollar', 'euro', 'pound', 'yen',
-      'rupee', 'ruble', 'won', 'lira', 'franc', 'peso',
-      'credit', 'bank', 'briefcase', 'coins', 'wallet', 'cash',
-      'piggy', 'sack', 'percent', 'calculator',
-      'analytics', 'trend', 'stock', 'invoice',
-      'chart-line', 'chart-bar', 'chart-pie', 'chart-area',
-      'chart-column', 'chart-gantt', 'chart-simple',
-      'money-bill', 'money-check', 'money-bills',
-      'file-invoice', 'file-invoice-dollar',
-      'scale-balanced', 'scale-unbalanced',
-      'hand-holding-dollar', 'sack-dollar', 'sack-xmark',
-      'piggy-bank', 'landmark-dome', 'vault',
-      'cash-register', 'receipt', 'coins',
-      'circle-dollar-to-slot', 'dollar-sign', 'cent-sign',
-      'sterling-sign', 'euro-sign', 'yen-sign',
-      'rupee-sign', 'ruble-sign', 'won-sign',
-      'bitcoin-sign', 'indian-rupee-sign',
-    ],
-  },
-  {
-    key: 'media',
-    icon: 'music',
-    label: '音乐媒体',
-    keywords: [
-      'music', 'film', 'video', 'camera', 'image', 'photo',
-      'pause', 'record', 'microphone', 'volume', 'speaker',
-      'headphones', 'headset', 'radio', 'podcast', 'compact-disc',
-      'dvd', 'cinema', 'clapperboard', 'guitar', 'drum',
-      'circle-play', 'circle-pause', 'circle-stop',
-      'play', 'stop', 'forward', 'backward',
-      'forward-step', 'forward-fast', 'backward-step', 'backward-fast',
-      'camera-retro', 'camera-rotate', 'video-slash',
-      'film-simple', 'images', 'photo-film',
-      'volume-high', 'volume-low', 'volume-off', 'volume-xmark',
-      'music-note', 'itunes-note', 'spotify',
-    ],
-  },
-  {
-    key: 'tools-settings',
-    icon: 'gear',
-    label: '工具设置',
-    keywords: [
-      'gear', 'gears', 'wrench', 'screwdriver', 'hammer', 'toolbox',
-      'slider', 'sliders', 'toggle', 'paintbrush', 'paint-roller',
-      'brush', 'ruler', 'drafting-compass', 'tape',
-      'screwdriver-wrench', 'gear', 'gears',
-      'toggle-on', 'toggle-off',
-      'filter', 'filter-circle-dollar', 'filter-circle-xmark',
-      'wrench', 'tools',
-    ],
-  },
-  {
-    key: 'weather-nature',
-    icon: 'cloud-sun',
-    label: '天气自然',
-    keywords: [
-      'sun', 'moon', 'cloud', 'rain', 'snow', 'wind', 'tree',
-      'leaf', 'water', 'droplet', 'fire', 'bolt', 'temperature',
-      'thermometer', 'rainbow', 'umbrella', 'tornado', 'hurricane',
-      'flood', 'volcano', 'mountain', 'wave', 'tsunami', 'icicle',
-      'smog', 'snowflake', 'meteor', 'comet', 'earth', 'globe',
-      'paw', 'feather', 'spider', 'worm', 'frog', 'dove', 'crow',
-      'dragon', 'horse', 'cat', 'dog', 'otter', 'hippo', 'kiwi',
-      'locust', 'mosquito', 'shrimp', 'fish',
-      'cloud-sun', 'cloud-moon', 'cloud-rain', 'cloud-bolt',
-      'cloud-showers-heavy', 'cloud-showers-water',
-      'cloud-sun-rain', 'cloud-moon-rain',
-      'cloud-meatball', 'cloud-arrow-up', 'cloud-arrow-down',
-      'sun-plant-wilt', 'temperature-high', 'temperature-low',
-      'temperature-half', 'temperature-full', 'temperature-empty',
-      'wind', 'fire-flame-curved', 'fire-flame-simple',
-      'tree-city', 'leaf-maple',
-    ],
-  },
-  {
-    key: 'edit-document',
-    icon: 'pen-to-square',
-    label: '编辑文档',
-    keywords: [
-      'pen', 'pencil', 'edit', 'file', 'folder', 'clipboard', 'book',
-      'paper', 'note', 'signature', 'eraser', 'highlight',
-      'copy', 'paste', 'scissors', 'floppy-disk',
-      'newspaper', 'scroll', 'envelope', 'inbox', 'stamp',
-      'pen-to-square', 'pen-nib', 'pen-clip', 'pen-fancy',
-      'pen-ruler', 'pencil',
-      'file-lines', 'file-pdf', 'file-word', 'file-excel',
-      'file-powerpoint', 'file-image', 'file-video',
-      'file-audio', 'file-code', 'file-zipper',
-      'file-circle-plus', 'file-circle-minus',
-      'file-circle-check', 'file-circle-xmark',
-      'file-arrow-up', 'file-arrow-down',
-      'file-export', 'file-import', 'file-contract',
-      'file-signature', 'file-prescription',
-      'folder-open', 'folder-plus', 'folder-minus',
-      'folder-tree', 'folder-closed',
-      'clipboard-list', 'clipboard-check',
-      'clipboard-question', 'clipboard-user',
-      'book-open', 'book-open-reader', 'book-bookmark',
-      'book-atlas', 'book-bible', 'book-journal-whills',
-      'book-medical', 'book-quran', 'book-skull',
-      'book-tanakh', 'bookmark',
-      'note-sticky', 'note-medical', 'notes-medical',
-      'envelope-open', 'envelope-circle-check',
-      'paper-plane', 'paperclip',
-    ],
-  },
-  {
-    key: 'security',
-    icon: 'lock',
-    label: '安全标识',
-    keywords: [
-      'lock', 'unlock', 'shield', 'key', 'eye', 'ban',
-      'check', 'xmark', 'fingerprint', 'mask', 'virus',
-      'lock-open', 'shield-halved', 'shield-heart',
-      'shield-virus', 'shield-cat', 'shield-dog',
-      'key-skeleton', 'eye-slash', 'eye-dropper',
-      'triangle-exclamation', 'circle-exclamation',
-      'circle-check', 'circle-xmark', 'square-check',
-      'radiation', 'biohazard', 'skull-crossbones',
-      'id-card', 'id-card-clip', 'id-badge',
-      'user-shield', 'user-lock',
-      'lock-hashtag', 'file-shield',
-      'bug', 'bug-slash', 'virus-slash', 'virus-covid',
-      'virus-covid-slash', 'shield-blank',
-    ],
-  },
-  {
-    key: 'social-emotion',
-    icon: 'heart',
-    label: '社交情感',
-    keywords: [
-      'heart', 'star', 'thumbs', 'comment', 'share',
-      'bell', 'bullhorn', 'megaphone', 'rss',
-      'face-smile', 'face-angry', 'face-sad-tear', 'face-sad-cry',
-      'face-laugh', 'face-laugh-wink', 'face-laugh-beam',
-      'face-laugh-squint', 'face-grin', 'face-grin-wide',
-      'face-grin-beam', 'face-grin-beam-sweat',
-      'face-grin-hearts', 'face-grin-squint',
-      'face-grin-squint-tears', 'face-grin-stars',
-      'face-grin-tears', 'face-grin-tongue',
-      'face-grin-tongue-squint', 'face-grin-tongue-wink',
-      'face-grin-wink', 'face-kiss', 'face-kiss-beam',
-      'face-kiss-wink-heart', 'face-meh', 'face-meh-blank',
-      'face-rolling-eyes', 'face-surprise',
-      'face-dizzy', 'face-flushed', 'face-frown',
-      'face-frown-open', 'face-grimace',
-      'face-tired', 'face-angry',
-      'heart-crack', 'heart-circle-bolt', 'heart-circle-check',
-      'heart-circle-exclamation', 'heart-circle-minus',
-      'heart-circle-plus', 'heart-circle-xmark',
-      'heart-pulse', 'star-half', 'star-half-stroke',
-      'star-of-life', 'star-of-david',
-      'thumbs-up', 'thumbs-down',
-      'comment-dots', 'comment-slash', 'comment-medical',
-      'comments', 'message',
-      'share-nodes', 'share-from-square',
-      'bell-slash', 'bell-concierge',
-    ],
-  },
-  {
-    key: 'medical',
-    icon: 'hospital',
-    label: '医疗健康',
-    keywords: [
-      'stethoscope', 'pills', 'capsules', 'syringe', 'vial', 'vials',
-      'prescription', 'ambulance', 'bandage', 'lungs', 'brain',
-      'tooth', 'dna', 'microscope', 'flask', 'bone', 'crutch',
-      'blood', 'droplet',
-      'heart-pulse', 'hand-holding-medical',
-      'staff-snake', 'notes-medical', 'file-medical',
-      'briefcase-medical', 'pump-medical', 'kit-medical',
-      'house-medical', 'house-chimney-medical',
-      'truck-medical', 'laptop-medical', 'book-medical',
-      'comment-medical', 'clipboard-medical',
-      'suitcase-medical', 'star-of-life',
-      'prescription-bottle', 'prescription-bottle-medical',
-      'hospital-user', 'user-doctor', 'user-nurse',
-      'bed-pulse', 'x-ray', 'disease',
-      'virus', 'virus-covid', 'virus-slash',
-      'bacteria', 'bacterium',
-      'biohazard', 'radiation',
-    ],
-  },
-  {
-    key: 'gaming',
-    icon: 'gamepad',
-    label: '游戏娱乐',
-    keywords: [
-      'gamepad', 'dice', 'puzzle', 'chess', 'trophy', 'medal',
-      'award', 'crown', 'ghost', 'dungeon', 'gem',
-      'clover', 'futbol', 'soccer',
-      'dice-one', 'dice-two', 'dice-three', 'dice-four',
-      'dice-five', 'dice-six', 'dice-d6', 'dice-d20',
-      'chess-rook', 'chess-knight', 'chess-bishop',
-      'chess-queen', 'chess-king', 'chess-pawn',
-      'chess-board',
-      'puzzle-piece',
-      'hat-wizard', 'wand-magic', 'wand-magic-sparkles',
-      'wand-sparkles',
-      'football', 'baseball', 'baseball-bat-ball',
-      'basketball', 'volleyball', 'golf-ball-tee',
-      'table-tennis-paddle-ball', 'hockey-puck',
-      'bowling-ball', 'medal-star',
-      'ranking-star', 'trophy-star',
-    ],
-  },
-  {
-    key: 'arrows-direction',
-    icon: 'compass',
-    label: '箭头方向',
-    keywords: [
-      'arrow', 'chevron', 'angle', 'caret', 'sort',
-      'expand', 'compress', 'maximize', 'minimize',
-      'rotate', 'repeat', 'shuffle',
-      'location', 'crosshairs', 'compass',
-      'arrows', 'up-down', 'left-right',
-      'arrow-up', 'arrow-down', 'arrow-left', 'arrow-right',
-      'arrow-rotate-left', 'arrow-rotate-right',
-      'arrows-rotate', 'arrows-spin',
-      'arrows-up-down', 'arrows-left-right',
-      'arrows-up-down-left-right', 'arrows-to-circle',
-      'arrows-to-dot', 'arrows-turn-to-dots',
-      'arrows-down-to-line', 'arrows-down-to-people',
-      'arrows-left-right-to-line', 'arrows-to-eye',
-      'arrows-turn-right', 'arrows-up-to-line',
-      'chevron-up', 'chevron-down', 'chevron-left', 'chevron-right',
-      'angle-up', 'angle-down', 'angle-left', 'angle-right',
-      'angles-up', 'angles-down', 'angles-left', 'angles-right',
-      'caret-up', 'caret-down', 'caret-left', 'caret-right',
-      'sort-up', 'sort-down',
-      'up-down-left-right', 'up-long', 'down-long',
-      'left-long', 'right-long',
-      'circle-arrow-up', 'circle-arrow-down',
-      'circle-arrow-left', 'circle-arrow-right',
-      'square-arrow-up-right',
-      'up-right-and-down-left-from-center',
-      'down-left-and-up-right-to-center',
-    ],
-  },
-  {
-    key: 'text-typography',
-    icon: 'font',
-    label: '文字排版',
-    keywords: [
-      'font', 'text', 'bold', 'italic', 'underline', 'strikethrough',
-      'heading', 'paragraph', 'quote', 'indent', 'outdent',
-      'superscript', 'subscript', 'spell-check', 'language',
-      'align-left', 'align-center', 'align-right', 'align-justify',
-      'list-ul', 'list-ol', 'list-check',
-      'quote-left', 'quote-right',
-      'text-height', 'text-width', 'text-slash',
-      'font-awesome',
-    ],
-  },
-  {
-    key: 'map-location',
-    icon: 'location-dot',
-    label: '地图定位',
-    keywords: [
-      'map', 'location', 'globe', 'earth', 'compass', 'flag',
-      'route', 'crosshairs', 'mountain',
-      'map-location', 'map-location-dot', 'map-pin',
-      'location-dot', 'location-arrow', 'location-crosshairs',
-      'location-pin', 'location-pin-lock',
-      'street-view', 'signs-post', 'diamond-turn-to-right',
-      'globe-americas', 'globe-europe', 'globe-asia',
-      'earth-americas', 'earth-europe', 'earth-asia',
-      'earth-africa', 'earth-oceania',
-      'flag-usa', 'flag-checkered',
-      'map-marked', 'map-marked-alt',
-    ],
-  },
-  {
-    key: 'science-education',
-    icon: 'microscope',
-    label: '科学教育',
-    keywords: [
-      'atom', 'flask', 'vial', 'vials', 'microscope', 'dna',
-      'brain', 'graduation-cap', 'school', 'chalkboard',
-      'lightbulb', 'magnet', 'satellite', 'telescope', 'binoculars',
-      'calculator', 'infinity',
-      'flask-vial', 'chalkboard-user',
-      'apple-whole', 'book-open-reader',
-      'square-root-variable', 'diagram-project',
-      'diagram-next', 'diagram-predecessor',
-      'diagram-successor',
-    ],
-  },
-  {
-    key: 'shopping',
-    icon: 'cart-shopping',
-    label: '购物电商',
-    keywords: [
-      'cart', 'basket', 'gift', 'box', 'barcode', 'qrcode',
-      'percent', 'receipt',
-      'cart-shopping', 'cart-plus', 'cart-arrow-down',
-      'basket-shopping', 'bag-shopping',
-      'store', 'shop', 'tags', 'tag',
-      'gift-card', 'box-open', 'box-archive',
-      'boxes-stacked', 'boxes-packing',
-      'truck-fast', 'parachute-box',
-      'credit-card', 'cash-register',
-      'shopping-bag', 'shopping-cart', 'shopping-basket',
-    ],
-  },
-  {
-    key: 'communication',
-    icon: 'comment-dots',
-    label: '通讯沟通',
-    keywords: [
-      'phone', 'envelope', 'comment', 'comments', 'message',
-      'paper-plane', 'inbox', 'fax', 'headset', 'rss',
-      'wifi', 'signal', 'bell', 'bullhorn', 'satellite',
-      'phone-volume', 'phone-flip', 'phone-slash',
-      'mobile-screen-button',
-      'envelope-open', 'envelope-open-text',
-      'envelope-circle-check',
-      'comment-dots', 'comment-slash',
-      'tower-broadcast', 'tower-cell',
-      'walkie-talkie', 'voicemail',
-      'at', 'hashtag',
-    ],
-  },
-  {
-    key: 'time-calendar',
-    icon: 'calendar-days',
-    label: '时间日历',
-    keywords: [
-      'clock', 'calendar', 'hourglass', 'timer', 'stopwatch',
-      'clock-rotate-left', 'clock-four',
-      'calendar-days', 'calendar-week', 'calendar-check',
-      'calendar-plus', 'calendar-minus', 'calendar-xmark',
-      'hourglass-start', 'hourglass-half', 'hourglass-end',
-      'stopwatch-20',
-      'business-time', 'timeline',
-    ],
-  },
-  {
-    key: 'brands-social',
-    icon: 'share-nodes',
-    label: '社交媒体',
-    keywords: [
-      'facebook', 'twitter', 'instagram', 'linkedin', 'youtube',
-      'tiktok', 'snapchat', 'pinterest', 'reddit', 'tumblr',
-      'whatsapp', 'telegram', 'discord', 'slack', 'wechat',
-      'weixin', 'weibo', 'qq', 'viber', 'skype', 'mastodon',
-      'threads', 'x-twitter',
-      'square-facebook', 'square-twitter', 'square-instagram',
-      'square-whatsapp', 'square-youtube', 'square-reddit',
-      'square-snapchat', 'square-pinterest',
-      'square-tumblr', 'square-vimeo',
-      'facebook-messenger', 'facebook-f',
-      'twitter-x', 'linkedin-in',
-    ],
-  },
-  {
-    key: 'brands-dev',
-    icon: 'screwdriver-wrench',
-    label: '开发工具',
-    keywords: [
-      'github', 'gitlab', 'bitbucket', 'docker', 'jenkins',
-      'jira', 'confluence', 'aws', 'digital-ocean',
-      'npm', 'yarn', 'node-js', 'python', 'java', 'php',
-      'rust', 'golang', 'swift', 'laravel', 'vuejs', 'angular',
-      'ember', 'sass', 'less', 'css3', 'html5',
-      'js', 'square-js', 'bootstrap', 'wordpress',
-      'drupal', 'magento', 'shopify', 'figma', 'sketch',
-      'git', 'git-alt', 'square-git',
-      'stack-overflow', 'dev', 'codepen',
-      'linux', 'ubuntu', 'redhat', 'centos', 'fedora',
-      'debian', 'suse', 'freebsd',
-      'windows', 'apple', 'android',
-      'chrome', 'firefox', 'firefox-browser',
-      'safari', 'edge', 'opera', 'internet-explorer', 'brave',
-      'react', 'reacteurope',
-      'github-alt', 'square-github',
-      'docker', 'kubernetes',
-      'python', 'r-project',
-    ],
-  },
-  {
-    key: 'brands-company',
-    icon: 'building-columns',
-    label: '品牌公司',
-    keywords: [
-      'microsoft', 'apple', 'google', 'amazon', 'meta',
-      'adobe', 'atlassian', 'salesforce', 'oracle',
-      'ibm', 'intel', 'nvidia', 'amd', 'cisco', 'vmware',
-      'paypal', 'stripe', 'shopify', 'spotify', 'netflix',
-      'twitch', 'airbnb', 'uber', 'lyft', 'tesla',
-      'bluetooth', 'usb', 'creative-commons', 'font-awesome',
-      'steam', 'playstation', 'xbox', 'nintendo', 'unity',
-      'aws', 'digital-ocean', 'cloudflare',
-      'google-pay', 'apple-pay', 'amazon-pay',
-      'cc-visa', 'cc-mastercard', 'cc-amex',
-      'cc-paypal', 'cc-stripe', 'cc-discover',
-      'cc-jcb', 'cc-diners-club',
-      'google-drive', 'google-play', 'google-plus',
-      'google-scholar', 'google-wallet',
-    ],
-  },
-];
+const CATEGORY_CN = {
+  'accessibility': { cn: '无障碍', icon: 'universal-access' },
+  'alert': { cn: '警告提醒', icon: 'triangle-exclamation' },
+  'alphabet': { cn: '字母', icon: 'font' },
+  'animals': { cn: '动物', icon: 'paw' },
+  'arrows': { cn: '箭头方向', icon: 'arrows-up-down-left-right' },
+  'astronomy': { cn: '天文星座', icon: 'moon' },
+  'automotive': { cn: '汽车交通', icon: 'car' },
+  'buildings': { cn: '建筑场所', icon: 'building' },
+  'business': { cn: '商业办公', icon: 'briefcase' },
+  'camping': { cn: '露营户外', icon: 'campground' },
+  'charity': { cn: '慈善公益', icon: 'hand-holding-heart' },
+  'charts-diagrams': { cn: '图表', icon: 'chart-pie' },
+  'childhood': { cn: '儿童', icon: 'child' },
+  'clothing-fashion': { cn: '服饰时尚', icon: 'shirt' },
+  'coding': { cn: '编程开发', icon: 'code' },
+  'communication': { cn: '通讯沟通', icon: 'comment-dots' },
+  'connectivity': { cn: '网络连接', icon: 'wifi' },
+  'construction': { cn: '建筑施工', icon: 'helmet-safety' },
+  'design': { cn: '设计', icon: 'paintbrush' },
+  'devices-hardware': { cn: '设备硬件', icon: 'laptop' },
+  'disaster': { cn: '灾害危机', icon: 'house-flood-water' },
+  'editing': { cn: '编辑', icon: 'pen-to-square' },
+  'education': { cn: '教育', icon: 'graduation-cap' },
+  'emoji': { cn: '表情', icon: 'face-smile' },
+  'energy': { cn: '能源', icon: 'bolt' },
+  'files': { cn: '文件', icon: 'file' },
+  'film-video': { cn: '影视', icon: 'film' },
+  'food-beverage': { cn: '餐饮食物', icon: 'utensils' },
+  'fruits-vegetables': { cn: '果蔬', icon: 'apple-whole' },
+  'gaming': { cn: '游戏', icon: 'gamepad' },
+  'gender': { cn: '性别', icon: 'venus-mars' },
+  'halloween': { cn: '万圣节', icon: 'ghost' },
+  'hands': { cn: '手势', icon: 'hand' },
+  'holidays': { cn: '节日假期', icon: 'gifts' },
+  'household': { cn: '家居生活', icon: 'couch' },
+  'humanitarian': { cn: '人道主义', icon: 'people-carry-box' },
+  'logistics': { cn: '物流运输', icon: 'truck-fast' },
+  'maps': { cn: '地图定位', icon: 'map-location-dot' },
+  'maritime': { cn: '航海', icon: 'anchor' },
+  'marketing': { cn: '营销推广', icon: 'bullhorn' },
+  'mathematics': { cn: '数学', icon: 'calculator' },
+  'media-playback': { cn: '媒体播放', icon: 'circle-play' },
+  'medical-health': { cn: '医疗健康', icon: 'stethoscope' },
+  'money': { cn: '金融货币', icon: 'money-bill' },
+  'moving': { cn: '搬迁', icon: 'truck-moving' },
+  'music-audio': { cn: '音乐音频', icon: 'music' },
+  'nature': { cn: '自然植物', icon: 'leaf' },
+  'numbers': { cn: '数字', icon: 'hashtag' },
+  'photos-images': { cn: '照片图片', icon: 'image' },
+  'political': { cn: '政治', icon: 'landmark-dome' },
+  'punctuation-symbols': { cn: '标点符号', icon: 'percent' },
+  'religion': { cn: '宗教', icon: 'place-of-worship' },
+  'science': { cn: '科学', icon: 'flask' },
+  'science-fiction': { cn: '科幻', icon: 'rocket' },
+  'security': { cn: '安全', icon: 'shield-halved' },
+  'shapes': { cn: '形状', icon: 'shapes' },
+  'shopping': { cn: '购物电商', icon: 'cart-shopping' },
+  'social': { cn: '社交互动', icon: 'thumbs-up' },
+  'spinners': { cn: '加载动画', icon: 'spinner' },
+  'sports-fitness': { cn: '运动健身', icon: 'dumbbell' },
+  'text-formatting': { cn: '文字排版', icon: 'bold' },
+  'time': { cn: '时间日历', icon: 'clock' },
+  'toggle': { cn: '开关切换', icon: 'toggle-on' },
+  'transportation': { cn: '交通工具', icon: 'train' },
+  'travel-hotel': { cn: '旅行住宿', icon: 'suitcase-rolling' },
+  'users-people': { cn: '用户人物', icon: 'users' },
+  'weather': { cn: '天气', icon: 'cloud-sun' },
+  'writing': { cn: '写作', icon: 'pen' },
+};
 
-// ── Build sorted icon lists from each icon set ──
-function buildIconList(iconSet) {
-  return Object.values(iconSet)
-    .filter((ic) => ic && typeof ic === 'object' && ic.iconName && ic.prefix && ic.icon)
-    .map((ic) => ({
-      prefix: ic.prefix,
-      iconName: ic.iconName,
-      unicode: Array.isArray(ic.icon) && ic.icon.length > 3
-        ? (typeof ic.icon[3] === 'string' ? ic.icon[3] : String(ic.icon[3]))
-        : '',
-    }))
-    .sort((a, b) => a.iconName.localeCompare(b.iconName));
+// ── Style helpers ──
+function styleToPrefixShort(style) {
+  if (style === 'solid') return 'fas';
+  if (style === 'regular') return 'far';
+  if (style === 'brands') return 'fab';
+  return 'fas';
 }
 
-// Match a single keyword against an icon name using segment-based matching.
-// Icon names use "-" as separator, e.g. "wine-glass-empty" → segments ["wine","glass","empty"]
-// - Single-word keyword (no "-"): matches if any segment equals the keyword exactly.
-//   e.g. "glass" matches "wine-glass" but NOT "hourglass" (single segment ≠ "glass")
-// - Multi-word keyword (contains "-"): matches if the keyword appears as a contiguous
-//   sequence of segments in the icon name.
-//   e.g. "wine-glass" matches "wine-glass-empty" but NOT "magnifying-glass-plus"
-function iconMatchesKeyword(iconName, keyword) {
-  const segments = iconName.split('-');
-  if (keyword.includes('-')) {
-    const kwSegments = keyword.split('-');
-    for (let i = 0; i <= segments.length - kwSegments.length; i++) {
-      if (kwSegments.every((ks, j) => segments[i + j] === ks)) return true;
-    }
-    return false;
-  }
-  return segments.includes(keyword);
+function styleShort(style) {
+  if (style === 'solid') return 'S';
+  if (style === 'regular') return 'R';
+  if (style === 'brands') return 'B';
+  return '?';
 }
 
-// Match icon to subcategories by keyword
-function matchSubcategories(iconName, defs) {
-  const matched = [];
-  for (const def of defs) {
-    if (def.keywords.some((kw) => iconMatchesKeyword(iconName, kw))) {
-      matched.push(def.key);
-    }
-  }
-  return matched;
+function styleBadgeClass(style) {
+  if (style === 'solid') return 'badge-solid';
+  if (style === 'regular') return 'badge-regular';
+  if (style === 'brands') return 'badge-brands';
+  return '';
 }
 
-// Build subcategorized structure for a top-level category
-function buildSubcategorized(icons, catName) {
-  // Determine which subcategory defs apply to this top-level category
-  const applicableDefs = catName === 'brands'
-    ? SUBCATEGORY_DEFS.filter((d) => d.key.startsWith('brands-') || ['social-emotion', 'gaming', 'media', 'tech-device'].includes(d.key))
-    : SUBCATEGORY_DEFS.filter((d) => !d.key.startsWith('brands-'));
-
-  const subMap = {};
-  const unmatched = [];
-
-  for (const ic of icons) {
-    const keys = matchSubcategories(ic.iconName, applicableDefs);
-    if (keys.length === 0) {
-      unmatched.push(ic);
-    } else {
-      for (const key of keys) {
-        if (!subMap[key]) subMap[key] = [];
-        subMap[key].push(ic);
-      }
-    }
-  }
-
-  // Build subcategories array in the order of SUBCATEGORY_DEFS
-  const result = [];
-  for (const def of applicableDefs) {
-    if (subMap[def.key] && subMap[def.key].length > 0) {
-      result.push({
-        key: def.key,
-        icon: def.icon,
-        label: def.label,
-        icons: subMap[def.key],
-      });
-    }
-  }
-
-  // Add "Other" subcategory
-  if (unmatched.length > 0) {
-    result.push({
-      key: 'other',
-      icon: 'box-archive',
-      label: '其他',
-      icons: unmatched,
-    });
-  }
-
-  return result;
+// Pick preferred display prefix: solid > regular > brands
+function preferredPrefix(styles) {
+  if (styles.includes('solid')) return 'fas';
+  if (styles.includes('regular')) return 'far';
+  if (styles.includes('brands')) return 'fab';
+  return 'fas';
 }
 
-const solidIcons = buildIconList(fas);
-const regularIcons = buildIconList(far);
-const brandsIcons = buildIconList(fab);
+// ── Build category data with display prefixes ──
+const categoryData = rawCategories.map((cat) => ({
+  ...cat,
+  icons: cat.icons.map((ic) => ({
+    ...ic,
+    displayPrefix: preferredPrefix(ic.styles),
+  })),
+}));
 
-const allCategories = shallowRef([
-  {
-    name: 'solid',
-    label: 'Solid（实心）',
-    allIcons: solidIcons,
-    subcategories: buildSubcategorized(solidIcons, 'solid'),
-    totalIconCount: solidIcons.length,
-  },
-  {
-    name: 'regular',
-    label: 'Regular（线框）',
-    allIcons: regularIcons,
-    subcategories: buildSubcategorized(regularIcons, 'regular'),
-    totalIconCount: regularIcons.length,
-  },
-  {
-    name: 'brands',
-    label: 'Brands（品牌）',
-    allIcons: brandsIcons,
-    subcategories: buildSubcategorized(brandsIcons, 'brands'),
-    totalIconCount: brandsIcons.length,
-  },
-]);
+// ── Compute unique total icon count ──
+const totalCount = computed(() => {
+  const seen = new Set();
+  for (const cat of categoryData) {
+    for (const ic of cat.icons) {
+      seen.add(ic.name);
+    }
+  }
+  return seen.size;
+});
 
+// ── Search & expand state ──
 const search = ref('');
-const expanded = reactive({ solid: true, regular: false, brands: false });
-const expandedSub = reactive({});
+const expanded = reactive({});
 
-// Initialize all subcategories to collapsed
-for (const cat of allCategories.value) {
-  for (const sub of cat.subcategories) {
-    expandedSub[cat.name + '.' + sub.key] = false;
-  }
+// Initialize all collapsed
+for (const cat of categoryData) {
+  expanded[cat.key] = false;
 }
-
-const totalCount = computed(() =>
-  allCategories.value.reduce((sum, cat) => sum + cat.totalIconCount, 0)
-);
 
 const filteredCategories = computed(() => {
   const q = search.value.trim().toLowerCase();
-  if (!q) return allCategories.value;
 
-  return allCategories.value
-    .map((cat) => {
-      const filteredSubs = cat.subcategories
-        .map((sub) => ({
-          ...sub,
-          icons: sub.icons.filter((ic) => ic.iconName.includes(q) || ic.unicode.includes(q)),
-        }))
-        .filter((sub) => sub.icons.length > 0);
-
-      return {
+  const cats = q
+    ? categoryData
+        .map((cat) => {
+          const filtered = cat.icons.filter(
+            (ic) => ic.name.includes(q) || ic.unicode.includes(q),
+          );
+          return filtered.length > 0
+            ? { ...cat, icons: filtered, iconCount: filtered.length }
+            : null;
+        })
+        .filter(Boolean)
+    : categoryData.map((cat) => ({
         ...cat,
-        subcategories: filteredSubs,
-        totalIconCount: new Set(filteredSubs.flatMap((s) => s.icons.map((ic) => ic.prefix + ':' + ic.iconName))).size,
-      };
-    })
-    .filter((cat) => cat.subcategories.length > 0);
+        iconCount: cat.icons.length,
+      }));
+
+  // When searching, auto-expand all
+  if (q) {
+    for (const cat of cats) {
+      expanded[cat.key] = true;
+    }
+  }
+
+  return cats;
 });
 
-function toggleCategory(name) {
-  expanded[name] = !expanded[name];
+function toggleCategory(key) {
+  expanded[key] = !expanded[key];
 }
 
-function toggleSub(key) {
-  expandedSub[key] = !expandedSub[key];
+function getCategoryLabel(key) {
+  return CATEGORY_CN[key]?.cn || key;
 }
 
-function topCategoryIcon(name) {
-  if (name === 'solid') return 'circle';
-  if (name === 'regular') return 'circle';
-  if (name === 'brands') return 'star';
-  return 'icons';
+function getCategoryIcon(key) {
+  return CATEGORY_CN[key]?.icon || 'icons';
 }
 
 // ── Detail Dialog ──
 const detailVisible = ref(false);
 const detailIcon = ref(null);
+const detailStyle = ref('solid');
 const usageTab = ref('html');
 
 function openDetail(ic) {
   detailIcon.value = ic;
+  detailStyle.value = ic.styles.includes('solid')
+    ? 'solid'
+    : ic.styles[0] || 'solid';
   usageTab.value = 'html';
   detailVisible.value = true;
 }
+
+// JS prefix for vue-fontawesome component: fas / far / fab
+const currentPrefix = computed(() => {
+  if (!detailIcon.value) return 'fas';
+  return styleToPrefixShort(detailStyle.value);
+});
+
+// CSS class for HTML <i> tags: fa-solid / fa-regular / fa-brands
+const currentHtmlClass = computed(() => {
+  return htmlClassPrefix(currentPrefix.value);
+});
 
 function prefixLabel(prefix) {
   if (prefix === 'fas') return 'Solid';
@@ -1026,8 +539,8 @@ function prefixLabel(prefix) {
 }
 
 function faOfficialUrl(ic) {
-  const style = ic.prefix === 'fas' ? 'solid' : ic.prefix === 'far' ? 'regular' : 'brands';
-  return `https://fontawesome.com/icons/${ic.iconName}?style=${style}&f=classic`;
+  const style = detailStyle.value || 'solid';
+  return `https://fontawesome.com/icons/${ic.name}?style=${style}&f=classic`;
 }
 
 // Convert iconName to PascalCase import name: "arrow-right" -> "faArrowRight"
@@ -1042,11 +555,12 @@ function iconPackage(prefix) {
   return '@fortawesome/free-solid-svg-icons';
 }
 
+// FA 7 CSS class: fa-solid / fa-regular / fa-brands (used in HTML <i> tags)
 function htmlClassPrefix(prefix) {
-  if (prefix === 'fas') return 'fas';
-  if (prefix === 'far') return 'far';
-  if (prefix === 'fab') return 'fab';
-  return 'fas';
+  if (prefix === 'fas') return 'fa-solid';
+  if (prefix === 'far') return 'fa-regular';
+  if (prefix === 'fab') return 'fa-brands';
+  return 'fa-solid';
 }
 
 function fontFamily(prefix) {
@@ -1066,51 +580,53 @@ function fontWeight(prefix) {
 // ── Code snippets (computed) ──
 const htmlCdnCode = computed(() => {
   if (!detailIcon.value) return '';
-  return `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">`;
+  return `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.0/css/all.min.css">`;
 });
 
 const htmlUsageCode = computed(() => {
   if (!detailIcon.value) return '';
   const ic = detailIcon.value;
-  return `<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName}"></i>\n\n<!-- 设置大小 -->\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName} fa-lg"></i>\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName} fa-2x"></i>\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName} fa-3x"></i>`;
+  const pfx = currentPrefix.value;
+  return `<i class="${htmlClassPrefix(pfx)} fa-${ic.name}"></i>\n\n<!-- 设置大小 -->\n<i class="${htmlClassPrefix(pfx)} fa-${ic.name} fa-lg"></i>\n<i class="${htmlClassPrefix(pfx)} fa-${ic.name} fa-2x"></i>\n<i class="${htmlClassPrefix(pfx)} fa-${ic.name} fa-3x"></i>`;
 });
 
 const vueInstallCode = computed(() => {
   if (!detailIcon.value) return '';
-  return `npm install @fortawesome/fontawesome-svg-core\nnpm install ${iconPackage(detailIcon.value.prefix)}\nnpm install @fortawesome/vue-fontawesome@latest-3`;
+  return `npm install @fortawesome/fontawesome-svg-core\nnpm install ${iconPackage(currentPrefix.value)}\nnpm install @fortawesome/vue-fontawesome@latest-3`;
 });
 
 const vueRegisterCode = computed(() => {
   if (!detailIcon.value) return '';
   const ic = detailIcon.value;
-  const pascal = toPascalCase(ic.iconName);
-  return `import { library } from '@fortawesome/fontawesome-svg-core'\nimport { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'\nimport { ${pascal} } from '${iconPackage(ic.prefix)}'\n\nlibrary.add(${pascal})\n\n// 在 createApp 后注册组件\napp.component('font-awesome-icon', FontAwesomeIcon)`;
+  const pascal = toPascalCase(ic.name);
+  return `import { library } from '@fortawesome/fontawesome-svg-core'\nimport { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'\nimport { ${pascal} } from '${iconPackage(currentPrefix.value)}'\n\nlibrary.add(${pascal})\n\n// 在 createApp 后注册组件\napp.component('font-awesome-icon', FontAwesomeIcon)`;
 });
 
 const vueTemplateCode = computed(() => {
   if (!detailIcon.value) return '';
   const ic = detailIcon.value;
-  const prefixShort = ic.prefix === 'fas' ? 'fas' : ic.prefix === 'far' ? 'far' : 'fab';
-  return `<!-- 基本用法 -->\n<font-awesome-icon icon="${ic.iconName}" />\n\n<!-- 指定前缀 -->\n<font-awesome-icon :icon="['${prefixShort}', '${ic.iconName}']" />\n\n<!-- 设置大小 -->\n<font-awesome-icon icon="${ic.iconName}" size="lg" />\n<font-awesome-icon icon="${ic.iconName}" size="2x" />`;
+  const pfx = currentPrefix.value;
+  return `<!-- 基本用法 -->\n<font-awesome-icon icon="${ic.name}" />\n\n<!-- 指定前缀 -->\n<font-awesome-icon :icon="['${pfx}', '${ic.name}']" />\n\n<!-- 设置大小 -->\n<font-awesome-icon icon="${ic.name}" size="lg" />\n<font-awesome-icon icon="${ic.name}" size="2x" />`;
 });
 
 const reactInstallCode = computed(() => {
   if (!detailIcon.value) return '';
-  return `npm install @fortawesome/fontawesome-svg-core\nnpm install ${iconPackage(detailIcon.value.prefix)}\nnpm install @fortawesome/react-fontawesome`;
+  return `npm install @fortawesome/fontawesome-svg-core\nnpm install ${iconPackage(currentPrefix.value)}\nnpm install @fortawesome/react-fontawesome`;
 });
 
 const reactUsageCode = computed(() => {
   if (!detailIcon.value) return '';
   const ic = detailIcon.value;
-  const pascal = toPascalCase(ic.iconName);
-  return `import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'\nimport { ${pascal} } from '${iconPackage(ic.prefix)}'\n\n// JSX 中使用\n<FontAwesomeIcon icon={${pascal}} />\n\n// 设置大小\n<FontAwesomeIcon icon={${pascal}} size="lg" />\n<FontAwesomeIcon icon={${pascal}} size="2x" />`;
+  const pascal = toPascalCase(ic.name);
+  return `import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'\nimport { ${pascal} } from '${iconPackage(currentPrefix.value)}'\n\n// JSX 中使用\n<FontAwesomeIcon icon={${pascal}} />\n\n// 设置大小\n<FontAwesomeIcon icon={${pascal}} size="lg" />\n<FontAwesomeIcon icon={${pascal}} size="2x" />`;
 });
 
 const cssUsageCode = computed(() => {
   if (!detailIcon.value) return '';
   const ic = detailIcon.value;
+  const pfx = currentPrefix.value;
   const uc = ic.unicode || '?';
-  return `.icon-${ic.iconName}::before {\n  font-family: ${fontFamily(ic.prefix)};\n  font-weight: ${fontWeight(ic.prefix)};\n  content: "\\${uc}";\n}`;
+  return `.icon-${ic.name}::before {\n  font-family: ${fontFamily(pfx)};\n  font-weight: ${fontWeight(pfx)};\n  content: "\\${uc}";\n}`;
 });
 
 // ── Webfont 字体方案 code snippets ──
@@ -1119,20 +635,22 @@ const webfontInstallCode = computed(() => {
 });
 
 const webfontImportCode = computed(() => {
-  return `// main.js / main.ts 入口文件\nimport '@fortawesome/fontawesome-free/css/all.min.css';\n\n// 或者按需引入（减小体积）\nimport '@fortawesome/fontawesome-free/css/fontawesome.min.css';\nimport '@fortawesome/fontawesome-free/css/solid.min.css';    // fas 实心图标\nimport '@fortawesome/fontawesome-free/css/regular.min.css';  // far 线框图标\nimport '@fortawesome/fontawesome-free/css/brands.min.css';   // fab 品牌图标`;
+  return `// main.js / main.ts 入口文件\nimport '@fortawesome/fontawesome-free/css/all.min.css';\n\n// 或者按需引入（减小体积）\nimport '@fortawesome/fontawesome-free/css/fontawesome.min.css';\nimport '@fortawesome/fontawesome-free/css/solid.min.css';    // fa-solid 实心图标\nimport '@fortawesome/fontawesome-free/css/regular.min.css';  // fa-regular 线框图标\nimport '@fortawesome/fontawesome-free/css/brands.min.css';   // fa-brands 品牌图标`;
 });
 
 const webfontHtmlCode = computed(() => {
   if (!detailIcon.value) return '';
   const ic = detailIcon.value;
-  return `<!-- 基本用法 -->\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName}"></i>\n\n<!-- 设置大小 -->\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName} fa-lg"></i>\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName} fa-2x"></i>\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName} fa-3x"></i>\n\n<!-- 设置颜色 -->\n<i class="${htmlClassPrefix(ic.prefix)} fa-${ic.iconName}" style="color: #0032a0;"></i>`;
+  const pfx = currentPrefix.value;
+  return `<!-- 基本用法 -->\n<i class="${htmlClassPrefix(pfx)} fa-${ic.name}"></i>\n\n<!-- 设置大小 -->\n<i class="${htmlClassPrefix(pfx)} fa-${ic.name} fa-lg"></i>\n<i class="${htmlClassPrefix(pfx)} fa-${ic.name} fa-2x"></i>\n<i class="${htmlClassPrefix(pfx)} fa-${ic.name} fa-3x"></i>\n\n<!-- 设置颜色 -->\n<i class="${htmlClassPrefix(pfx)} fa-${ic.name}" style="color: #0032a0;"></i>`;
 });
 
 const webfontCssCode = computed(() => {
   if (!detailIcon.value) return '';
   const ic = detailIcon.value;
+  const pfx = currentPrefix.value;
   const uc = ic.unicode || '?';
-  return `/* CSS 伪元素用法（需要先引入 webfont CSS） */\n.icon-${ic.iconName}::before {\n  font-family: ${fontFamily(ic.prefix)};\n  font-weight: ${fontWeight(ic.prefix)};\n  content: "\\${uc}";\n}`;
+  return `/* CSS 伪元素用法（需要先引入 webfont CSS） */\n.icon-${ic.name}::before {\n  font-family: ${fontFamily(pfx)};\n  font-weight: ${fontWeight(pfx)};\n  content: "\\${uc}";\n}`;
 });
 
 const webfontCdnCode = computed(() => {
@@ -1200,11 +718,40 @@ async function copyText(text) {
   max-width: 100%;
 }
 
+.icon-meta {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 3px;
+}
+
 .icon-unicode {
-  margin-top: 2px;
   font-size: 10px;
   color: #94a3b8;
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+}
+
+.style-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 0 3px;
+  border-radius: 3px;
+  line-height: 1.5;
+}
+
+.badge-solid {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-regular {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.badge-brands {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 /* Detail Dialog */
@@ -1282,11 +829,6 @@ async function copyText(text) {
   line-height: 1.6;
   color: #e2e8f0;
   white-space: pre;
-}
-
-/* Border left for subcategory */
-.border-l-3 {
-  border-left-width: 3px;
 }
 
 /* ========== Icon Detail Dialog: responsive size + scrollable body ========== */
