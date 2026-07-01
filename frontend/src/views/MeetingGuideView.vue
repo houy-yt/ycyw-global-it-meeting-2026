@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex-1 flex flex-col">
     <!-- ============ HERO with QR Code ============ -->
     <section class="hero-bg text-white py-14 sm:py-16">
       <div class="container-x">
@@ -42,7 +42,7 @@
     </section>
 
     <!-- ============ TAB SWITCHER ============ -->
-    <section class="section-y sticky-tabs-section">
+    <section class="section-y sticky-tabs-section flex-1">
       <div class="container-x">
         <!-- Sticky tab bar -->
         <div class="sticky-tabs -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-8">

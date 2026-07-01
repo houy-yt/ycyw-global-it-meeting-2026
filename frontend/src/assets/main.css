@@ -164,11 +164,8 @@ body {
   z-index: 30;
   background-color: #fafbfc;
 }
-/* Ensure the section wrapping sticky-tabs has enough height so tabs
-   don't get pushed behind the navbar when scrolled to the bottom */
-.sticky-tabs-section {
-  min-height: calc(100vh - 4rem);
-}
+/* sticky-tabs-section: flex-1 is used on the element in Vue templates
+   to fill remaining viewport via flexbox, replacing the old min-height approach */
 
 /* ========== Horizontal Underline Tab Bar (shared) ========== */
 .guide-tabs-bar {

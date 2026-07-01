@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex-1 flex flex-col">
     <!-- header -->
     <section class="hero-bg text-white py-14 sm:py-16">
       <div class="container-x">
@@ -29,7 +29,7 @@
       </div>
     </section>
 
-    <section class="section-y sticky-tabs-section">
+    <section class="section-y sticky-tabs-section flex-1">
       <div class="container-x">
         <!-- tabs (sticky) -->
         <div class="sticky-tabs -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-6">
@@ -77,30 +77,30 @@
               <span
                 class="sch-dot"
                 :style="{
-                  background: getIconType(it.title) ? '#94a3b8' : '#ff8200',
-                  boxShadow: '0 0 0 3px #fafbfc, 0 0 0 5px ' + (getIconType(it.title) ? 'rgba(148,163,184,0.25)' : 'rgba(255,130,0,0.2)')
+                  background: getIconType(it) ? '#94a3b8' : '#ff8200',
+                  boxShadow: '0 0 0 3px #fafbfc, 0 0 0 5px ' + (getIconType(it) ? 'rgba(148,163,184,0.25)' : 'rgba(255,130,0,0.2)')
                 }"
                 aria-hidden="true"
               >
                 <!-- Icons inside dot -->
                 <!-- FA bowl-food (lunch) -->
-                <svg v-if="getIconType(it.title) === 'lunch'" class="sch-dot-svg" viewBox="0 0 512 512" fill="white">
+                <svg v-if="getIconType(it) === 'lunch'" class="sch-dot-svg" viewBox="0 0 512 512" fill="white">
                   <path d="M0 192c0-35.3 28.7-64 64-64c.5 0 1.1 0 1.6 0C73 91.5 105.3 64 144 64c15 0 29 4.1 40.9 11.2C198.2 49.6 225.1 32 256 32s57.8 17.6 71.1 43.2C339 68.1 353 64 368 64c38.7 0 71 27.5 78.4 64c.5 0 1.1 0 1.6 0c35.3 0 64 28.7 64 64c0 11.7-3.1 22.6-8.6 32H8.6C3.1 214.6 0 203.7 0 192zm0 91.4C0 268.3 12.3 256 27.4 256H484.6c15.1 0 27.4 12.3 27.4 27.4c0 70.5-44.4 130.7-106.7 154.1L403.5 452c-2 8-9.2 13.5-17.5 13.5H126c-8.3 0-15.5-5.5-17.5-13.5l-1.8-14.5C44.4 414.1 0 353.9 0 283.4z"/>
                 </svg>
                 <!-- FA bowl-food (dinner) -->
-                <svg v-else-if="getIconType(it.title) === 'dinner'" class="sch-dot-svg" viewBox="0 0 512 512" fill="white">
+                <svg v-else-if="getIconType(it) === 'dinner'" class="sch-dot-svg" viewBox="0 0 512 512" fill="white">
                   <path d="M0 192c0-35.3 28.7-64 64-64c.5 0 1.1 0 1.6 0C73 91.5 105.3 64 144 64c15 0 29 4.1 40.9 11.2C198.2 49.6 225.1 32 256 32s57.8 17.6 71.1 43.2C339 68.1 353 64 368 64c38.7 0 71 27.5 78.4 64c.5 0 1.1 0 1.6 0c35.3 0 64 28.7 64 64c0 11.7-3.1 22.6-8.6 32H8.6C3.1 214.6 0 203.7 0 192zm0 91.4C0 268.3 12.3 256 27.4 256H484.6c15.1 0 27.4 12.3 27.4 27.4c0 70.5-44.4 130.7-106.7 154.1L403.5 452c-2 8-9.2 13.5-17.5 13.5H126c-8.3 0-15.5-5.5-17.5-13.5l-1.8-14.5C44.4 414.1 0 353.9 0 283.4z"/>
                 </svg>
                 <!-- FA mug-saucer (tea break) -->
-                <svg v-else-if="getIconType(it.title) === 'tea'" class="sch-dot-svg" viewBox="0 0 640 512" fill="white">
+                <svg v-else-if="getIconType(it) === 'tea'" class="sch-dot-svg" viewBox="0 0 640 512" fill="white">
                   <path d="M96 64c0-17.7 14.3-32 32-32H448h64c70.7 0 128 57.3 128 128s-57.3 128-128 128H480c0 53-43 96-96 96H192c-53 0-96-43-96-96V64zM480 224h32c35.3 0 64-28.7 64-64s-28.7-64-64-64H480V224zM32 416H544c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/>
                 </svg>
                 <!-- FA clipboard-check (checkin) -->
-                <svg v-else-if="getIconType(it.title) === 'checkin'" class="sch-dot-svg" viewBox="0 0 384 512" fill="white">
+                <svg v-else-if="getIconType(it) === 'checkin'" class="sch-dot-svg" viewBox="0 0 384 512" fill="white">
                   <path d="M336 64h-80c0-35.3-28.7-64-64-64s-64 28.7-64 64H48C21.5 64 0 85.5 0 112v352c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48zM192 40c13.3 0 24 10.7 24 24s-10.7 24-24 24-24-10.7-24-24 10.7-24 24-24zm121.2 231.8l-143 141.8a15.6 15.6 0 01-21.9 0l-63.6-63.2a15.6 15.6 0 010-22.1l22.1-21.9a15.6 15.6 0 0121.9 0l30.5 30.3 109.9-109c6.1-6.1 16-6.1 22.1 0l21.9 22.1c6.1 6.1 6.1 16 .1 22z"/>
                 </svg>
                 <!-- FA bus (transit / school bus) -->
-                <svg v-else-if="getIconType(it.title) === 'transit'" class="sch-dot-svg" viewBox="0 0 512 512" fill="white">
+                <svg v-else-if="getIconType(it) === 'transit'" class="sch-dot-svg" viewBox="0 0 512 512" fill="white">
                   <path d="M488 128h-8V80c0-44.8-99.2-80-224-80S32 35.2 32 80v48h-8c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24h8v160c0 17.7 14.3 32 32 32v32c0 17.7 14.3 32 32 32h32c17.7 0 32-14.3 32-32v-32h192v32c0 17.7 14.3 32 32 32h32c17.7 0 32-14.3 32-32v-32c17.7 0 32-14.3 32-32V224h8c13.3 0 24-10.7 24-24v-48c0-13.3-10.7-24-24-24zM160 72h192c4.4 0 8 3.6 8 8s-3.6 8-8 8H160c-4.4 0-8-3.6-8-8s3.6-8 8-8zm-48 328c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm288 0c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm32-120H80V176h352v104z"/>
                 </svg>
               </span>
@@ -109,12 +109,12 @@
             <!-- RIGHT: content -->
             <div class="sch-right">
               <!-- Meals/breaks/checkin/transit: simple text, no card -->
-              <template v-if="getIconType(it.title)">
+              <template v-if="getIconType(it)">
                 <div>
                   <div class="flex items-center sch-meal-row">
                     <span class="text-sm sm:text-base font-medium text-slate-500">{{ it.title }}</span>
                   </div>
-                  <div v-if="it.description" class="text-xs text-slate-400 mt-0.5">{{ it.description }}</div>
+                  <div v-if="it.description" class="sch-info-note mt-2" v-html="it.description"></div>
                 </div>
               </template>
               <!-- Normal agenda: card style with talks -->
@@ -123,7 +123,7 @@
                   <!-- Section title (optional, e.g. "AI 应用分享") -->
                   <div v-if="it.title" class="text-xs font-semibold text-brand-orange uppercase tracking-wider mb-3">{{ it.title }}</div>
                   <!-- Item-level description -->
-                  <div v-if="it.description" class="text-sm text-slate-600 leading-relaxed mb-3 whitespace-pre-line">{{ it.description }}</div>
+                  <div v-if="it.description" class="text-sm text-slate-600 leading-relaxed mb-3" v-html="it.description"></div>
                   <!-- Talks list -->
                   <template v-if="it.talks && it.talks.length">
                     <div
@@ -141,7 +141,7 @@
                       <div v-if="tk.speaker" class="mt-1">
                         <span class="text-sm text-slate-500">—— {{ tk.speaker }}</span>
                       </div>
-                      <div v-if="tk.abstract" class="text-xs text-slate-500 mt-1 line-clamp-2">{{ tk.abstract }}</div>
+                      <div v-if="tk.abstract" class="text-xs text-slate-500 mt-1 line-clamp-3" v-html="tk.abstract"></div>
                       <!-- Resource pills -->
                       <div v-if="tk.resources && tk.resources.length" class="mt-2 flex flex-wrap gap-1.5">
                         <button
@@ -174,8 +174,8 @@
     <!-- ============ Talk detail modal ============ -->
     <el-dialog v-model="talkModal.show" :title="talkModal.talk?.title || '演讲详情'" width="720px" align-center destroy-on-close>
       <div v-if="talkModal.talk" class="space-y-4">
-        <div v-if="talkModal.talk.speaker" class="text-sm text-slate-500">演讲者：{{ talkModal.talk.speaker }}</div>
-        <div v-if="talkModal.talk.abstract" class="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{{ talkModal.talk.abstract }}</div>
+        <div v-if="talkModal.talk.speaker" class="text-sm text-slate-500">——　{{ talkModal.talk.speaker }}</div>
+        <div v-if="talkModal.talk.abstract" class="text-sm text-slate-700 leading-relaxed" v-html="talkModal.talk.abstract"></div>
 
         <!-- Resources -->
         <div v-if="talkModal.talk.resources?.length" class="border-t pt-4">
@@ -233,14 +233,21 @@ function splitDayLabel(label) {
   return parts.length >= 2 ? parts : [label, ''];
 }
 
-function getIconType(title) {
+function getIconType(item) {
+  // 优先按 category 字段匹配
+  const cat = item?.category;
+  if (cat === 'meal') return 'lunch';
+  if (cat === 'tea') return 'tea';
+  if (cat === 'checkin') return 'checkin';
+  if (cat === 'transit') return 'transit';
+  // fallback：兼容老数据按标题文字匹配
+  const title = item?.title || item?.sectionTitle || '';
   if (!title) return '';
   if (title.includes('午餐')) return 'lunch';
   if (title.includes('晚餐')) return 'dinner';
   if (title.includes('茶歇')) return 'tea';
   if (title.includes('签到')) return 'checkin';
-  if (title.includes('前往')) return 'transit';
-  if (title.includes('校车')) return 'transit';
+  if (title.includes('前往') || title.includes('校车')) return 'transit';
   return '';
 }
 
@@ -422,6 +429,43 @@ onMounted(async () => {
   background: #e0f2fe;
   border-color: var(--brand-blue);
   color: var(--brand-blue);
+}
+
+/* Non-agenda info note (checkin / meal / tea / transit description) */
+.sch-info-note {
+  margin-top: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px dashed #e2e8f0;
+  border-radius: 8px;
+}
+.sch-info-note :deep(p) {
+  margin: 0 0 2px 0;
+}
+.sch-info-note :deep(p:last-child) {
+  margin-bottom: 0;
+}
+.sch-info-note :deep(strong),
+.sch-info-note :deep(b) {
+  font-weight: 600;
+  color: #475569;
+}
+.sch-info-note :deep(a) {
+  color: var(--brand-blue);
+  text-decoration: underline;
+}
+.sch-info-note :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+@media (max-width: 639px) {
+  .sch-info-note {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
 }
 
 /* Notice area: images max-width 100%, format controlled by backend */

@@ -51,7 +51,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-brand-deep">{{ item.sectionTitle || '(无标题)' }}</div>
-                  <div v-if="item.description" class="text-xs text-slate-500 mt-1 line-clamp-2">{{ item.description }}</div>
+                  <div v-if="item.description" class="text-xs text-slate-500 mt-1 line-clamp-2" v-html="item.description"></div>
                   <div v-if="item.talks?.length" class="mt-2 space-y-1">
                     <div v-for="t in item.talks" :key="t.id" class="text-sm flex items-center gap-2 flex-wrap">
                       <span class="font-medium text-brand-deep">▸ {{ t.title }}</span>
@@ -64,8 +64,8 @@
                 </div>
                 <div class="flex flex-col gap-1 items-end">
                   <el-button size="small" @click="openItemDialog(day, item)">编辑</el-button>
-                  <el-button size="small" type="success" plain @click="openTalkDialog(item, null)">+ 演讲</el-button>
                   <el-button size="small" type="danger" @click="delItem(item)">删除</el-button>
+                  <el-button size="small" type="success" plain @click="openTalkDialog(item, null)">+ 议题</el-button>
                 </div>
               </div>
             </div>
@@ -91,7 +91,7 @@
 
         <el-alert v-if="!excelDialog.rows.length" type="info" :closable="false" show-icon
           title="Excel / CSV 列头说明"
-          description="支持列头（不区分大小写）：date / 日期, dayLabel / 日期标签, startTime / 开始时间, endTime / 结束时间, sectionTitle / 标题, category / 类型, description / 描述, talkTitle / 演讲标题, speaker / 演讲者。每行代表一个时段，如同时段有多个 Talk 可用多行（date/startTime/endTime 相同）。"
+          description="支持列头（不区分大小写）：date / 日期, dayLabel / 日期标签, startTime / 开始时间, endTime / 结束时间, sectionTitle / 标题, category / 类型, description / 描述, talkTitle / 议题名称, speaker / 负责人。每行代表一个时段，如同时段有多个议题可用多行（date/startTime/endTime 相同）。"
         />
 
         <div v-if="excelDialog.rows.length">
@@ -103,8 +103,8 @@
             <el-table-column prop="endTime" label="结束" width="70" />
             <el-table-column prop="sectionTitle" label="标题" min-width="120" />
             <el-table-column prop="category" label="类型" width="80" />
-            <el-table-column prop="talkTitle" label="演讲" min-width="120" />
-            <el-table-column prop="speaker" label="演讲者" width="100" />
+            <el-table-column prop="talkTitle" label="议题" min-width="120" />
+            <el-table-column prop="speaker" label="负责人" width="100" />
           </el-table>
           <div class="mt-2 flex items-center gap-3">
             <el-checkbox v-model="excelDialog.clearExisting">导入前清空已有日程</el-checkbox>
@@ -121,11 +121,11 @@
     </el-dialog>
 
     <!-- Day dialog -->
-    <el-dialog v-model="dayDialog.show" :title="dayDialog.id ? '编辑日期' : '新增日期'" width="90vw" style="max-width: 800px" top="5vh" align-center>
+    <el-dialog v-model="dayDialog.show" :title="dayDialog.id ? '编辑日期' : '新增日期'" width="80vw" style="max-width: 1200px" align-center class="item-dialog">
       <div class="space-y-3">
         <div>
           <label class="text-sm text-slate-600 font-medium">日期 *</label>
-          <el-date-picker v-model="dayDialog.form.date" type="date" value-format="YYYY-MM-DD" class="w-full" />
+          <el-date-picker v-model="dayDialog.form.date" type="date" value-format="YYYY-MM-DD" class="w-full" @change="onDayDateChange" />
         </div>
         <div>
           <label class="text-sm text-slate-600 font-medium">日期标签 *</label>
@@ -137,7 +137,7 @@
         </div>
         <div>
           <label class="text-sm text-slate-600 font-medium">日程页通知文字（富文本，留空则不显示）</label>
-          <TinyEditor v-model="dayDialog.form.notice" :height="editorHeight" class="mt-1" />
+          <TinyEditor v-model="dayDialog.form.notice" :height="itemEditorHeight" class="mt-1" />
         </div>
       </div>
       <template #footer>
@@ -147,15 +147,18 @@
     </el-dialog>
 
     <!-- Item dialog -->
-    <el-dialog v-model="itemDialog.show" :title="itemDialog.id ? '编辑时段' : '新增时段'" width="560px" align-center>
+    <el-dialog v-model="itemDialog.show" :title="itemDialog.id ? '编辑时段' : '新增时段'" width="80vw" style="max-width: 1200px" align-center class="item-dialog">
       <div class="grid grid-cols-2 gap-3">
+        <div class="col-span-2">
+          <el-switch v-model="itemDialog.form.allDay" active-text="全天" @change="onAllDayChange" />
+        </div>
         <div>
           <label class="text-sm text-slate-600 font-medium">开始时间 *</label>
-          <input v-model="itemDialog.form.startTime" class="form-input" placeholder="8:40" />
+          <input v-model="itemDialog.form.startTime" class="form-input" :disabled="itemDialog.form.allDay" :class="{ 'opacity-50 cursor-not-allowed': itemDialog.form.allDay }" placeholder="8:40" />
         </div>
         <div>
           <label class="text-sm text-slate-600 font-medium">结束时间 *</label>
-          <input v-model="itemDialog.form.endTime" class="form-input" placeholder="9:20" />
+          <input v-model="itemDialog.form.endTime" class="form-input" :disabled="itemDialog.form.allDay" :class="{ 'opacity-50 cursor-not-allowed': itemDialog.form.allDay }" placeholder="9:20" />
         </div>
         <div class="col-span-2">
           <label class="text-sm text-slate-600 font-medium">标题</label>
@@ -163,7 +166,7 @@
         </div>
         <div>
           <label class="text-sm text-slate-600 font-medium">类型</label>
-          <el-select v-model="itemDialog.form.category" class="w-full">
+          <el-select v-model="itemDialog.form.category" class="w-full mt-1">
             <el-option label="演讲/分享 session" value="session" />
             <el-option label="用餐 meal" value="meal" />
             <el-option label="茶歇 tea" value="tea" />
@@ -178,7 +181,7 @@
         </div>
         <div class="col-span-2">
           <label class="text-sm text-slate-600 font-medium">详细描述</label>
-          <textarea v-model="itemDialog.form.description" rows="4" class="form-input" placeholder="支持纯文本/Markdown"></textarea>
+          <TinyEditor v-model="itemDialog.form.description" :height="itemEditorHeight" class="mt-1" />
         </div>
       </div>
       <template #footer>
@@ -188,14 +191,14 @@
     </el-dialog>
 
     <!-- Talk dialog (with resources) -->
-    <el-dialog v-model="talkDialog.show" :title="talkDialog.id ? '编辑演讲' : '新增演讲'" width="720px" align-center>
+    <el-dialog v-model="talkDialog.show" :title="talkDialog.id ? '编辑议题' : '新增议题'" width="80vw" style="max-width: 1200px" align-center class="item-dialog">
       <div class="grid grid-cols-2 gap-3">
         <div class="col-span-2">
-          <label class="text-sm text-slate-600 font-medium">演讲题目 *</label>
+          <label class="text-sm text-slate-600 font-medium">议题名称 *</label>
           <input v-model="talkDialog.form.title" class="form-input" />
         </div>
         <div>
-          <label class="text-sm text-slate-600 font-medium">演讲者</label>
+          <label class="text-sm text-slate-600 font-medium">负责人</label>
           <input v-model="talkDialog.form.speaker" class="form-input" />
         </div>
         <div>
@@ -204,14 +207,14 @@
         </div>
         <div class="col-span-2">
           <label class="text-sm text-slate-600 font-medium">摘要 / 详细描述</label>
-          <textarea v-model="talkDialog.form.abstract" rows="3" class="form-input"></textarea>
+          <TinyEditor v-model="talkDialog.form.abstract" :height="itemEditorHeight" class="mt-1" />
         </div>
       </div>
 
       <!-- Resources (only after talk saved) -->
       <div v-if="talkDialog.id" class="mt-5 border-t pt-4">
         <div class="flex justify-between items-center mb-2">
-          <span class="text-sm font-semibold text-brand-deep">演讲资料（PPT / 视频 / 音频 / 链接）</span>
+          <span class="text-sm font-semibold text-brand-deep">议题资料（PPT / 视频 / 音频 / 链接）</span>
           <el-button size="small" type="primary" @click="addResource">+ 新增资料</el-button>
         </div>
         <el-table :data="talkDialog.resources" border size="small">
@@ -258,7 +261,7 @@
 
       <template #footer>
         <el-button @click="talkDialog.show = false">关闭</el-button>
-        <el-button type="primary" :loading="talkDialog.saving" @click="saveTalk">保存演讲</el-button>
+        <el-button type="primary" :loading="talkDialog.saving" @click="saveTalk">保存议题</el-button>
       </template>
     </el-dialog>
   </div>
@@ -276,8 +279,8 @@ const days = ref([]);
 const activeDays = ref([]);
 const loading = ref(false);
 
-// Dynamic TinyEditor height based on viewport
-const editorHeight = computed(() => Math.max(200, window.innerHeight - 420));
+// Dialog TinyEditor height: adaptive to 80vh dialog, min 400px
+const itemEditorHeight = computed(() => Math.max(400, Math.floor(window.innerHeight * 0.8 - 340)));
 
 function formatDate(d) { return dayjs(d).format('YYYY-MM-DD'); }
 function categoryType(c) {
@@ -291,8 +294,25 @@ const talkDialog = reactive({
   form: blankTalk(),
   resources: [],
 });
+const WEEKDAY_NAMES = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+function onDayDateChange(val) {
+  if (!val) return;
+  if (!dayDialog.form.dayLabel) {
+    const d = dayjs(val);
+    dayDialog.form.dayLabel = `${d.month() + 1}月${d.date()}日，${WEEKDAY_NAMES[d.day()]}`;
+  }
+}
 function blankDay() { return { date: '', dayLabel: '', sortOrder: 0, notice: '' }; }
-function blankItem() { return { startTime: '', endTime: '', sectionTitle: '', category: 'session', description: '', sortOrder: 0 }; }
+function blankItem() { return { startTime: '', endTime: '', sectionTitle: '', category: 'session', description: '', sortOrder: 0, allDay: false }; }
+function onAllDayChange(val) {
+  if (val) {
+    itemDialog.form.startTime = '全天';
+    itemDialog.form.endTime = '';
+  } else {
+    itemDialog.form.startTime = '';
+    itemDialog.form.endTime = '';
+  }
+}
 function blankTalk() { return { title: '', speaker: '', abstract: '', sortOrder: 0 }; }
 
 async function load() {
@@ -321,8 +341,8 @@ const SCHEDULE_COL_MAP = {
   sectiontitle: 'sectionTitle', '标题': 'sectionTitle', '时段标题': 'sectionTitle', 'section': 'sectionTitle',
   category: 'category', '类型': 'category', 'type': 'category',
   description: 'description', '描述': 'description', '详细描述': 'description',
-  talktitle: 'talkTitle', '演讲标题': 'talkTitle', '演讲': 'talkTitle', 'talk': 'talkTitle',
-  speaker: 'speaker', '演讲者': 'speaker', '讲者': 'speaker',
+  talktitle: 'talkTitle', '演讲标题': 'talkTitle', '议题名称': 'talkTitle', '议题': 'talkTitle', '演讲': 'talkTitle', 'talk': 'talkTitle',
+  speaker: 'speaker', '演讲者': 'speaker', '负责人': 'speaker', '讲者': 'speaker',
 };
 
 function handleScheduleExcel(uploadFile) {
@@ -365,7 +385,7 @@ async function doScheduleExcelImport() {
       rows: excelDialog.rows,
       clearExisting: excelDialog.clearExisting,
     });
-    ElMessage.success(`成功导入 ${data.days} 天 ${data.items} 个时段 ${data.talks} 个演讲`);
+    ElMessage.success(`成功导入 ${data.days} 天 ${data.items} 个时段 ${data.talks} 个议题`);
     excelDialog.show = false;
     excelDialog.rows = [];
     excelDialog.fileName = '';
@@ -423,13 +443,23 @@ async function delDay(d) {
 
 // ───── Item ─────
 function openItemDialog(day, item) {
-  if (item) Object.assign(itemDialog, { show: true, id: item.id, dayId: day.id, form: { ...blankItem(), ...item } });
-  else Object.assign(itemDialog, { show: true, id: null, dayId: day.id, form: blankItem() });
+  if (item) {
+    const form = { ...blankItem(), ...item };
+    form.allDay = item.startTime === '全天';
+    Object.assign(itemDialog, { show: true, id: item.id, dayId: day.id, form });
+  } else {
+    Object.assign(itemDialog, { show: true, id: null, dayId: day.id, form: blankItem() });
+  }
 }
 async function saveItem() {
   itemDialog.saving = true;
   try {
     const payload = { ...itemDialog.form, dayId: itemDialog.dayId };
+    delete payload.allDay;
+    if (itemDialog.form.allDay) {
+      payload.startTime = '全天';
+      payload.endTime = '';
+    }
     if (itemDialog.id) await api.put(`/admin/schedule/items/${itemDialog.id}`, payload);
     else await api.post('/admin/schedule/items', payload);
     itemDialog.show = false;
@@ -440,7 +470,7 @@ async function saveItem() {
 }
 async function delItem(item) {
   try {
-    await ElMessageBox.confirm('确定删除该时段及其下所有演讲？', '提示', { type: 'warning' });
+    await ElMessageBox.confirm('确定删除该时段及其下所有议题？', '提示', { type: 'warning' });
     await api.delete(`/admin/schedule/items/${item.id}`);
     ElMessage.success('已删除');
     load();
@@ -481,7 +511,7 @@ async function saveTalk() {
 }
 async function delTalk(talk) {
   try {
-    await ElMessageBox.confirm('确定删除该演讲及其全部资料？', '提示', { type: 'warning' });
+    await ElMessageBox.confirm('确定删除该议题及其全部资料？', '提示', { type: 'warning' });
     await api.delete(`/admin/schedule/talks/${talk.id}`);
     ElMessage.success('已删除');
     load();
@@ -494,7 +524,7 @@ function addResource() {
   talkDialog.resources.push({ id: null, type: 'ppt', title: '', fileUrl: '', linkUrl: '', _dirty: true });
 }
 async function saveResource(row, i) {
-  if (!talkDialog.id) return ElMessage.warning('请先保存演讲');
+  if (!talkDialog.id) return ElMessage.warning('请先保存议题');
   try {
     const payload = { type: row.type, title: row.title, fileUrl: row.fileUrl, linkUrl: row.linkUrl };
     if (row.id) await api.put(`/admin/schedule/talk-resources/${row.id}`, payload);
@@ -548,4 +578,25 @@ onMounted(load);
 }
 .form-input:focus { border-color: var(--brand-blue); }
 .schedule-item:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+</style>
+
+<style>
+/* Item dialog sizing (non-scoped: el-dialog teleports to body) */
+.item-dialog .el-dialog {
+  height: 80vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.item-dialog .el-dialog__body {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+/* Match el-select height to form-input */
+.item-dialog .el-select .el-input__wrapper {
+  padding: 4px 11px;
+  min-height: 38px;
+  box-sizing: border-box;
+}
 </style>

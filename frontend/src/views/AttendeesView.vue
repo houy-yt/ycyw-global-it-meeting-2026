@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex-1 flex flex-col">
     <!-- ============ HERO ============ -->
     <section class="hero-bg text-white py-14 sm:py-16">
       <div class="container-x">
@@ -60,7 +60,7 @@
     </section>
 
     <!-- ============ MAIN: TIMELINE ============ -->
-    <section v-else class="section-y sticky-tabs-section">
+    <section v-else class="section-y sticky-tabs-section flex-1">
       <div class="container-x">
         <div class="timeline">
           <div
