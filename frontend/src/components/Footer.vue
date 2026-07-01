@@ -41,7 +41,7 @@
     <div class="border-t border-white/10">
       <div class="container-x py-3 sm:py-4 text-[10px] sm:text-xs text-white/60 flex flex-col items-center text-center sm:flex-row sm:items-stretch sm:text-left sm:justify-between gap-1 sm:gap-2">
         <div>© {{ year }} {{ meetingInfo?.organizer || 'YCYW Education' }}. All rights reserved.</div>
-        <div>Powered by Yaotong(YCYW IT R&D)</div>
+        <div>Powered by Yaotong ( YCYW IT R&D Team )</div>
       </div>
     </div>
   </footer>
