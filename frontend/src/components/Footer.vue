@@ -1,34 +1,37 @@
 <template>
   <footer class="mt-12 bg-brand-deep text-white">
-    <div class="container-x py-10 grid gap-8 sm:grid-cols-3">
+    <div class="container-x py-6 sm:py-10 grid gap-4 sm:gap-8 sm:grid-cols-[1fr_auto_1fr]">
+      <!-- Brand -->
       <div>
-        <div class="flex items-center gap-3">
-          <img src="/logo.gif" alt="YCYW" class="h-10 w-auto bg-white rounded p-1" />
+        <div class="flex items-center gap-2 sm:gap-3">
+          <img src="/logo.gif" alt="YCYW" class="h-8 sm:h-10 w-auto bg-white rounded p-1" />
           <div>
-            <div class="text-base font-semibold">YCYW</div>
-            <div class="text-xs text-white/70">{{ meetingInfo?.name || '2026 Global IT Meeting' }}</div>
+            <div class="text-sm sm:text-base font-semibold">YCYW</div>
+            <div class="text-[10px] sm:text-xs text-white/70">{{ meetingInfo?.name || '2026 Global IT Meeting' }}</div>
           </div>
         </div>
-        <p class="mt-4 text-sm text-white/70 leading-relaxed">
+        <p class="mt-2 sm:mt-4 text-xs sm:text-sm text-white/70 leading-relaxed">
           {{ meetingInfo?.tagline || '连接 · 创新 · 未来。一年一度的 YCYW 全球 IT 同仁聚会。' }}
         </p>
-        <p v-if="meetingInfo?.taglineEn" class="mt-1 text-xs text-white/50">
+        <p v-if="meetingInfo?.taglineEn" class="mt-1 text-[10px] sm:text-xs text-white/50">
           {{ meetingInfo.taglineEn }}
         </p>
       </div>
 
-      <div>
+      <!-- Quick Nav - hidden on mobile -->
+      <div class="hidden sm:block">
         <div class="text-sm font-semibold mb-3">快速导航</div>
-        <ul class="text-sm space-y-2 text-white/80">
+        <ul class="text-sm text-white/80 grid grid-cols-4 gap-x-6 gap-y-2">
           <li v-for="l in footerLinks" :key="l.to">
             <router-link :to="l.to" class="hover:text-brand-orange">{{ l.label }}</router-link>
           </li>
         </ul>
       </div>
 
-      <div>
-        <div class="text-sm font-semibold mb-3">联系</div>
-        <ul class="text-sm space-y-2 text-white/80">
+      <!-- Contact -->
+      <div class="sm:ml-auto">
+        <div class="text-sm font-semibold mb-3 hidden sm:block">联系</div>
+        <ul class="text-[11px] sm:text-sm space-y-1 sm:space-y-2 text-white/80">
           <li>会议时间：{{ formattedDateRange }}</li>
           <li>会议地点：{{ meetingInfo?.location || '北京' }}</li>
           <li>主办方：{{ meetingInfo?.organizer || 'YCYW Education' }}</li>
@@ -36,9 +39,9 @@
       </div>
     </div>
     <div class="border-t border-white/10">
-      <div class="container-x py-4 text-xs text-white/60 flex flex-col sm:flex-row justify-between gap-2">
+      <div class="container-x py-3 sm:py-4 text-[10px] sm:text-xs text-white/60 flex flex-col items-center text-center sm:flex-row sm:items-stretch sm:text-left sm:justify-between gap-1 sm:gap-2">
         <div>© {{ year }} {{ meetingInfo?.organizer || 'YCYW Education' }}. All rights reserved.</div>
-        <div>Powered by Vue 3 · Express · Prisma</div>
+        <div>Powered by Yaotong(YCYW IT R&D)</div>
       </div>
     </div>
   </footer>

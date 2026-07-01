@@ -8,7 +8,10 @@
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 ring-1 ring-white/20 text-xs tracking-widest uppercase"><font-awesome-icon icon="calendar-days" class="mr-1" />{{ heroLabel }}</div>
             <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold">{{ heroTitle }}</h1>
             <p class="mt-3 text-white/70 text-sm sm:text-base">
-              {{ meta?.startDate }} - {{ meta?.endDate }} · {{ meta?.location }}
+              <span>{{ meta?.startDate }} - {{ meta?.endDate }}</span>
+              <span class="hidden sm:inline"> · </span>
+              <br class="sm:hidden" />
+              <span>{{ meta?.location }}</span>
             </p>
             <div class="mt-4 flex flex-wrap gap-3 lg:justify-start justify-center">
               <router-link to="/venue" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20 hover:text-white transition">
@@ -26,29 +29,27 @@
       </div>
     </section>
 
-    <section class="section-y">
+    <section class="section-y sticky-tabs-section">
       <div class="container-x">
-        <!-- tabs -->
-        <div class="flex flex-nowrap sm:flex-wrap justify-center gap-2 mb-8 overflow-x-auto sm:overflow-visible">
-          <button
-            v-for="(d, i) in dates"
-            :key="d.date"
-            @click="active = i"
-            class="flex-shrink-0 px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-full text-sm font-medium transition"
-            :class="
-              active === i
-                ? 'bg-brand-blue text-white shadow-soft'
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-brand-blue hover:text-brand-blue'
-            "
-          >
-            <!-- Desktop: single line -->
-            <span class="hidden sm:inline">{{ d.dayLabel }}</span>
-            <!-- Mobile: date on top, weekday below, smaller font -->
-            <span class="sm:hidden flex flex-col items-center text-xs leading-tight">
-              <span>{{ splitDayLabel(d.dayLabel)[0] }}</span>
-              <span class="text-[10px] opacity-70">{{ splitDayLabel(d.dayLabel)[1] }}</span>
-            </span>
-          </button>
+        <!-- tabs (sticky) -->
+        <div class="sticky-tabs -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-6">
+          <div class="guide-tabs-bar overflow-x-auto sm:overflow-visible">
+            <button
+              v-for="(d, i) in dates"
+              :key="d.date"
+              @click="active = i"
+              class="guide-tabs-item whitespace-nowrap"
+              :class="active === i ? 'guide-tabs-item--active' : ''"
+            >
+              <!-- Desktop: single line -->
+              <span class="hidden sm:inline">{{ d.dayLabel }}</span>
+              <!-- Mobile: compact -->
+              <span class="sm:hidden flex flex-col items-center text-xs leading-tight">
+                <span>{{ splitDayLabel(d.dayLabel)[0] }}</span>
+                <span class="text-[10px] opacity-70">{{ splitDayLabel(d.dayLabel)[1] }}</span>
+              </span>
+            </button>
+          </div>
         </div>
 
         <!-- Day notice (rich text from backend, per day) -->

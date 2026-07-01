@@ -45,7 +45,7 @@
             </span>
           </div>
           <button
-            class="text-xs text-slate-500 hover:text-brand-red px-2 py-1 inline-flex items-center gap-1"
+            class="hidden md:inline-flex text-xs text-slate-500 hover:text-brand-red px-2 py-1 items-center gap-1"
             @click="handleLogout"
           >
             <font-awesome-icon icon="right-from-bracket" /> 退出
@@ -84,32 +84,64 @@
       </div>
     </div>
 
-    <!-- mobile menu -->
-    <transition name="fade">
-      <div v-if="mobileOpen" class="md:hidden border-t border-slate-200 bg-white">
-        <nav class="w-full px-4 sm:px-6 py-3 grid gap-1">
-          <router-link
-            v-for="l in navLinks"
-            :key="l.to"
-            :to="l.to"
-            class="px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-brand-blue/5"
-            active-class="text-brand-blue bg-brand-blue/10"
-            @click="mobileOpen = false"
-          >
-            {{ l.label }}
-          </router-link>
-          <router-link
-            v-if="auth.isAdmin"
-            to="/admin"
-            class="px-3 py-2 rounded-lg text-sm text-brand-red hover:bg-brand-red/5"
-            @click="mobileOpen = false"
-          >
-            管理后台
-          </router-link>
-        </nav>
-      </div>
-    </transition>
   </header>
+
+  <!-- mobile drawer overlay -->
+  <transition name="drawer-overlay">
+    <div
+      v-if="mobileOpen"
+      class="fixed inset-0 z-50 bg-black/30 md:hidden"
+      @click="mobileOpen = false"
+    ></div>
+  </transition>
+
+  <!-- mobile drawer -->
+  <transition name="drawer-slide">
+    <div
+      v-if="mobileOpen"
+      class="fixed top-0 right-0 z-50 h-full bg-white shadow-lg md:hidden flex flex-col"
+      style="width: 60%; max-width: 180px;"
+    >
+      <!-- close button -->
+      <div class="flex justify-end px-3 pt-4">
+        <button class="p-2 text-brand-deep" @click="mobileOpen = false" aria-label="close">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <!-- nav links -->
+      <nav class="px-3 grid gap-1">
+        <router-link
+          v-for="l in navLinks"
+          :key="l.to"
+          :to="l.to"
+          class="px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-brand-blue/5"
+          active-class="text-brand-blue bg-brand-blue/10"
+          @click="mobileOpen = false"
+        >
+          {{ l.label }}
+        </router-link>
+        <router-link
+          v-if="auth.isAdmin"
+          to="/admin"
+          class="px-3 py-2 rounded-lg text-sm text-brand-red hover:bg-brand-red/5"
+          @click="mobileOpen = false"
+        >
+          管理后台
+        </router-link>
+      </nav>
+      <!-- logout button -->
+      <div v-if="auth.isLoggedIn" class="mt-auto px-3 pb-6 border-t border-slate-100 pt-3">
+        <button
+          class="text-xs text-slate-500 hover:text-brand-red px-3 py-2 inline-flex items-center gap-1"
+          @click="handleLogout(); mobileOpen = false"
+        >
+          <font-awesome-icon icon="right-from-bracket" /> 退出
+        </button>
+      </div>
+    </div>
+  </transition>
 </template>
 
 <script setup>
@@ -171,3 +203,25 @@ const initial = computed(() => {
   return n.trim().charAt(0).toUpperCase() || 'U';
 });
 </script>
+
+<style scoped>
+/* drawer overlay fade */
+.drawer-overlay-enter-active,
+.drawer-overlay-leave-active {
+  transition: opacity 0.25s ease;
+}
+.drawer-overlay-enter-from,
+.drawer-overlay-leave-to {
+  opacity: 0;
+}
+
+/* drawer slide from right */
+.drawer-slide-enter-active,
+.drawer-slide-leave-active {
+  transition: transform 0.25s ease;
+}
+.drawer-slide-enter-from,
+.drawer-slide-leave-to {
+  transform: translateX(100%);
+}
+</style>

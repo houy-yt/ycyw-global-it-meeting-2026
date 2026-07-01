@@ -17,23 +17,6 @@
               <span class="font-bold text-brand-orange">{{ orderedGroups.length }}</span> 所学校 / 部门
             </p>
 
-            <!-- Department Tabs -->
-            <div v-if="departments.length > 1" class="mt-4 flex flex-wrap gap-2 lg:justify-start justify-center">
-              <button
-                v-for="d in departments"
-                :key="d.code"
-                class="px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition"
-                :class="
-                  currentDept === d.code
-                    ? 'bg-brand-orange text-white shadow-soft'
-                    : 'bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/20'
-                "
-                @click="switchDept(d.code)"
-              >
-                {{ d.nameCn || d.name }}
-                <span class="ml-1 opacity-75">({{ d.count }})</span>
-              </button>
-            </div>
           </div>
           <div class="flex-shrink-0 flex justify-center lg:justify-end">
             <WeatherCard />
@@ -41,6 +24,24 @@
         </div>
       </div>
     </section>
+
+    <!-- ============ DEPARTMENT TABS (sticky) ============ -->
+    <div v-if="departments.length > 1" class="sticky-tabs">
+      <div class="container-x">
+        <div class="guide-tabs-bar">
+          <button
+            v-for="d in departments"
+            :key="d.code"
+            class="guide-tabs-item"
+            :class="currentDept === d.code ? 'guide-tabs-item--active' : ''"
+            @click="switchDept(d.code)"
+          >
+            <span>{{ d.nameCn || d.name }}</span>
+            <span class="text-xs opacity-75 font-normal">({{ d.count }})</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- ============ LOADING / ERROR / EMPTY ============ -->
     <section class="container-x section-y" v-if="loading || loadError || orderedGroups.length === 0">
@@ -59,7 +60,7 @@
     </section>
 
     <!-- ============ MAIN: TIMELINE ============ -->
-    <section v-else class="section-y">
+    <section v-else class="section-y sticky-tabs-section">
       <div class="container-x">
         <div class="timeline">
           <div

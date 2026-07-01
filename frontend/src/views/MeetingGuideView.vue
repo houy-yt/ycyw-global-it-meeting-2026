@@ -42,25 +42,28 @@
     </section>
 
     <!-- ============ TAB SWITCHER ============ -->
-    <section class="section-y">
+    <section class="section-y sticky-tabs-section">
       <div class="container-x">
-        <div class="guide-tabs-bar mb-10">
-          <button
-            @click="activeTab = 'info'"
-            class="guide-tabs-item"
-            :class="activeTab === 'info' ? 'guide-tabs-item--active' : ''"
-          >
-            <font-awesome-icon icon="clipboard-check" />
-            <span>参会须知</span>
-          </button>
-          <button
-            @click="activeTab = 'entry'"
-            class="guide-tabs-item"
-            :class="activeTab === 'entry' ? 'guide-tabs-item--active' : ''"
-          >
-            <font-awesome-icon icon="signs-post" />
-            <span>入校指引</span>
-          </button>
+        <!-- Sticky tab bar -->
+        <div class="sticky-tabs -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-8">
+          <div class="guide-tabs-bar">
+            <button
+              @click="activeTab = 'info'"
+              class="guide-tabs-item"
+              :class="activeTab === 'info' ? 'guide-tabs-item--active' : ''"
+            >
+              <font-awesome-icon icon="clipboard-check" />
+              <span>参会须知</span>
+            </button>
+            <button
+              @click="activeTab = 'entry'"
+              class="guide-tabs-item"
+              :class="activeTab === 'entry' ? 'guide-tabs-item--active' : ''"
+            >
+              <font-awesome-icon icon="signs-post" />
+              <span>入校指引</span>
+            </button>
+          </div>
         </div>
 
         <!-- ============ TAB 1: 入校指引 ============ -->
@@ -232,41 +235,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ========== Horizontal Tab Bar ========== */
-.guide-tabs-bar {
-  display: flex;
-  justify-content: center;
-  gap: 0;
-  border-bottom: 2px solid #e2e8f0;
-  position: relative;
-}
-.guide-tabs-item {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #94a3b8;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.2s;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-}
-.guide-tabs-item:hover {
-  color: var(--brand-blue, #0032a0);
-}
-.guide-tabs-item--active {
-  color: var(--brand-blue, #0032a0);
-  border-bottom-color: var(--brand-blue, #0032a0);
-}
-.guide-tabs-item--active svg {
-  color: var(--brand-blue, #0032a0);
-}
-
 /* ========== Guide content HTML styling ========== */
 .guide-content :deep(p) {
   margin-bottom: 0.5rem;

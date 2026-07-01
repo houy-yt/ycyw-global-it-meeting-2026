@@ -156,3 +156,84 @@ body {
   opacity: 0;
   transform: translateY(12px);
 }
+
+/* ========== Sticky Tab Bar (shared across pages) ========== */
+.sticky-tabs {
+  position: sticky;
+  top: 4rem; /* 64px = h-16 navbar height */
+  z-index: 30;
+  background-color: #fafbfc;
+}
+/* Ensure the section wrapping sticky-tabs has enough height so tabs
+   don't get pushed behind the navbar when scrolled to the bottom */
+.sticky-tabs-section {
+  min-height: calc(100vh - 4rem);
+}
+
+/* ========== Horizontal Underline Tab Bar (shared) ========== */
+.guide-tabs-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  border-bottom: 2px solid #e2e8f0;
+  position: relative;
+}
+.guide-tabs-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+.guide-tabs-item:hover {
+  color: var(--brand-blue, #0032a0);
+}
+.guide-tabs-item--active {
+  color: var(--brand-blue, #0032a0);
+  border-bottom-color: var(--brand-blue, #0032a0);
+}
+.guide-tabs-item--active svg {
+  color: var(--brand-blue, #0032a0);
+}
+
+/* Mobile: switch to pill/capsule style for better visibility */
+@media (max-width: 639px) {
+  .guide-tabs-bar {
+    gap: 0.5rem;
+    border-bottom: none;
+    padding: 0.5rem 0;
+  }
+  .guide-tabs-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    border-radius: 9999px;
+    border: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0;
+    color: #64748b;
+  }
+  .guide-tabs-item:hover {
+    border-color: var(--brand-blue, #0032a0);
+    color: var(--brand-blue, #0032a0);
+  }
+  .guide-tabs-item--active {
+    background-color: var(--brand-blue, #0032a0);
+    color: #fff !important;
+    border-color: var(--brand-blue, #0032a0);
+    border-bottom-color: var(--brand-blue, #0032a0);
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0, 50, 160, 0.2);
+  }
+  .guide-tabs-item--active svg {
+    color: #fff;
+  }
+}
