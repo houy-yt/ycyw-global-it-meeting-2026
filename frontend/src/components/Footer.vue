@@ -3,19 +3,26 @@
     <div class="container-x py-6 sm:py-10 grid gap-4 sm:gap-8 sm:grid-cols-[1fr_auto_1fr]">
       <!-- Brand -->
       <div>
-        <div class="flex items-center gap-2 sm:gap-3">
-          <img src="/logo.gif" alt="YCYW" class="h-8 sm:h-10 w-auto bg-white rounded p-1" />
-          <div>
+        <div class="flex items-center gap-2 sm:gap-3" v-if="fs.showLogo || fs.showSiteName">
+          <img
+            v-if="fs.showLogo"
+            :src="siteLogoUrl || '/logo.gif'"
+            alt="YCYW"
+            class="h-8 sm:h-10 w-auto bg-white rounded p-1"
+          />
+          <div v-if="fs.showSiteName">
             <div class="text-sm sm:text-base font-semibold">YCYW</div>
             <div class="text-[10px] sm:text-xs text-white/70">{{ meetingInfo?.name || '2026 Global IT Meeting' }}</div>
           </div>
         </div>
-        <p class="mt-2 sm:mt-4 text-xs sm:text-sm text-white/70 leading-relaxed">
-          {{ meetingInfo?.tagline || '连接 · 创新 · 未来。一年一度的 YCYW 全球 IT 同仁聚会。' }}
-        </p>
-        <p v-if="meetingInfo?.taglineEn" class="mt-1 text-[10px] sm:text-xs text-white/50">
-          {{ meetingInfo.taglineEn }}
-        </p>
+        <template v-if="fs.showMeetingName">
+          <p class="mt-2 sm:mt-4 text-xs sm:text-sm text-white/70 leading-relaxed">
+            {{ meetingInfo?.tagline || '连接 · 创新 · 未来。一年一度的 YCYW 全球 IT 同仁聚会。' }}
+          </p>
+          <p v-if="meetingInfo?.taglineEn" class="mt-1 text-[10px] sm:text-xs text-white/50">
+            {{ meetingInfo.taglineEn }}
+          </p>
+        </template>
       </div>
 
       <!-- Quick Nav - hidden on mobile -->
@@ -29,12 +36,13 @@
       </div>
 
       <!-- Contact -->
-      <div class="sm:ml-auto">
+      <div class="sm:ml-auto" v-if="hasContactContent">
         <div class="text-sm font-semibold mb-3 hidden sm:block">联系</div>
         <ul class="text-[11px] sm:text-sm space-y-1 sm:space-y-2 text-white/80">
-          <li>会议时间：{{ formattedDateRange }}</li>
-          <li>会议地点：{{ meetingInfo?.location || '北京' }}</li>
-          <li>主办方：{{ meetingInfo?.organizer || 'YCYW Education' }}</li>
+          <li v-if="fs.showMeetingTime">{{ fs.meetingTimeLabel }}：{{ formattedDateRange }}</li>
+          <li v-if="fs.showMeetingLocation">{{ fs.meetingLocationLabel }}：{{ meetingInfo?.location || '北京' }}</li>
+          <li v-if="fs.showOrganizer">{{ fs.organizerLabel }}：{{ meetingInfo?.organizer || 'YCYW Education' }}</li>
+          <li v-for="(field, idx) in customFields" :key="'cf-' + idx">{{ field.label }}：{{ field.value }}</li>
         </ul>
       </div>
     </div>
@@ -48,13 +56,29 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted } from 'vue';
 import api from '../api';
 
 const year = new Date().getFullYear();
 
 const meetingInfo = ref(null);
 const allLinks = ref([]);
+const siteLogoUrl = ref('');
+
+// Footer settings with defaults
+const fs = reactive({
+  showLogo: true,
+  showSiteName: true,
+  showMeetingName: false,
+  showMeetingTime: true,
+  showMeetingLocation: true,
+  showOrganizer: true,
+  meetingTimeLabel: '会议时间',
+  meetingLocationLabel: '会议地点',
+  organizerLabel: '主办方',
+});
+
+const customFields = ref([]);
 
 // Default fallback links for footer
 const defaultFooterLinks = [
@@ -68,6 +92,11 @@ const defaultFooterLinks = [
 const footerLinks = computed(() => {
   const filtered = allLinks.value.filter(l => l.showInFooter);
   return filtered.length > 0 ? filtered : defaultFooterLinks;
+});
+
+// Whether there's any contact content to show
+const hasContactContent = computed(() => {
+  return fs.showMeetingTime || fs.showMeetingLocation || fs.showOrganizer || customFields.value.length > 0;
 });
 
 /**
@@ -99,6 +128,24 @@ async function loadNav() {
     }
     if (data?.meetingInfo) {
       meetingInfo.value = data.meetingInfo;
+    }
+    // Site logo
+    if (data?.siteLogoUrl) {
+      siteLogoUrl.value = data.siteLogoUrl;
+    }
+    // Footer settings
+    if (data?.footerSettings && typeof data.footerSettings === 'object') {
+      const fst = data.footerSettings;
+      fs.showLogo = fst.showLogo !== false;
+      fs.showSiteName = fst.showSiteName !== false;
+      fs.showMeetingName = !!fst.showMeetingName;
+      fs.showMeetingTime = fst.showMeetingTime !== false;
+      fs.showMeetingLocation = fst.showMeetingLocation !== false;
+      fs.showOrganizer = fst.showOrganizer !== false;
+      fs.meetingTimeLabel = fst.meetingTimeLabel || '会议时间';
+      fs.meetingLocationLabel = fst.meetingLocationLabel || '会议地点';
+      fs.organizerLabel = fst.organizerLabel || '主办方';
+      customFields.value = Array.isArray(fst.customFields) ? fst.customFields.filter(f => f.label && f.value && f.visible !== false) : [];
     }
   } catch (e) {
     console.error('[Footer] failed to load nav', e);

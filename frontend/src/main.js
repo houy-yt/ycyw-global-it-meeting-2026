@@ -52,6 +52,7 @@ import {
   faBan,
   faClipboardCheck,
   faUserCheck,
+  faImage,
   faImages,
   faMagnifyingGlassPlus,
   faCircleInfo,
@@ -107,6 +108,7 @@ import {
 import {
   faHeart as farHeart,
   faComment as farComment,
+  faTrashCan as farTrashCan,
 } from '@fortawesome/free-regular-svg-icons';
 
 library.add(
@@ -156,6 +158,7 @@ library.add(
   faBan,
   faClipboardCheck,
   faUserCheck,
+  faImage,
   faImages,
   faMagnifyingGlassPlus,
   faCircleInfo,
@@ -207,6 +210,7 @@ library.add(
   faShareNodes,
   faBuildingColumns,
   faBox,
+  farTrashCan,
 );
 
 import App from './App.vue';

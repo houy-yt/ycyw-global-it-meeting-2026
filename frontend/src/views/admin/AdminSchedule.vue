@@ -124,11 +124,11 @@
     <el-dialog v-model="dayDialog.show" :title="dayDialog.id ? '编辑日期' : '新增日期'" width="80vw" style="max-width: 1200px" align-center class="item-dialog">
       <div class="space-y-3">
         <div>
-          <label class="text-sm text-slate-600 font-medium">日期 *</label>
+          <label class="text-sm text-slate-600 font-medium">日期 <span class="text-red-500">*</span></label>
           <el-date-picker v-model="dayDialog.form.date" type="date" value-format="YYYY-MM-DD" class="w-full" @change="onDayDateChange" />
         </div>
         <div>
-          <label class="text-sm text-slate-600 font-medium">日期标签 *</label>
+          <label class="text-sm text-slate-600 font-medium">日期标签 <span class="text-red-500">*</span></label>
           <input v-model="dayDialog.form.dayLabel" class="form-input" placeholder="7月14日 (周一)" />
         </div>
         <div>
@@ -153,11 +153,11 @@
           <el-switch v-model="itemDialog.form.allDay" active-text="全天" @change="onAllDayChange" />
         </div>
         <div>
-          <label class="text-sm text-slate-600 font-medium">开始时间 *</label>
+          <label class="text-sm text-slate-600 font-medium">开始时间 <span class="text-red-500">*</span></label>
           <input v-model="itemDialog.form.startTime" class="form-input" :disabled="itemDialog.form.allDay" :class="{ 'opacity-50 cursor-not-allowed': itemDialog.form.allDay }" placeholder="8:40" />
         </div>
         <div>
-          <label class="text-sm text-slate-600 font-medium">结束时间 *</label>
+          <label class="text-sm text-slate-600 font-medium">结束时间 <span class="text-red-500">*</span></label>
           <input v-model="itemDialog.form.endTime" class="form-input" :disabled="itemDialog.form.allDay" :class="{ 'opacity-50 cursor-not-allowed': itemDialog.form.allDay }" placeholder="9:20" />
         </div>
         <div class="col-span-2">
@@ -165,8 +165,9 @@
           <input v-model="itemDialog.form.sectionTitle" class="form-input" />
         </div>
         <div>
-          <label class="text-sm text-slate-600 font-medium">类型</label>
+          <label class="text-sm text-slate-600 font-medium">类型 <span class="text-red-500">*</span></label>
           <el-select v-model="itemDialog.form.category" class="w-full mt-1">
+            <el-option label="-" value="-" />
             <el-option label="演讲/分享 session" value="session" />
             <el-option label="用餐 meal" value="meal" />
             <el-option label="茶歇 tea" value="tea" />
@@ -194,7 +195,7 @@
     <el-dialog v-model="talkDialog.show" :title="talkDialog.id ? '编辑议题' : '新增议题'" width="80vw" style="max-width: 1200px" align-center class="item-dialog">
       <div class="grid grid-cols-2 gap-3">
         <div class="col-span-2">
-          <label class="text-sm text-slate-600 font-medium">议题名称 *</label>
+          <label class="text-sm text-slate-600 font-medium">议题名称 <span class="text-red-500">*</span></label>
           <input v-model="talkDialog.form.title" class="form-input" />
         </div>
         <div>
@@ -303,7 +304,7 @@ function onDayDateChange(val) {
   }
 }
 function blankDay() { return { date: '', dayLabel: '', sortOrder: 0, notice: '' }; }
-function blankItem() { return { startTime: '', endTime: '', sectionTitle: '', category: 'session', description: '', sortOrder: 0, allDay: false }; }
+function blankItem() { return { startTime: '', endTime: '', sectionTitle: '', category: '-', description: '', sortOrder: 0, allDay: false }; }
 function onAllDayChange(val) {
   if (val) {
     itemDialog.form.startTime = '全天';

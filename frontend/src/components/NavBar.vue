@@ -2,7 +2,7 @@
   <header class="sticky top-0 z-40 nav-glass border-b border-slate-200/60">
     <div class="w-full px-4 sm:px-6 lg:px-10 flex items-center justify-between h-16">
       <router-link to="/" class="flex items-center gap-3 min-w-0">
-        <img src="/logo.gif" alt="YCYW" class="h-12 w-auto flex-shrink-0" />
+        <img :src="siteLogoUrl || '/logo.gif'" alt="YCYW" class="h-12 w-auto flex-shrink-0" />
         <div
           class="hidden md:block text-sm sm:text-base font-semibold text-brand-deep whitespace-nowrap tracking-tight"
         >
@@ -181,6 +181,7 @@ const defaultLinks = [
 ];
 
 const allLinks = ref([...defaultLinks]);
+const siteLogoUrl = ref('');
 
 // Only show links where showInNav is true
 const navLinks = computed(() => allLinks.value.filter(l => l.showInNav));
@@ -190,6 +191,9 @@ async function loadNav() {
     const { data } = await api.get('/nav');
     if (data?.links?.length) {
       allLinks.value = data.links;
+    }
+    if (data?.siteLogoUrl) {
+      siteLogoUrl.value = data.siteLogoUrl;
     }
   } catch (e) {
     console.error('[NavBar] failed to load nav', e);

@@ -42,6 +42,30 @@ router.put('/', authRequired, adminRequired, async (req, res) => {
   res.json({ ok: true, updated: items.length });
 });
 
+// ── Site Logo Upload ──
+router.post('/site-logo', authRequired, adminRequired, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: '请上传文件' });
+    const { url } = await storageService.upload(req.file);
+    await settingsService.set('site.logoUrl', url, 'site');
+    res.json({ ok: true, logoUrl: url });
+  } catch (e) {
+    console.error('[site-logo] upload error', e);
+    res.status(500).json({ message: e.message || '上传失败' });
+  }
+});
+
+// ── Delete Site Logo ──
+router.delete('/site-logo', authRequired, adminRequired, async (req, res) => {
+  try {
+    await settingsService.set('site.logoUrl', '', 'site');
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[site-logo] delete error', e);
+    res.status(500).json({ message: e.message || '删除失败' });
+  }
+});
+
 // ── Entry Guide QR Code Upload ──
 router.post('/entry-guide-qrcode', authRequired, adminRequired, upload.single('file'), async (req, res) => {
   try {

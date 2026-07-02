@@ -25,8 +25,8 @@
 
     <el-dialog v-model="dialog.show" :title="dialog.id ? '编辑部门' : '新增部门'" width="460px" align-center>
       <div class="space-y-3">
-        <div><label class="text-sm text-slate-600 font-medium">代码 *</label><input v-model="dialog.form.code" class="form-input" placeholder="IT" /></div>
-        <div><label class="text-sm text-slate-600 font-medium">英文名 *</label><input v-model="dialog.form.name" class="form-input" /></div>
+        <div><label class="text-sm text-slate-600 font-medium">代码 <span class="text-red-500">*</span></label><input v-model="dialog.form.code" class="form-input" placeholder="IT" /></div>
+        <div><label class="text-sm text-slate-600 font-medium">英文名 <span class="text-red-500">*</span></label><input v-model="dialog.form.name" class="form-input" /></div>
         <div><label class="text-sm text-slate-600 font-medium">中文名</label><input v-model="dialog.form.nameCn" class="form-input" /></div>
         <div><label class="text-sm text-slate-600 font-medium">颜色</label><input v-model="dialog.form.color" class="form-input" placeholder="#0032a0" /></div>
         <div><label class="text-sm text-slate-600 font-medium">排序</label><input v-model.number="dialog.form.sortOrder" type="number" class="form-input" /></div>

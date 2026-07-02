@@ -33,8 +33,8 @@
 
     <el-dialog v-model="dialog.show" :title="dialog.id ? '编辑组织' : '新增组织'" width="460px" align-center>
       <div class="space-y-3">
-        <div><label class="text-sm text-slate-600 font-medium">代码 *</label><input v-model="dialog.form.code" class="form-input" placeholder="YCIS-BJ" /></div>
-        <div><label class="text-sm text-slate-600 font-medium">名称 *</label><input v-model="dialog.form.name" class="form-input" placeholder="耀中国际学校（北京）" /></div>
+        <div><label class="text-sm text-slate-600 font-medium">代码 <span class="text-red-500">*</span></label><input v-model="dialog.form.code" class="form-input" placeholder="YCIS-BJ" /></div>
+        <div><label class="text-sm text-slate-600 font-medium">名称 <span class="text-red-500">*</span></label><input v-model="dialog.form.name" class="form-input" placeholder="耀中国际学校（北京）" /></div>
         <div>
           <label class="text-sm text-slate-600 font-medium">类别</label>
           <el-select v-model="dialog.form.category" class="w-full">

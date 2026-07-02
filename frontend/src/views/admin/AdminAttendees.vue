@@ -135,13 +135,13 @@
           <input v-model.number="dialog.form.no" type="number" class="form-input" />
         </div>
         <div>
-          <label class="text-sm text-slate-600 font-medium">部门 *</label>
+          <label class="text-sm text-slate-600 font-medium">部门 <span class="text-red-500">*</span></label>
           <el-select v-model="dialog.form.department" class="w-full" placeholder="选择部门">
             <el-option v-for="d in departments" :key="d.code" :label="`${d.nameCn || d.name} (${d.code})`" :value="d.code" />
           </el-select>
         </div>
         <div>
-          <label class="text-sm text-slate-600 font-medium">学校 *</label>
+          <label class="text-sm text-slate-600 font-medium">学校 <span class="text-red-500">*</span></label>
           <el-select v-model="dialog.form.school" class="w-full" placeholder="选择学校 / 组织" filterable allow-create>
             <el-option v-for="o in organizations" :key="o.code" :label="o.name" :value="o.code" />
           </el-select>

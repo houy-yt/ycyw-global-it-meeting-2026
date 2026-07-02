@@ -2,64 +2,98 @@
   <div class="max-w-2xl">
     <h3 class="text-lg font-semibold text-brand-deep mb-4">系统设置</h3>
 
-    <!-- ── 导航链接维护 ── -->
-    <el-divider content-position="left"><b>导航链接维护</b></el-divider>
-    <p class="text-xs text-slate-400 mb-3">管理页头和页尾的导航链接。拖动调整顺序，勾选控制显示位置。</p>
+    <!-- ── 网站LOGO ── -->
+    <el-divider content-position="left"><b>网站LOGO</b></el-divider>
+    <p class="text-xs text-slate-400 mb-3">
+      上传自定义LOGO，将替换页头和页尾的默认LOGO。建议使用透明背景的 PNG/GIF 图片。
+    </p>
+    <div class="flex items-center gap-4">
+      <div class="relative group">
+        <div class="w-24 h-24 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-50 overflow-hidden">
+          <img v-if="logoUrl" :src="logoUrl" alt="LOGO" class="max-w-full max-h-full object-contain" />
+          <font-awesome-icon v-else icon="image" class="text-2xl text-slate-300" />
+        </div>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <label class="btn-upload cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-brand-blue text-white hover:bg-blue-600 transition">
+            <font-awesome-icon icon="upload" />
+            {{ logoUrl ? '更换LOGO' : '上传LOGO' }}
+            <input type="file" accept="image/*" class="hidden" @change="handleLogoUpload" />
+          </label>
+          <el-button v-if="logoUrl" size="small" type="danger" plain @click="removeLogo">
+            <font-awesome-icon :icon="['far', 'trash-can']" class="mr-1" /> 删除
+          </el-button>
+        </div>
+        <p class="text-xs text-slate-400">支持 PNG / GIF / JPG，不超过 5MB</p>
+      </div>
+    </div>
 
-    <div class="space-y-2">
+    <!-- ── 导航链接维护 ── -->
+    <el-divider content-position="left" class="mt-6"><b>导航链接维护</b></el-divider>
+    <p class="text-xs text-slate-400 mb-3">
+      管理页头和页尾的导航链接。拖动 <span class="font-mono text-slate-500">≡</span> 调整顺序，开关控制显示位置。
+    </p>
+
+    <div ref="navListRef" class="space-y-2">
       <div
         v-for="(link, idx) in navLinks"
         :key="idx"
-        class="p-3 rounded-lg bg-slate-50 ring-1 ring-slate-200 space-y-2"
+        class="nav-link-card rounded-lg bg-white ring-1 ring-slate-200 shadow-sm overflow-hidden flex"
       >
-        <div class="flex items-center gap-2">
-          <div class="flex flex-col gap-0.5">
-            <button
-              class="text-xs text-slate-400 hover:text-brand-blue disabled:opacity-30"
-              :disabled="idx === 0"
-              @click="moveLink(idx, -1)"
-            >▲</button>
-            <button
-              class="text-xs text-slate-400 hover:text-brand-blue disabled:opacity-30"
-              :disabled="idx === navLinks.length - 1"
-              @click="moveLink(idx, 1)"
-            >▼</button>
-          </div>
-          <input
-            v-model="link.label"
-            class="form-input !py-1.5 !text-sm flex-1"
-            placeholder="导航名称（也用于 Hero 标签）"
-          />
-          <input
-            v-model="link.to"
-            class="form-input !py-1.5 !text-sm w-36"
-            placeholder="路径，如 /schedule"
-          />
-          <label class="flex items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
-            <input type="checkbox" v-model="link.showInNav" class="accent-brand-blue" />
-            页头
-          </label>
-          <label class="flex items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
-            <input type="checkbox" v-model="link.showInFooter" class="accent-brand-blue" />
-            页尾
-          </label>
-          <button
-            class="text-slate-400 hover:text-brand-red text-sm px-1"
-            @click="removeLink(idx)"
-            title="删除"
-          ><font-awesome-icon icon="xmark" /></button>
+        <!-- ▸ 左列：拖拽条 -->
+        <div class="drag-handle flex-shrink-0 w-7 flex flex-col items-center justify-center cursor-move bg-slate-100 hover:bg-blue-50 border-r border-slate-200 transition-colors" title="拖动排序">
+          <font-awesome-icon icon="grip-vertical" class="text-slate-400 text-xs" />
         </div>
-        <div class="flex items-center gap-2 pl-7">
-          <input
-            v-model="link.heroTitle"
-            class="form-input !py-1 !text-xs flex-1"
-            placeholder="Hero 大标题（留空则用导航名称）"
-          />
-          <input
-            v-model="link.heroSubtitle"
-            class="form-input !py-1 !text-xs flex-1"
-            placeholder="Hero 副标题（可选）"
-          />
+
+        <!-- ▸ 中列：内容 -->
+        <div class="flex-1 min-w-0 py-2.5 px-3 space-y-1.5">
+          <!-- 行1：标题 + 链接 + 开关 -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="flex items-center gap-1 flex-1 min-w-[120px]">
+              <label class="field-label-inline">标题</label>
+              <input v-model="link.label" class="form-input-compact flex-1" placeholder="导航名称" />
+            </div>
+            <div class="flex items-center gap-1 flex-1 min-w-[120px]">
+              <label class="field-label-inline">链接</label>
+              <input v-model="link.to" class="form-input-compact flex-1" placeholder="/schedule" />
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0 ml-1">
+              <label class="checkbox-label" :class="link.showInNav ? 'text-blue-600' : 'text-slate-400'">
+                <input type="checkbox" v-model="link.showInNav" class="accent-blue-500" />
+                显示到页头
+              </label>
+              <label class="checkbox-label" :class="link.showInFooter ? 'text-blue-600' : 'text-slate-400'">
+                <input type="checkbox" v-model="link.showInFooter" class="accent-blue-500" />
+                显示到页尾
+              </label>
+            </div>
+          </div>
+
+          <!-- 行2：Hero 标题 + Hero 副标题 -->
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1 flex-1 min-w-0">
+              <label class="field-label-inline text-slate-400">Hero 标题</label>
+              <input v-model="link.heroTitle" class="form-input-compact form-input-secondary flex-1" placeholder="留空则用导航名称" />
+            </div>
+            <div class="flex items-center gap-1 flex-1 min-w-0">
+              <label class="field-label-inline text-slate-400">Hero 副标题</label>
+              <input v-model="link.heroSubtitle" class="form-input-compact form-input-secondary flex-1" placeholder="可选" />
+            </div>
+          </div>
+
+          <!-- 行3：说明 -->
+          <div class="flex items-center gap-1">
+            <label class="field-label-inline text-slate-400">说明</label>
+            <input v-model="link.description" class="form-input-compact form-input-secondary flex-1" placeholder="页面说明文字（可选）" />
+          </div>
+        </div>
+
+        <!-- ▸ 右列：删除 -->
+        <div class="flex-shrink-0 w-10 flex items-center justify-center border-l border-slate-100 bg-slate-50/50 hover:bg-red-50 transition-colors">
+          <button class="p-2 text-slate-300 hover:text-red-500 transition" title="删除此链接" @click="confirmRemoveLink(idx)">
+            <font-awesome-icon :icon="['far', 'trash-can']" />
+          </button>
         </div>
       </div>
     </div>
@@ -68,6 +102,74 @@
       <el-button size="small" @click="addLink">
         <font-awesome-icon icon="plus" class="mr-1" /> 添加链接
       </el-button>
+    </div>
+
+    <!-- ── 页尾设置 ── -->
+    <el-divider content-position="left" class="mt-6"><b>页尾设置</b></el-divider>
+    <p class="text-xs text-slate-400 mb-2">控制页尾区域的显示内容。</p>
+
+    <!-- 品牌区域卡片 -->
+    <div class="rounded-lg bg-white ring-1 ring-slate-200 overflow-hidden">
+      <div class="px-3 py-1.5 bg-slate-50 text-xs font-semibold text-slate-500 border-b border-slate-100">品牌区域</div>
+      <div class="footer-row">
+        <span class="footer-row-label">显示LOGO</span>
+        <span class="footer-row-desc">页尾左上角显示网站LOGO</span>
+        <el-switch v-model="footerSettings.showLogo" size="small" class="flex-shrink-0" />
+        <span class="w-6 flex-shrink-0"></span>
+      </div>
+      <div class="footer-row">
+        <span class="footer-row-label">显示网站名称</span>
+        <span class="footer-row-desc">页尾左上角显示会议名称及标语</span>
+        <el-switch v-model="footerSettings.showSiteName" size="small" class="flex-shrink-0" />
+        <span class="w-6 flex-shrink-0"></span>
+      </div>
+      <div class="footer-row border-b-0">
+        <span class="footer-row-label">显示会议主题</span>
+        <span class="footer-row-desc">在网站名称下方显示会议主题（来自会议信息）</span>
+        <el-switch v-model="footerSettings.showMeetingName" size="small" class="flex-shrink-0" />
+        <span class="w-6 flex-shrink-0"></span>
+      </div>
+    </div>
+
+    <!-- 联系区域卡片 -->
+    <div class="rounded-lg bg-white ring-1 ring-slate-200 overflow-hidden mt-3">
+      <div class="px-3 py-1.5 bg-slate-50 text-xs font-semibold text-slate-500 border-b border-slate-100">「联系」区域</div>
+      <div class="footer-row">
+        <input v-model="footerSettings.meetingTimeLabel" class="form-input-compact w-28 text-center flex-shrink-0" placeholder="标签" />
+        <span class="footer-row-desc">显示会议日期范围</span>
+        <el-switch v-model="footerSettings.showMeetingTime" size="small" class="flex-shrink-0" />
+        <span class="w-6 flex-shrink-0"></span>
+      </div>
+      <div class="footer-row">
+        <input v-model="footerSettings.meetingLocationLabel" class="form-input-compact w-28 text-center flex-shrink-0" placeholder="标签" />
+        <span class="footer-row-desc">显示会议地点信息</span>
+        <el-switch v-model="footerSettings.showMeetingLocation" size="small" class="flex-shrink-0" />
+        <span class="w-6 flex-shrink-0"></span>
+      </div>
+      <div class="footer-row">
+        <input v-model="footerSettings.organizerLabel" class="form-input-compact w-28 text-center flex-shrink-0" placeholder="标签" />
+        <span class="footer-row-desc">显示主办方信息</span>
+        <el-switch v-model="footerSettings.showOrganizer" size="small" class="flex-shrink-0" />
+        <span class="w-6 flex-shrink-0"></span>
+      </div>
+      <!-- 自定义字段 -->
+      <div
+        v-for="(field, idx) in footerSettings.customFields"
+        :key="'cf-' + idx"
+        class="footer-row"
+      >
+        <input v-model="field.label" class="form-input-compact w-28 text-center flex-shrink-0" placeholder="字段名" />
+        <input v-model="field.value" class="form-input-compact flex-1" placeholder="字段值" />
+        <el-switch v-model="field.visible" size="small" class="flex-shrink-0" />
+        <button class="w-6 flex-shrink-0 p-0 flex items-center justify-center text-slate-300 hover:text-red-500 transition" title="删除" @click="removeCustomField(idx)">
+          <font-awesome-icon :icon="['far', 'trash-can']" class="text-xs" />
+        </button>
+      </div>
+      <div class="px-3 py-2 border-t border-slate-100">
+        <el-button size="small" @click="addCustomField">
+          <font-awesome-icon icon="plus" class="mr-1" /> 添加字段
+        </el-button>
+      </div>
     </div>
 
     <!-- ── 上传限制 ── -->
@@ -120,8 +222,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ref, reactive, onMounted, nextTick } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import Sortable from 'sortablejs';
 import api from '../../api';
 
 // ── General settings ──
@@ -136,75 +239,200 @@ const form = reactive({
   'analytics.llmApiKey': '',
 });
 
+// ── Site Logo ──
+const logoUrl = ref('');
+const logoUploading = ref(false);
+
+async function handleLogoUpload(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning('文件不能超过 5MB');
+    return;
+  }
+  logoUploading.value = true;
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const { data } = await api.post('/admin/settings/site-logo', fd);
+    logoUrl.value = data.logoUrl;
+    ElMessage.success('LOGO 已上传');
+  } catch (err) {
+    ElMessage.error(err.response?.data?.message || '上传失败');
+  } finally {
+    logoUploading.value = false;
+    e.target.value = '';
+  }
+}
+
+async function removeLogo() {
+  try {
+    await ElMessageBox.confirm('确定删除自定义LOGO？将恢复为默认LOGO。', '删除确认', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+    await api.delete('/admin/settings/site-logo');
+    logoUrl.value = '';
+    ElMessage.success('LOGO 已删除');
+  } catch {
+    // cancelled
+  }
+}
+
+// ── Footer settings ──
+const footerSettings = reactive({
+  showLogo: true,
+  showSiteName: true,
+  showMeetingName: false,
+  showMeetingTime: true,
+  showMeetingLocation: true,
+  showOrganizer: true,
+  meetingTimeLabel: '会议时间',
+  meetingLocationLabel: '会议地点',
+  organizerLabel: '主办方',
+  customFields: [],
+});
+
+function addCustomField() {
+  footerSettings.customFields.push({ label: '', value: '', visible: true });
+}
+
+function removeCustomField(idx) {
+  footerSettings.customFields.splice(idx, 1);
+}
+
 // ── Nav links ──
 const defaultNavLinks = [
-  { label: '首页',     to: '/',               showInNav: true,  showInFooter: false, heroTitle: '',                  heroSubtitle: '' },
-  { label: '日程安排', to: '/schedule',        showInNav: true,  showInFooter: true,  heroTitle: '日程安排',           heroSubtitle: '' },
-  { label: '会议地点', to: '/venue',           showInNav: true,  showInFooter: false, heroTitle: '',                  heroSubtitle: '' },
-  { label: '参会须知', to: '/meeting-guide',   showInNav: true,  showInFooter: false, heroTitle: 'Meeting Guide',     heroSubtitle: '参会前请仔细阅读以下信息，做好出行准备' },
-  { label: '参会人员', to: '/attendees',       showInNav: true,  showInFooter: true,  heroTitle: 'Meet the Team',     heroSubtitle: '' },
-  { label: '会后反思', to: '/reflections',     showInNav: true,  showInFooter: true,  heroTitle: '会后反思',           heroSubtitle: '记录你的收获、想法与建议' },
-  { label: '会议剪影', to: '/gallery',         showInNav: true,  showInFooter: true,  heroTitle: 'Gallery',           heroSubtitle: '照片 · 视频 · 第三方链接' },
-  { label: '往届会议', to: '/past-meetings',   showInNav: false, showInFooter: true,  heroTitle: 'Past Meetings',     heroSubtitle: '回顾每一届 YCYW Global IT Meeting' },
-  { label: '入校指引', to: '/entry-guide',     showInNav: false, showInFooter: false, heroTitle: 'Campus Entry Guide', heroSubtitle: '参会访客入校申请填写指引，请使用微信扫描右侧二维码完成申请' },
+  { label: '首页',     to: '/',               showInNav: true,  showInFooter: false, heroTitle: '',                  heroSubtitle: '', description: '' },
+  { label: '日程安排', to: '/schedule',        showInNav: true,  showInFooter: true,  heroTitle: '日程安排',           heroSubtitle: '', description: '' },
+  { label: '会议地点', to: '/venue',           showInNav: true,  showInFooter: false, heroTitle: '',                  heroSubtitle: '', description: '' },
+  { label: '参会须知', to: '/meeting-guide',   showInNav: true,  showInFooter: false, heroTitle: 'Meeting Guide',     heroSubtitle: '参会前请仔细阅读以下信息，做好出行准备', description: '' },
+  { label: '参会人员', to: '/attendees',       showInNav: true,  showInFooter: true,  heroTitle: 'Meet the Team',     heroSubtitle: '', description: '' },
+  { label: '会后反思', to: '/reflections',     showInNav: true,  showInFooter: true,  heroTitle: '会后反思',           heroSubtitle: '记录你的收获、想法与建议', description: '' },
+  { label: '会议剪影', to: '/gallery',         showInNav: true,  showInFooter: true,  heroTitle: 'Gallery',           heroSubtitle: '照片 · 视频 · 第三方链接', description: '' },
+  { label: '往届会议', to: '/past-meetings',   showInNav: false, showInFooter: true,  heroTitle: 'Past Meetings',     heroSubtitle: '回顾每一届 YCYW Global IT Meeting', description: '' },
+  { label: '入校指引', to: '/entry-guide',     showInNav: false, showInFooter: false, heroTitle: 'Campus Entry Guide', heroSubtitle: '参会访客入校申请填写指引，请使用微信扫描右侧二维码完成申请', description: '' },
 ];
 
 const navLinks = ref([]);
+const navListRef = ref(null);
+let sortableInstance = null;
 
 function addLink() {
-  navLinks.value.push({ label: '', to: '/', showInNav: true, showInFooter: false, heroTitle: '', heroSubtitle: '' });
+  navLinks.value.push({ label: '', to: '/', showInNav: true, showInFooter: false, heroTitle: '', heroSubtitle: '', description: '' });
+  nextTick(() => initSortable());
 }
 
 function removeLink(idx) {
   navLinks.value.splice(idx, 1);
+  nextTick(() => initSortable());
 }
 
-function moveLink(idx, dir) {
-  const target = idx + dir;
-  if (target < 0 || target >= navLinks.value.length) return;
-  const temp = navLinks.value[idx];
-  navLinks.value[idx] = navLinks.value[target];
-  navLinks.value[target] = temp;
-  // Trigger reactivity
-  navLinks.value = [...navLinks.value];
+async function confirmRemoveLink(idx) {
+  const name = navLinks.value[idx]?.label || '此链接';
+  try {
+    await ElMessageBox.confirm(`确定删除「${name}」？`, '删除确认', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+    removeLink(idx);
+  } catch {
+    // cancelled
+  }
+}
+
+// ── Sortable drag-and-drop ──
+function initSortable() {
+  if (sortableInstance) { sortableInstance.destroy(); sortableInstance = null; }
+  const el = navListRef.value;
+  if (!el) return;
+  sortableInstance = Sortable.create(el, {
+    handle: '.drag-handle',
+    animation: 180,
+    ghostClass: 'sortable-ghost',
+    onEnd: ({ oldIndex, newIndex }) => {
+      if (oldIndex === newIndex) return;
+      const list = [...navLinks.value];
+      const [moved] = list.splice(oldIndex, 1);
+      list.splice(newIndex, 0, moved);
+      navLinks.value = list;
+    },
+  });
 }
 
 async function load() {
   const { data } = await api.get('/admin/settings');
-  // backend returns { list: [{key,value,category}], grouped }
   const list = Array.isArray(data) ? data : (data?.list || []);
   for (const it of list) {
     if (it.key === 'nav.links') {
       try {
         const parsed = JSON.parse(it.value);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          navLinks.value = parsed;
+          navLinks.value = parsed.map(l => ({ description: '', ...l }));
         } else {
           navLinks.value = JSON.parse(JSON.stringify(defaultNavLinks));
         }
       } catch {
         navLinks.value = JSON.parse(JSON.stringify(defaultNavLinks));
       }
+    } else if (it.key === 'site.logoUrl') {
+      logoUrl.value = it.value || '';
+    } else if (it.key === 'footer.settings') {
+      try {
+        const parsed = JSON.parse(it.value);
+        if (parsed && typeof parsed === 'object') {
+          footerSettings.showLogo = parsed.showLogo !== false;
+          footerSettings.showSiteName = parsed.showSiteName !== false;
+          footerSettings.showMeetingName = !!parsed.showMeetingName;
+          footerSettings.showMeetingTime = parsed.showMeetingTime !== false;
+          footerSettings.showMeetingLocation = parsed.showMeetingLocation !== false;
+          footerSettings.showOrganizer = parsed.showOrganizer !== false;
+          footerSettings.meetingTimeLabel = parsed.meetingTimeLabel || '会议时间';
+          footerSettings.meetingLocationLabel = parsed.meetingLocationLabel || '会议地点';
+          footerSettings.organizerLabel = parsed.organizerLabel || '主办方';
+          footerSettings.customFields = Array.isArray(parsed.customFields) ? parsed.customFields : [];
+        }
+      } catch {
+        // keep defaults
+      }
     } else if (it.key in form) {
       if (typeof form[it.key] === 'number') form[it.key] = Number(it.value) || 0;
       else form[it.key] = it.value || '';
     }
   }
-  // If nav.links not found in settings, use defaults
   if (navLinks.value.length === 0) {
     navLinks.value = JSON.parse(JSON.stringify(defaultNavLinks));
   }
+  await nextTick();
+  initSortable();
 }
 
 async function save() {
   saving.value = true;
   try {
     const items = Object.entries(form).map(([key, value]) => ({ key, value }));
-    // Add nav links as JSON
     items.push({
       key: 'nav.links',
       value: JSON.stringify(navLinks.value),
       category: 'nav',
+    });
+    items.push({
+      key: 'footer.settings',
+      value: JSON.stringify({
+        showLogo: footerSettings.showLogo,
+        showSiteName: footerSettings.showSiteName,
+        showMeetingName: footerSettings.showMeetingName,
+        showMeetingTime: footerSettings.showMeetingTime,
+        showMeetingLocation: footerSettings.showMeetingLocation,
+        showOrganizer: footerSettings.showOrganizer,
+        meetingTimeLabel: footerSettings.meetingTimeLabel || '会议时间',
+        meetingLocationLabel: footerSettings.meetingLocationLabel || '会议地点',
+        organizerLabel: footerSettings.organizerLabel || '主办方',
+        customFields: footerSettings.customFields.filter(f => f.label || f.value),
+      }),
+      category: 'footer',
     });
     await api.put('/admin/settings', { items });
     ElMessage.success('已保存');
@@ -219,14 +447,112 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.form-input {
-  margin-top: 0.25rem;
-  width: 100%;
-  border-radius: 0.75rem;
-  border: 1px solid rgb(226 232 240);
-  padding: 0.625rem 1rem;
-  font-size: 0.875rem;
-  outline: none;
+/* ── Inline field label (same line as input) ── */
+.field-label-inline {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.form-input:focus { border-color: var(--brand-blue); }
+
+/* ── Block field label (for other sections) ── */
+.field-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* ── Full form input (for other sections) ── */
+.form-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  outline: none;
+  transition: border-color 0.15s;
+  background: #fff;
+}
+.form-input:focus {
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* ── Compact input (nav link cards) ── */
+.form-input-compact {
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  outline: none;
+  transition: border-color 0.15s;
+  background: #fff;
+  min-width: 0;
+}
+.form-input-compact:focus {
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 1.5px rgba(59, 130, 246, 0.1);
+}
+
+/* ── Secondary style (lighter border for Hero/description rows) ── */
+.form-input-secondary {
+  border-color: #f1f5f9;
+  background: #fafbfc;
+}
+.form-input-secondary:focus {
+  border-color: var(--brand-blue);
+  background: #fff;
+}
+
+/* ── Checkbox + label combo ── */
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* ── Sortable ghost highlight ── */
+.sortable-ghost {
+  opacity: 0.4;
+  background: #dbeafe !important;
+  border-radius: 0.5rem;
+}
+
+/* ── Card hover ── */
+.nav-link-card {
+  transition: box-shadow 0.15s;
+}
+.nav-link-card:hover {
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Footer settings compact rows ── */
+.footer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.footer-row-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  min-width: 6rem;
+}
+.footer-row-desc {
+  flex: 1;
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  min-width: 0;
+}
 </style>

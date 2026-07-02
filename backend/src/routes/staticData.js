@@ -192,7 +192,17 @@ router.get('/nav', async (req, res) => {
       organizer: meeting.organizer || 'YCYW Education',
     } : null;
 
-    res.json({ links, meetingInfo });
+    // 3. Get site logo URL
+    const siteLogoUrl = await settingsService.get('site.logoUrl', '');
+
+    // 4. Get footer settings
+    const footerSettingsRaw = await settingsService.get('footer.settings', '');
+    let footerSettings = null;
+    if (footerSettingsRaw) {
+      try { footerSettings = JSON.parse(footerSettingsRaw); } catch { footerSettings = null; }
+    }
+
+    res.json({ links, meetingInfo, siteLogoUrl: siteLogoUrl || '', footerSettings });
   } catch (e) {
     console.error('[nav] error', e);
     res.status(500).json({ message: 'Failed to load nav' });
