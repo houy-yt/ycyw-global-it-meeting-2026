@@ -394,6 +394,8 @@ function openEdit(row) {
 }
 
 async function save() {
+  if (!dialog.form.department) return ElMessage.warning('请选择部门');
+  if (!dialog.form.school) return ElMessage.warning('请选择学校');
   dialog.saving = true;
   try {
     if (dialog.id) await api.put(`/admin/attendees/${dialog.id}`, dialog.form);

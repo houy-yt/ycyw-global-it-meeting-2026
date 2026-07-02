@@ -57,6 +57,8 @@ function openAdd() { Object.assign(dialog, { show: true, id: null, form: blank()
 function openEdit(row) { Object.assign(dialog, { show: true, id: row.id, form: { ...blank(), ...row } }); }
 
 async function save() {
+  if (!dialog.form.code?.trim()) return ElMessage.warning('请填写代码');
+  if (!dialog.form.name?.trim()) return ElMessage.warning('请填写英文名');
   dialog.saving = true;
   try {
     if (dialog.id) await api.put(`/admin/departments/${dialog.id}`, dialog.form);

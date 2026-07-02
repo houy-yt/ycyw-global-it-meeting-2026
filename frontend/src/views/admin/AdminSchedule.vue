@@ -423,6 +423,8 @@ function openDayDialog(d) {
   else Object.assign(dayDialog, { show: true, id: null, form: blankDay() });
 }
 async function saveDay() {
+  if (!dayDialog.form.date) return ElMessage.warning('请选择日期');
+  if (!dayDialog.form.dayLabel?.trim()) return ElMessage.warning('请填写日期标签');
   dayDialog.saving = true;
   try {
     if (dayDialog.id) await api.put(`/admin/schedule/days/${dayDialog.id}`, dayDialog.form);
@@ -453,6 +455,11 @@ function openItemDialog(day, item) {
   }
 }
 async function saveItem() {
+  if (!itemDialog.form.allDay) {
+    if (!itemDialog.form.startTime?.trim()) return ElMessage.warning('请填写开始时间');
+    if (!itemDialog.form.endTime?.trim()) return ElMessage.warning('请填写结束时间');
+  }
+  if (!itemDialog.form.category || itemDialog.form.category === '-') return ElMessage.warning('请选择类型');
   itemDialog.saving = true;
   try {
     const payload = { ...itemDialog.form, dayId: itemDialog.dayId };
@@ -495,6 +502,7 @@ async function openTalkDialog(item, talk) {
   }
 }
 async function saveTalk() {
+  if (!talkDialog.form.title?.trim()) return ElMessage.warning('请填写议题名称');
   talkDialog.saving = true;
   try {
     const payload = { ...talkDialog.form, itemId: talkDialog.itemId };

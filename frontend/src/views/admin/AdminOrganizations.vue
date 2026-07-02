@@ -148,6 +148,8 @@ function openAdd() {
 function openEdit(row) { Object.assign(dialog, { show: true, id: row.id, form: { ...blank(), ...row } }); }
 
 async function save() {
+  if (!dialog.form.code?.trim()) return ElMessage.warning('请填写代码');
+  if (!dialog.form.name?.trim()) return ElMessage.warning('请填写名称');
   dialog.saving = true;
   try {
     if (dialog.id) await api.put(`/admin/organizations/${dialog.id}`, dialog.form);
