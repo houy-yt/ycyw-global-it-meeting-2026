@@ -1,7 +1,7 @@
 <template>
   <div>
-    <!-- Toolbar -->
-    <div class="flex flex-wrap items-center gap-3 mb-4">
+    <!-- Toolbar Row 1: Search / Filter -->
+    <div class="flex flex-wrap items-center gap-3 mb-3">
       <el-select v-model="filter.department" placeholder="全部部门" clearable size="default" style="width:160px" @change="load">
         <el-option v-for="d in departments" :key="d.code" :label="`${d.nameCn || d.name} (${d.code})`" :value="d.code" />
       </el-select>
@@ -10,14 +10,29 @@
       </el-select>
       <input v-model="filter.q" class="rounded-xl border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:border-brand-blue" placeholder="姓名 / 邮箱" @keyup.enter="load" />
       <button class="btn-primary !py-2 !px-4 !text-xs" @click="load">搜索</button>
-      <div class="flex-1"></div>
-      <el-button :type="items.length === 0 ? 'warning' : 'default'" @click="importStatic">
-        <font-awesome-icon icon="file-import" class="mr-1" /> 从 attendees.json 导入
+    </div>
+
+    <!-- Toolbar Row 2: Action Buttons -->
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <!-- Left: Import & Add -->
+      <el-button :type="items.length === 0 ? 'warning' : 'default'" @click="triggerJsonImport">
+        <font-awesome-icon icon="file-import" class="mr-1" /> 导入 Json 文件
       </el-button>
+      <input ref="jsonFileInput" type="file" accept=".json" style="display:none" @change="handleJsonFile" />
       <el-button type="success" @click="excelDialog.show = true">
         <font-awesome-icon icon="file-arrow-up" class="mr-1" /> 导入 Excel/CSV
       </el-button>
       <el-button type="primary" @click="openAdd">+ 新增参会人员</el-button>
+
+      <div class="flex-1"></div>
+
+      <!-- Right: Export -->
+      <el-button type="success" @click="exportAttendees">
+        <font-awesome-icon icon="file-arrow-down" class="mr-1" /> 导出参会人员名单
+      </el-button>
+      <el-button type="warning" :loading="exportingPhotos" @click="exportPhotos">
+        <font-awesome-icon icon="images" class="mr-1" /> 导出参会人员照片
+      </el-button>
     </div>
 
     <!-- Empty hint -->
@@ -27,7 +42,7 @@
       :closable="false"
       class="mb-4"
       title="暂无参会人员"
-      description="您可以点击右上角「从 attendees.json 导入」一键导入 backend/data/attendees.json 中的全部 IT 部门人员，或手动「+ 新增参会人员」录入其他部门成员。"
+      description="您可以点击「导入 Json 文件」选择编辑好的 attendees.json 文件导入人员数据，或手动「+ 新增参会人员」录入其他部门成员。"
       show-icon
     />
 
@@ -204,6 +219,8 @@ import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import Sortable from 'sortablejs';
 import * as XLSX from 'xlsx';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import api from '../../api';
 
 const items = ref([]);
@@ -287,24 +304,47 @@ async function load() {
   items.value = data;
 }
 
-async function importStatic() {
-  try {
-    const force = items.value.length > 0;
-    if (force) {
-      await ElMessageBox.confirm(
-        '数据库中已有参会人员，导入将清空已有人员并用 attendees.json 重新填充（仅 IT 部门），确定吗？',
-        '强制导入', { type: 'warning' }
-      );
+// ───── JSON file import ─────
+const jsonFileInput = ref(null);
+
+function triggerJsonImport() {
+  jsonFileInput.value.value = '';
+  jsonFileInput.value.click();
+}
+
+function handleJsonFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const jsonData = JSON.parse(e.target.result);
+      if (!Array.isArray(jsonData)) {
+        ElMessage.error('JSON 文件格式不正确，应为数组格式');
+        return;
+      }
+      const force = items.value.length > 0;
+      if (force) {
+        await ElMessageBox.confirm(
+          '数据库中已有参会人员，导入将清空已有人员并用所选 JSON 文件重新填充，确定吗？',
+          '强制导入', { type: 'warning' }
+        );
+      }
+      const { data } = await api.post('/admin/attendees/import-json', { jsonData, force });
+      const n = data?.attendees ?? 0;
+      ElMessage.success(`已导入 ${n} 位人员`);
+      await loadMeta();
+      load();
+    } catch (err) {
+      if (err === 'cancel') return;
+      if (err instanceof SyntaxError) {
+        ElMessage.error('JSON 文件解析失败，请检查文件格式');
+      } else {
+        ElMessage.error(err.response?.data?.message || '导入失败');
+      }
     }
-    const { data } = await api.post(`/admin/attendees/import-static${force ? '?force=1' : ''}`);
-    const n = data?.result?.attendees?.attendees ?? 0;
-    ElMessage.success(`已导入 ${n} 位人员`);
-    await loadMeta();
-    load();
-  } catch (e) {
-    if (e === 'cancel') return;
-    ElMessage.error(e.response?.data?.message || '导入失败');
-  }
+  };
+  reader.readAsText(file);
 }
 
 // ───── Excel/CSV import ─────
@@ -380,6 +420,157 @@ async function doExcelImport() {
   } finally {
     excelDialog.importing = false;
   }
+}
+
+// ───── Export attendees to Excel ─────
+function exportAttendees() {
+  if (items.value.length === 0) {
+    ElMessage.warning('暂无参会人员可导出');
+    return;
+  }
+  // Flatten grouped items to maintain group order (by school)
+  const rows = [];
+  for (const group of groupedItems.value) {
+    for (const item of group.members) {
+      rows.push({
+        'No.': item.no ?? '',
+        'School': item.school || '',
+        'EN Name': item.nameEn || '',
+        'Name': item.nameCn || '',
+        'Email': item.email || '',
+        '照片': item.photoUrl || '',
+      });
+    }
+  }
+  const ws = XLSX.utils.json_to_sheet(rows, {
+    header: ['No.', 'School', 'EN Name', 'Name', 'Email', '照片'],
+  });
+  // Set column widths
+  ws['!cols'] = [
+    { wch: 6 },   // No.
+    { wch: 25 },  // School
+    { wch: 20 },  // EN Name
+    { wch: 12 },  // Name
+    { wch: 30 },  // Email
+    { wch: 40 },  // 照片
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '参会人员名单');
+  const today = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `参会人员名单_${today}.xlsx`);
+  ElMessage.success(`已导出 ${rows.length} 条记录`);
+}
+
+// ───── Export attendee photos as ZIP ─────
+const exportingPhotos = ref(false);
+
+async function exportPhotos() {
+  if (items.value.length === 0) {
+    ElMessage.warning('暂无参会人员可导出');
+    return;
+  }
+
+  // Collect all attendees with photos
+  const withPhoto = [];
+  for (const group of groupedItems.value) {
+    for (const item of group.members) {
+      if (item.photoUrl) {
+        withPhoto.push(item);
+      }
+    }
+  }
+
+  if (withPhoto.length === 0) {
+    ElMessage.warning('没有参会人员有照片可导出');
+    return;
+  }
+
+  exportingPhotos.value = true;
+  const msgInstance = ElMessage({ message: `正在打包 ${withPhoto.length} 张照片，请稍候…`, type: 'info', duration: 0 });
+
+  try {
+    const zip = new JSZip();
+    // Track file names per folder to avoid duplicates
+    const folderNameCount = {};
+    let successCount = 0;
+    let failCount = 0;
+
+    // Fetch all photos in parallel (with concurrency limit)
+    const CONCURRENCY = 6;
+    let index = 0;
+
+    async function fetchNext() {
+      while (index < withPhoto.length) {
+        const i = index++;
+        const item = withPhoto[i];
+        const school = item.school || '未分配';
+        // Sanitize folder name (remove chars not safe for filenames)
+        const folderName = school.replace(/[\\/:*?"<>|]/g, '_');
+
+        // Build a meaningful file name: nameEn_nameCn_no.ext
+        const nameParts = [item.nameEn, item.nameCn].filter(Boolean).join('_') || `attendee_${item.id}`;
+        const ext = getExtFromUrl(item.photoUrl);
+
+        // Ensure unique name within folder
+        const folderKey = folderName;
+        if (!folderNameCount[folderKey]) folderNameCount[folderKey] = {};
+        let fileName = `${nameParts}${ext}`;
+        if (folderNameCount[folderKey][fileName]) {
+          folderNameCount[folderKey][fileName]++;
+          fileName = `${nameParts}_${folderNameCount[folderKey][fileName]}${ext}`;
+        } else {
+          folderNameCount[folderKey][fileName] = 1;
+        }
+
+        try {
+          const response = await fetch(item.photoUrl);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const blob = await response.blob();
+          zip.folder(folderName).file(fileName, blob);
+          successCount++;
+        } catch (err) {
+          console.warn(`Failed to fetch photo for ${nameParts}:`, err);
+          failCount++;
+        }
+      }
+    }
+
+    // Run concurrent fetchers
+    const workers = [];
+    for (let w = 0; w < Math.min(CONCURRENCY, withPhoto.length); w++) {
+      workers.push(fetchNext());
+    }
+    await Promise.all(workers);
+
+    // Generate zip and trigger download
+    const content = await zip.generateAsync({ type: 'blob' });
+    const today = new Date().toISOString().slice(0, 10);
+    saveAs(content, `参会人员照片_${today}.zip`);
+
+    msgInstance.close();
+    if (failCount > 0) {
+      ElMessage.warning(`已导出 ${successCount} 张照片，${failCount} 张下载失败`);
+    } else {
+      ElMessage.success(`已导出 ${successCount} 张照片`);
+    }
+  } catch (e) {
+    msgInstance.close();
+    ElMessage.error('导出照片失败: ' + (e.message || '未知错误'));
+  } finally {
+    exportingPhotos.value = false;
+  }
+}
+
+function getExtFromUrl(url) {
+  try {
+    const pathname = new URL(url, window.location.origin).pathname;
+    const dotIdx = pathname.lastIndexOf('.');
+    if (dotIdx > -1) {
+      const ext = pathname.substring(dotIdx).toLowerCase().split('?')[0];
+      if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].includes(ext)) return ext;
+    }
+  } catch { /* ignore */ }
+  return '.jpg'; // default fallback
 }
 
 function openAdd() {

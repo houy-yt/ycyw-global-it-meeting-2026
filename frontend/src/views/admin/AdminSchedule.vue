@@ -1,17 +1,23 @@
 <template>
   <div>
     <!-- Toolbar -->
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-base font-semibold text-brand-deep">日程管理</h3>
-      <div class="flex gap-2">
-        <el-button :type="days.length === 0 ? 'warning' : 'default'" :icon="null" @click="importStatic">
-          <font-awesome-icon icon="file-import" class="mr-1" /> 从 schedule.json 导入
-        </el-button>
-        <el-button type="success" @click="excelDialog.show = true">
-          <font-awesome-icon icon="file-arrow-up" class="mr-1" /> 导入 Excel/CSV
-        </el-button>
-        <el-button type="primary" @click="openDayDialog(null)">+ 新增日期</el-button>
-      </div>
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <!-- Left: Import & Add -->
+      <el-button :type="days.length === 0 ? 'warning' : 'default'" :icon="null" @click="triggerJsonImport">
+        <font-awesome-icon icon="file-import" class="mr-1" /> 导入 Json 文件
+      </el-button>
+      <input ref="jsonFileInput" type="file" accept=".json" style="display:none" @change="handleJsonFile" />
+      <el-button type="success" @click="excelDialog.show = true">
+        <font-awesome-icon icon="file-arrow-up" class="mr-1" /> 导入 Excel/CSV
+      </el-button>
+      <el-button type="primary" @click="openDayDialog(null)">+ 新增日期</el-button>
+
+      <div class="flex-1"></div>
+
+      <!-- Right: Export -->
+      <el-button type="success" @click="exportSchedule">
+        <font-awesome-icon icon="file-arrow-down" class="mr-1" /> 导出日程安排
+      </el-button>
     </div>
 
     <!-- Empty hint -->
@@ -21,7 +27,7 @@
       :closable="false"
       class="mb-4"
       title="暂无日程数据"
-      description="您可以点击右上角「从 schedule.json 导入」一键导入 backend/data/schedule.json 中的默认日程，或手动「+ 新增日期」开始维护。"
+      description="您可以点击「导入 Json 文件」选择编辑好的 schedule.json 文件导入日程，或手动「+ 新增日期」开始维护。"
       show-icon
     />
 
@@ -398,23 +404,140 @@ async function doScheduleExcelImport() {
   }
 }
 
-async function importStatic() {
-  try {
-    const force = days.value.length > 0;
-    if (force) {
-      await ElMessageBox.confirm(
-        '数据库中已有日程数据，导入将清空已有的日程并用 schedule.json 重新填充，确定吗？',
-        '强制导入', { type: 'warning' }
-      );
+// ───── JSON file import ─────
+const jsonFileInput = ref(null);
+
+function triggerJsonImport() {
+  jsonFileInput.value.value = '';
+  jsonFileInput.value.click();
+}
+
+function handleJsonFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const jsonData = JSON.parse(e.target.result);
+      if (!jsonData.dates || !Array.isArray(jsonData.dates)) {
+        ElMessage.error('JSON 文件格式不正确，缺少 dates 数组');
+        return;
+      }
+      const force = days.value.length > 0;
+      if (force) {
+        await ElMessageBox.confirm(
+          '数据库中已有日程数据，导入将清空已有的日程并用所选 JSON 文件重新填充，确定吗？',
+          '强制导入', { type: 'warning' }
+        );
+      }
+      const { data } = await api.post('/admin/schedule/import-json', { jsonData, force });
+      const n = data?.schedule ?? 0;
+      ElMessage.success(`已导入 ${n} 天日程`);
+      load();
+    } catch (err) {
+      if (err === 'cancel') return;
+      if (err instanceof SyntaxError) {
+        ElMessage.error('JSON 文件解析失败，请检查文件格式');
+      } else {
+        ElMessage.error(err.response?.data?.message || '导入失败');
+      }
     }
-    const { data } = await api.post(`/admin/schedule/import-static${force ? '?force=1' : ''}`);
-    const n = data?.result?.schedule?.schedule ?? data?.result?.schedule ?? 0;
-    ElMessage.success(`已导入 ${n} 天日程`);
-    load();
-  } catch (e) {
-    if (e === 'cancel') return;
-    ElMessage.error(e.response?.data?.message || '导入失败');
+  };
+  reader.readAsText(file);
+}
+
+// ───── Export schedule to Excel ─────
+const CATEGORY_LABEL = {
+  session: '演讲/分享',
+  meal: '用餐',
+  tea: '茶歇',
+  checkin: '签到',
+  transit: '出行',
+  other: '其他',
+};
+
+function stripHtml(html) {
+  if (!html) return '';
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+function exportSchedule() {
+  if (days.value.length === 0) {
+    ElMessage.warning('暂无日程数据可导出');
+    return;
   }
+
+  const wb = XLSX.utils.book_new();
+  const headers = ['时段', '类型', '时段主题（标题）', '议题名称', '负责人', '详细描述'];
+
+  for (const day of days.value) {
+    const rows = [];
+
+    for (const item of (day.items || [])) {
+      const timeRange = item.endTime ? `${item.startTime}-${item.endTime}` : (item.startTime || '');
+      const categoryLabel = CATEGORY_LABEL[item.category] || item.category || '';
+      const sectionTitle = item.sectionTitle || '';
+      const description = stripHtml(item.description);
+
+      if (item.talks && item.talks.length > 0) {
+        // First talk row: include time, category, sectionTitle, description
+        item.talks.forEach((talk, idx) => {
+          if (idx === 0) {
+            rows.push({
+              '时段': timeRange,
+              '类型': categoryLabel,
+              '时段主题（标题）': sectionTitle,
+              '议题名称': talk.title || '',
+              '负责人': talk.speaker || '',
+              '详细描述': description,
+            });
+          } else {
+            // Subsequent talks: only fill talk-specific fields
+            rows.push({
+              '时段': '',
+              '类型': '',
+              '时段主题（标题）': '',
+              '议题名称': talk.title || '',
+              '负责人': talk.speaker || '',
+              '详细描述': '',
+            });
+          }
+        });
+      } else {
+        // No talks: output item info only
+        rows.push({
+          '时段': timeRange,
+          '类型': categoryLabel,
+          '时段主题（标题）': sectionTitle,
+          '议题名称': '',
+          '负责人': '',
+          '详细描述': description,
+        });
+      }
+    }
+
+    const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 14 },  // 时段
+      { wch: 12 },  // 类型
+      { wch: 24 },  // 时段主题（标题）
+      { wch: 30 },  // 议题名称
+      { wch: 12 },  // 负责人
+      { wch: 40 },  // 详细描述
+    ];
+
+    // Sheet name: Chinese date format like "2026年7月8日"
+    const d = dayjs(day.date);
+    const sheetName = `${d.year()}年${d.month() + 1}月${d.date()}日`;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `日程安排_${today}.xlsx`);
+  ElMessage.success('日程安排已导出');
 }
 
 // ───── Day ─────

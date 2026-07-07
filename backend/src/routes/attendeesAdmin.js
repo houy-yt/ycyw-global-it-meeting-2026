@@ -30,6 +30,69 @@ router.post('/attendees/import-static', authRequired, adminRequired, async (req,
   }
 });
 
+// Import from user-uploaded JSON file
+router.post('/attendees/import-json', authRequired, adminRequired, async (req, res) => {
+  try {
+    const { jsonData, force } = req.body || {};
+    if (!Array.isArray(jsonData) || !jsonData.length) {
+      return res.status(400).json({ message: 'jsonData array required' });
+    }
+
+    if (force) {
+      await prisma.attendee.deleteMany();
+    }
+
+    let n = 0;
+    for (const a of jsonData) {
+      await prisma.attendee.create({
+        data: {
+          no: a.no !== undefined && a.no !== '' ? Number(a.no) : null,
+          nameEn: a.nameEn || null,
+          nameCn: a.nameCn || null,
+          email: a.email || null,
+          photoUrl: a.photoUrl || null,
+          school: a.school || 'Other',
+          department: a.department || 'IT',
+          title: a.title || null,
+          phone: a.phone || null,
+          bio: a.bio || null,
+          isActive: a.isActive !== false,
+          sortOrder: a.sortOrder || a.no || 0,
+        },
+      });
+      n++;
+    }
+
+    // Sync organizations from imported data
+    const schools = Array.from(new Set(jsonData.map((a) => a.school).filter(Boolean)));
+    let orgCount = 0;
+    for (let i = 0; i < schools.length; i++) {
+      const code = schools[i];
+      const upper = (code || '').toUpperCase();
+      let color = '#0032a0';
+      if (upper.includes('YCIS')) color = '#ff0044';
+      else if (upper.includes('YWIES') || upper.includes('YWAD')) color = '#ff8200';
+      await prisma.organization.upsert({
+        where: { code },
+        update: {},
+        create: {
+          code,
+          name: code,
+          category: code === 'CTO' ? 'headquarter' : 'school',
+          color,
+          sortOrder: i,
+        },
+      });
+      orgCount++;
+    }
+
+    res.json({ ok: true, attendees: n, organizations: orgCount });
+  } catch (e) {
+    console.error('[attendees import-json]', e);
+    res.status(500).json({ message: e.message });
+  }
+});
+
 router.get('/attendees', authRequired, adminRequired, async (req, res) => {
   const { department, school, q } = req.query;
   const where = {};

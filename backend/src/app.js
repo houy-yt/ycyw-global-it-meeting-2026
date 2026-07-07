@@ -52,6 +52,7 @@ app.use('/api/admin', require('./routes/attendeesAdmin'));   // attendees/orgs/d
 app.use('/api/admin/settings', require('./routes/settings'));// key-value settings
 app.use('/api/admin/analytics', require('./routes/analytics'));// reflection analytics
 app.use('/api/admin/meeting-guide', require('./routes/meetingGuide').adminRouter);
+app.use('/api/admin/notification', require('./routes/notification'));
 
 // ---------- Static: Frontend (production) ----------
 const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');

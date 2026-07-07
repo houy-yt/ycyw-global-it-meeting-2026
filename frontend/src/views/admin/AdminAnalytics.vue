@@ -2,7 +2,6 @@
   <div class="space-y-6">
     <!-- ============ Toolbar ============ -->
     <div class="flex flex-wrap items-center gap-3">
-      <h3 class="text-base font-semibold text-brand-deep">反思数据分析</h3>
       <div class="flex-1"></div>
       <el-button :loading="scanning" type="primary" plain @click="scan(true)">仅扫描未分析</el-button>
       <el-button :loading="scanning" type="primary" @click="scan(false)">重新分析全部</el-button>

@@ -1,7 +1,5 @@
 <template>
-  <div class="max-w-2xl">
-    <h3 class="text-lg font-semibold text-brand-deep mb-4">系统设置</h3>
-
+  <div>
     <!-- ── 网站LOGO ── -->
     <el-divider content-position="left"><b>网站LOGO</b></el-divider>
     <p class="text-xs text-slate-400 mb-3">
@@ -214,6 +212,132 @@
       </div>
     </div>
 
+    <!-- ── 邮件服务 (SMTP) ── -->
+    <el-divider content-position="left" class="mt-6"><b>邮件服务 (SMTP)</b></el-divider>
+    <p class="text-xs text-slate-400 mb-3">
+      配置发件邮箱及 SMTP 服务器，用于「发送通知」功能向参会人员发送邮件。发送通知时从下拉列表中选择。
+    </p>
+
+    <!-- ── 邮箱列表表格 ── -->
+    <div class="rounded-lg ring-1 ring-slate-200 overflow-hidden bg-white">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-slate-50 text-slate-500 text-xs">
+            <th class="text-left px-4 py-2 font-semibold">发件邮箱</th>
+            <th class="text-center px-4 py-2 font-semibold w-20">Active</th>
+            <th class="text-center px-4 py-2 font-semibold w-40">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(sender, idx) in senderEmails"
+            :key="idx"
+            class="border-t border-slate-100 hover:bg-slate-50/50 transition"
+          >
+            <td class="px-4 py-2.5">
+              <div class="font-medium text-slate-700">{{ sender.email || '(未填写)' }}</div>
+              <div v-if="sender.name" class="text-xs text-slate-400">{{ sender.name }}</div>
+            </td>
+            <td class="px-4 py-2.5 text-center">
+              <el-switch v-model="sender.active" size="small" @change="saveSenderEmails" />
+            </td>
+            <td class="px-4 py-2.5 text-center">
+              <div class="inline-flex items-center gap-2">
+                <el-button size="small" link type="primary" @click="openSmtpDialog(idx)">
+                  <font-awesome-icon icon="pen-to-square" class="mr-1" />修改配置
+                </el-button>
+                <el-button size="small" link type="danger" @click="confirmRemoveSender(idx)">
+                  <font-awesome-icon :icon="['far', 'trash-can']" class="mr-1" />删除
+                </el-button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="senderEmails.length === 0">
+            <td colspan="3" class="px-4 py-6 text-center text-slate-400 text-xs">
+              <font-awesome-icon icon="inbox" class="text-xl mb-1 block" />
+              尚未配置发件邮箱，请点击下方按钮添加。
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-3 flex items-center gap-3">
+      <el-button size="small" @click="openSmtpDialog(-1)">
+        <font-awesome-icon icon="plus" class="mr-1" /> 添加邮箱
+      </el-button>
+    </div>
+
+    <!-- ── 配置弹窗 ── -->
+    <el-dialog
+      v-model="smtpDlgVisible"
+      :title="smtpDlgIdx < 0 ? '添加发件邮箱' : '修改邮箱配置'"
+      width="520px"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm text-slate-600 font-medium">发件邮箱 <span class="text-red-500">*</span></label>
+            <input v-model="smtpDlgForm.email" class="form-input" placeholder="noreply@example.com" />
+          </div>
+          <div>
+            <label class="text-sm text-slate-600 font-medium">发件人名称</label>
+            <input v-model="smtpDlgForm.name" class="form-input" placeholder="IT Meeting" />
+          </div>
+        </div>
+        <el-divider class="!my-2" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm text-slate-600 font-medium">SMTP 服务器 <span class="text-red-500">*</span></label>
+            <input v-model="smtpDlgForm.host" class="form-input" placeholder="smtp.example.com" />
+          </div>
+          <div>
+            <label class="text-sm text-slate-600 font-medium">端口</label>
+            <el-input-number v-model="smtpDlgForm.port" :min="1" :max="65535" class="w-full" />
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-slate-600 font-medium">加密方式</label>
+          <el-select v-model="smtpDlgForm.secure" class="w-full">
+            <el-option label="STARTTLS（端口 587，推荐）" value="tls" />
+            <el-option label="SSL/TLS（端口 465）" value="ssl" />
+            <el-option label="无加密" value="none" />
+          </el-select>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm text-slate-600 font-medium">SMTP 用户名</label>
+            <input v-model="smtpDlgForm.user" class="form-input" placeholder="your-email@example.com" />
+          </div>
+          <div>
+            <label class="text-sm text-slate-600 font-medium">SMTP 密码</label>
+            <el-input v-model="smtpDlgForm.pass" type="password" show-password placeholder="SMTP 密码或授权码" />
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-slate-600 font-medium">启用</label>
+          <el-switch v-model="smtpDlgForm.active" />
+        </div>
+        <!-- 测试按钮 -->
+        <div class="flex items-center gap-3 pt-1">
+          <el-button size="small" :loading="smtpTesting" @click="testSmtpInDialog">
+            <font-awesome-icon icon="paper-plane" class="mr-1" /> 发送测试邮件
+          </el-button>
+          <span v-if="smtpTestResult" :class="smtpTestResult.ok ? 'text-green-600' : 'text-red-500'" class="text-xs">
+            {{ smtpTestResult.message }}
+          </span>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <el-button @click="smtpDlgVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveSmtpDialog">保存</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <div class="pt-6 flex gap-3">
       <el-button type="primary" :loading="saving" @click="save">保存所有设置</el-button>
       <el-button @click="load">重新加载</el-button>
@@ -237,6 +361,18 @@ const form = reactive({
   'analytics.llmBaseUrl': '',
   'analytics.llmModel': '',
   'analytics.llmApiKey': '',
+});
+
+// ── Sender emails (SMTP) ──
+const senderEmails = ref([]);  // [{email, name, host, port, secure, user, pass, active}]
+const smtpTesting = ref(false);
+const smtpTestResult = ref(null);
+
+// Dialog state
+const smtpDlgVisible = ref(false);
+const smtpDlgIdx = ref(-1); // -1 = add new
+const smtpDlgForm = reactive({
+  email: '', name: '', host: '', port: 587, secure: 'tls', user: '', pass: '', active: true,
 });
 
 // ── Site Logo ──
@@ -362,6 +498,115 @@ function initSortable() {
   });
 }
 
+// ── Sender emails management ──
+
+async function loadSenderEmails() {
+  try {
+    const { data } = await api.get('/admin/notification/smtp-config');
+    senderEmails.value = Array.isArray(data.senderEmails) ? data.senderEmails : [];
+  } catch {
+    senderEmails.value = [];
+  }
+}
+
+async function saveSenderEmails() {
+  try {
+    await api.put('/admin/notification/smtp-config', {
+      senderEmails: senderEmails.value,
+    });
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '保存邮箱配置失败');
+  }
+}
+
+function openSmtpDialog(idx) {
+  smtpDlgIdx.value = idx;
+  smtpTestResult.value = null;
+  if (idx >= 0 && senderEmails.value[idx]) {
+    const s = senderEmails.value[idx];
+    Object.assign(smtpDlgForm, {
+      email: s.email || '', name: s.name || '',
+      host: s.host || '', port: Number(s.port) || 587, secure: s.secure || 'tls',
+      user: s.user || '', pass: s.pass || '', active: s.active !== false,
+    });
+  } else {
+    Object.assign(smtpDlgForm, {
+      email: '', name: '', host: '', port: 587, secure: 'tls', user: '', pass: '', active: true,
+    });
+  }
+  smtpDlgVisible.value = true;
+}
+
+async function saveSmtpDialog() {
+  if (!smtpDlgForm.email || !smtpDlgForm.email.trim()) {
+    ElMessage.warning('请填写发件邮箱');
+    return;
+  }
+  if (!smtpDlgForm.host || !smtpDlgForm.host.trim()) {
+    ElMessage.warning('请填写 SMTP 服务器');
+    return;
+  }
+  const entry = { ...smtpDlgForm, port: Number(smtpDlgForm.port) || 587 };
+  if (smtpDlgIdx.value >= 0) {
+    senderEmails.value[smtpDlgIdx.value] = entry;
+  } else {
+    senderEmails.value.push(entry);
+  }
+  await saveSenderEmails();
+  smtpDlgVisible.value = false;
+  ElMessage.success('邮箱配置已保存');
+  // Reload to get masked passwords
+  await loadSenderEmails();
+}
+
+async function confirmRemoveSender(idx) {
+  const email = senderEmails.value[idx]?.email || '此邮箱';
+  try {
+    await ElMessageBox.confirm(`确定删除「${email}」的邮箱配置？`, '删除确认', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+    senderEmails.value.splice(idx, 1);
+    await saveSenderEmails();
+    ElMessage.success('已删除');
+  } catch {
+    // cancelled
+  }
+}
+
+async function testSmtpInDialog() {
+  smtpTesting.value = true;
+  smtpTestResult.value = null;
+  try {
+    // First save dialog data so backend has latest config
+    if (!smtpDlgForm.email || !smtpDlgForm.host) {
+      smtpTestResult.value = { ok: false, message: '请先填写发件邮箱和 SMTP 服务器' };
+      return;
+    }
+    // Save current dialog entry temporarily
+    const entry = { ...smtpDlgForm, port: Number(smtpDlgForm.port) || 587 };
+    const tempList = [...senderEmails.value];
+    if (smtpDlgIdx.value >= 0) {
+      tempList[smtpDlgIdx.value] = entry;
+    } else {
+      tempList.push(entry);
+    }
+    await api.put('/admin/notification/smtp-config', { senderEmails: tempList });
+
+    const testEmail = smtpDlgForm.user || smtpDlgForm.email;
+    const { data } = await api.post('/admin/notification/test-smtp', {
+      senderEmail: smtpDlgForm.email,
+      testEmail,
+    });
+    smtpTestResult.value = { ok: true, message: data.message || '测试邮件已发送' };
+  } catch (e) {
+    smtpTestResult.value = { ok: false, message: e.response?.data?.message || '测试失败' };
+  } finally {
+    smtpTesting.value = false;
+  }
+}
+
 async function load() {
   const { data } = await api.get('/admin/settings');
   const list = Array.isArray(data) ? data : (data?.list || []);
@@ -435,6 +680,7 @@ async function save() {
       category: 'footer',
     });
     await api.put('/admin/settings', { items });
+    // SMTP sender emails are saved independently via their own API
     ElMessage.success('已保存');
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '保存失败');
@@ -443,6 +689,7 @@ async function save() {
 
 onMounted(() => {
   load();
+  loadSenderEmails();
 });
 </script>
 

@@ -1,6 +1,5 @@
 <template>
-  <div class="max-w-2xl">
-    <h3 class="text-lg font-semibold text-brand-deep mb-4">会议基本信息</h3>
+  <div>
     <div class="space-y-4">
       <div>
         <label class="text-sm text-slate-600 font-medium">名称</label>
@@ -8,11 +7,13 @@
       </div>
       <div>
         <label class="text-sm text-slate-600 font-medium">主题（中文）</label>
-        <input v-model="form.tagline" class="form-input" placeholder="例：连接 · 创新 · 未来" />
+        <textarea v-model="form.tagline" class="form-input" rows="2" placeholder="例：连接 · 创新 · 未来" />
+        <p class="mt-1 text-xs text-slate-400">按 Enter 可控制前台显示的换行位置</p>
       </div>
       <div>
         <label class="text-sm text-slate-600 font-medium">主题（英文） / Theme (EN)</label>
-        <input v-model="form.taglineEn" class="form-input" placeholder="e.g. Connect · Innovate · Empower" />
+        <textarea v-model="form.taglineEn" class="form-input" rows="2" placeholder="e.g. Connect · Innovate · Empower" />
+        <p class="mt-1 text-xs text-slate-400">Press Enter to control line break position on the frontend</p>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>

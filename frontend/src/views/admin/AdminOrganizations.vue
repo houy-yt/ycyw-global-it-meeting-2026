@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-base font-semibold text-brand-deep">学校 / 组织维护</h3>
+    <div class="flex justify-end items-center mb-4">
       <div class="flex items-center gap-2">
         <span class="text-xs text-slate-400">拖拽 <span class="font-mono">≡</span> 调整排序</span>
         <el-button type="primary" @click="openAdd">+ 新增组织</el-button>

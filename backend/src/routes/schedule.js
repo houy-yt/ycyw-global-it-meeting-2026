@@ -45,6 +45,115 @@ router.post('/import-static', authRequired, adminRequired, async (req, res) => {
   }
 });
 
+// ─────── Import from user-uploaded JSON file ───────
+router.post('/import-json', authRequired, adminRequired, async (req, res) => {
+  try {
+    const { jsonData, force } = req.body || {};
+    if (!jsonData || typeof jsonData !== 'object') {
+      return res.status(400).json({ message: 'jsonData object required' });
+    }
+
+    const data = jsonData;
+
+    // Optionally sync MeetingInfo
+    const m = data.meeting || {};
+    if (m.name || m.startDate) {
+      await prisma.meetingInfo.upsert({
+        where: { id: 1 },
+        update: {
+          name: m.name || 'YCYW 2026 Global IT Meeting',
+          tagline: m.tagline || null,
+          startDate: m.startDate ? new Date(m.startDate) : new Date(),
+          endDate: m.endDate ? new Date(m.endDate) : new Date(),
+          location: m.location || '北京',
+        },
+        create: {
+          id: 1,
+          name: m.name || 'YCYW 2026 Global IT Meeting',
+          tagline: m.tagline || null,
+          startDate: m.startDate ? new Date(m.startDate) : new Date(),
+          endDate: m.endDate ? new Date(m.endDate) : new Date(),
+          location: m.location || '北京',
+        },
+      });
+    }
+
+    // Check existing data
+    if (force) {
+      await prisma.talkResource.deleteMany();
+      await prisma.talk.deleteMany();
+      await prisma.scheduleItem.deleteMany();
+      await prisma.scheduleDay.deleteMany();
+    }
+
+    // Parse time range helper
+    function parseTimeRange(s) {
+      if (!s) return { startTime: '', endTime: '' };
+      const [a, b] = String(s).split(/\s*[-–—]\s*/);
+      return { startTime: (a || '').trim(), endTime: (b || '').trim() };
+    }
+    function detectCategory(title) {
+      if (!title) return 'session';
+      if (title.includes('午餐')) return 'meal';
+      if (title.includes('晚餐')) return 'meal';
+      if (title.includes('茶歇')) return 'tea';
+      if (title.includes('签到')) return 'checkin';
+      if (title.includes('前往')) return 'transit';
+      return 'session';
+    }
+
+    let dayN = 0;
+    for (let d = 0; d < (data.dates || []).length; d++) {
+      const day = data.dates[d];
+      const dayRow = await prisma.scheduleDay.create({
+        data: {
+          date: new Date(day.date),
+          dayLabel: day.dayLabel || day.date,
+          sortOrder: d,
+        },
+      });
+      dayN++;
+
+      for (let i = 0; i < (day.items || []).length; i++) {
+        const it = day.items[i];
+        const { startTime, endTime } = parseTimeRange(it.time);
+        const category = detectCategory(it.title);
+        const itemRow = await prisma.scheduleItem.create({
+          data: {
+            dayId: dayRow.id,
+            startTime,
+            endTime,
+            sortOrder: i,
+            sectionTitle: it.title || null,
+            category,
+            description: null,
+          },
+        });
+
+        const talks = it.talks || [];
+        for (let t = 0; t < talks.length; t++) {
+          const tk = talks[t];
+          if (!tk.title && !tk.speaker) continue;
+          await prisma.talk.create({
+            data: {
+              itemId: itemRow.id,
+              title: tk.title || '议程待定',
+              speaker: tk.speaker || null,
+              abstract: null,
+              sortOrder: t,
+            },
+          });
+        }
+      }
+    }
+
+    res.json({ ok: true, schedule: dayN });
+  } catch (e) {
+    console.error('[schedule import-json]', e);
+    res.status(500).json({ message: e.message });
+  }
+});
+
 // ─────── Import from Excel/CSV (pre-parsed JSON from frontend) ───────
 router.post('/import-excel', authRequired, adminRequired, async (req, res) => {
   try {

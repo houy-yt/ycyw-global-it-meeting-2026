@@ -19,6 +19,8 @@
     "axios": "^1.7.4",
     "dayjs": "^1.11.13",
     "element-plus": "^2.8.1",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
     "pinia": "^2.2.2",
     "sortablejs": "^1.15.7",
     "tinymce": "^8.6.0",
