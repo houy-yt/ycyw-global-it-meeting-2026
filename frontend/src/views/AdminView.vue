@@ -29,10 +29,18 @@
             class="flex-shrink-0 w-56"
             :class="{ 'hidden lg:block': !sidebarOpen, 'block': sidebarOpen }"
           >
-            <nav class="sticky top-24 space-y-5">
-              <div v-for="group in menuGroups" :key="group.title">
-                <div class="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
-                  {{ group.title }}
+            <nav class="sticky top-24 space-y-1">
+              <div
+                v-for="(group, gIdx) in menuGroups"
+                :key="group.title"
+                :class="gIdx > 0 ? 'mt-3' : ''"
+              >
+                <div class="flex items-center gap-2 pt-1 pb-2 pl-3">
+                  <span class="w-3 h-px bg-slate-300"></span>
+                  <span class="text-[11px] font-semibold tracking-wider text-slate-400 whitespace-nowrap">
+                    {{ group.title }}
+                  </span>
+                  <span class="flex-1 h-px bg-slate-200"></span>
                 </div>
                 <ul class="space-y-0.5">
                   <li v-for="item in group.items" :key="item.key">
@@ -58,6 +66,7 @@
 
           <!-- Content -->
           <main class="flex-1 min-w-0">
+            <h2 class="text-xl font-bold text-brand-deep mb-4">{{ currentLabel }}</h2>
             <div class="bg-white rounded-xl ring-1 ring-slate-100 shadow-soft p-6 sm:p-8">
               <AdminMeeting v-if="tab === 'meeting'" />
               <AdminSchedule v-if="tab === 'schedule'" />
@@ -69,8 +78,8 @@
               <AdminAnalytics v-if="tab === 'analytics'" />
               <AdminGallery v-if="tab === 'gallery'" />
               <AdminPast v-if="tab === 'past'" />
-              <AdminTags v-if="tab === 'tags'" />
               <AdminAnnouncements v-if="tab === 'announce'" />
+              <AdminNotification v-if="tab === 'notification'" />
               <AdminSettings v-if="tab === 'settings'" />
               <AdminFaIcons v-if="tab === 'faIcons'" />
             </div>
@@ -93,8 +102,8 @@ import AdminReflections from './admin/AdminReflections.vue';
 import AdminAnalytics from './admin/AdminAnalytics.vue';
 import AdminGallery from './admin/AdminGallery.vue';
 import AdminPast from './admin/AdminPast.vue';
-import AdminTags from './admin/AdminTags.vue';
 import AdminAnnouncements from './admin/AdminAnnouncements.vue';
+import AdminNotification from './admin/AdminNotification.vue';
 import AdminSettings from './admin/AdminSettings.vue';
 import AdminFaIcons from './admin/AdminFaIcons.vue';
 
@@ -108,6 +117,7 @@ const menuGroups = [
       { key: 'meeting',      label: '会议信息',  icon: 'circle-info' },
       { key: 'schedule',     label: '日程安排',  icon: 'calendar-days' },
       { key: 'meetingGuide', label: '参会须知',  icon: 'clipboard-check' },
+      { key: 'notification', label: '发送通知',  icon: 'paper-plane' },
     ],
   },
   {
@@ -131,7 +141,6 @@ const menuGroups = [
     title: '数据与设置',
     items: [
       { key: 'analytics', label: '数据分析',  icon: 'chart-bar' },
-      { key: 'tags',      label: '预设标签',  icon: 'tags' },
       { key: 'settings',  label: '系统设置',  icon: 'gear' },
       { key: 'faIcons',   label: 'FA图标库',  icon: 'icons' },
     ],

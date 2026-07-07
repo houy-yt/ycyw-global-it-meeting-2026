@@ -91,6 +91,7 @@ import {
   /* ── admin emoji → FA replacements ── */
   faFileImport,
   faFileArrowUp,
+  faFileArrowDown,
   faCheck,
   faMusic,
   faUser,
@@ -104,6 +105,11 @@ import {
   faShareNodes,
   faBuildingColumns,
   faBox,
+  faEnvelope,
+  faSchool,
+  faCheckDouble,
+  faFaceMeh,
+  faMagnifyingGlass,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faHeart as farHeart,
@@ -197,6 +203,7 @@ library.add(
   /* ── admin emoji → FA replacements ── */
   faFileImport,
   faFileArrowUp,
+  faFileArrowDown,
   faCheck,
   faMusic,
   faUser,
@@ -210,6 +217,11 @@ library.add(
   faShareNodes,
   faBuildingColumns,
   faBox,
+  faEnvelope,
+  faSchool,
+  faCheckDouble,
+  faFaceMeh,
+  faMagnifyingGlass,
   farTrashCan,
 );
 

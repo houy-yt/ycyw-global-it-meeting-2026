@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-base font-semibold text-brand-deep">部门维护</h3>
+    <div class="flex justify-end items-center mb-4">
       <el-button type="primary" @click="openAdd">+ 新增部门</el-button>
     </div>
     <el-table :data="items" border stripe size="small">

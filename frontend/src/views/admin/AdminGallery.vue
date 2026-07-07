@@ -1,5 +1,22 @@
 <template>
   <div>
+    <!-- ── 预设标签管理 ── -->
+    <el-divider content-position="left"><b>预设标签管理</b></el-divider>
+    <p class="text-xs text-slate-400 mb-3">管理剪影可用的预设标签，用户上传剪影时可快速选择。</p>
+    <div class="flex gap-2 mb-3">
+      <input v-model="tagName" class="rounded-xl border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:border-brand-blue" placeholder="新标签名称" @keyup.enter="addTag" />
+      <button class="btn-primary !py-2 !px-4 !text-xs" @click="addTag">+ 添加</button>
+    </div>
+    <div class="flex flex-wrap gap-2 mb-6">
+      <div v-for="t in presetTags" :key="t.id" class="chip !text-sm !py-1.5 !px-3">
+        {{ t.name }}
+        <button class="ml-2 text-brand-red hover:underline" @click="delTag(t)">×</button>
+      </div>
+      <div v-if="!presetTags.length" class="text-sm text-slate-400">暂无标签</div>
+    </div>
+
+    <!-- ── 剪影列表 ── -->
+    <el-divider content-position="left"><b>剪影列表</b></el-divider>
     <div class="flex items-center gap-3 mb-4">
       <input
         v-model="q"
@@ -81,6 +98,28 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import dayjs from 'dayjs';
 import api from '../../api';
 
+// ── Preset tags ──
+const presetTags = ref([]);
+const tagName = ref('');
+
+async function loadTags() {
+  const { data } = await api.get('/preset-tags');
+  presetTags.value = data;
+}
+async function addTag() {
+  if (!tagName.value.trim()) return;
+  try {
+    await api.post('/preset-tags', { name: tagName.value.trim() });
+    tagName.value = '';
+    loadTags();
+  } catch (e) { ElMessage.error(e.response?.data?.message || '失败'); }
+}
+async function delTag(t) {
+  await api.delete(`/preset-tags/${t.id}`);
+  loadTags();
+}
+
+// ── Gallery items ──
 const items = ref([]);
 const q = ref('');
 
@@ -143,5 +182,8 @@ async function del(row) {
   load();
 }
 
-onMounted(load);
+onMounted(() => {
+  load();
+  loadTags();
+});
 </script>

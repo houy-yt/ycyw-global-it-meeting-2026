@@ -26,10 +26,10 @@
           <!-- white divider line -->
           <div class="mt-6 w-14 h-[3px] rounded bg-white/50 mx-auto md:mx-0"></div>
 
-          <p class="mt-5 text-lg sm:text-xl text-white/80 tracking-wide">
+          <p class="mt-5 text-lg sm:text-xl text-white/80 tracking-wide" style="white-space: pre-line">
             {{ meetingInfo?.tagline || '连接 · 创新 · 赋能' }}
           </p>
-          <p v-if="meetingInfo?.taglineEn" class="mt-1 text-sm text-white/50 tracking-wide whitespace-nowrap">
+          <p v-if="meetingInfo?.taglineEn" class="mt-1 text-sm text-white/50 tracking-wide" style="white-space: pre-line">
             {{ meetingInfo.taglineEn }}
           </p>
 

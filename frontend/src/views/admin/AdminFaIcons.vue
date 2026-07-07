@@ -3,8 +3,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <div>
-        <h3 class="text-lg font-semibold text-brand-deep">FA图标库</h3>
-        <p class="text-sm text-slate-500 mt-1">
+        <p class="text-sm text-slate-500">
           Font Awesome 7.3.0 免费图标合集，共
           <span class="font-semibold text-brand-blue">{{ totalCount }}</span> 个图标，
           <span class="font-semibold text-slate-600">{{ categoryData.length }}</span> 个分类

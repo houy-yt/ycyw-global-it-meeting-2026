@@ -16,10 +16,10 @@
           </div>
         </div>
         <template v-if="fs.showMeetingName">
-          <p class="mt-2 sm:mt-4 text-xs sm:text-sm text-white/70 leading-relaxed">
+          <p class="mt-2 sm:mt-4 text-xs sm:text-sm text-white/70 leading-relaxed" style="white-space: pre-line">
             {{ meetingInfo?.tagline || '连接 · 创新 · 未来。一年一度的 YCYW 全球 IT 同仁聚会。' }}
           </p>
-          <p v-if="meetingInfo?.taglineEn" class="mt-1 text-[10px] sm:text-xs text-white/50">
+          <p v-if="meetingInfo?.taglineEn" class="mt-1 text-[10px] sm:text-xs text-white/50" style="white-space: pre-line">
             {{ meetingInfo.taglineEn }}
           </p>
         </template>

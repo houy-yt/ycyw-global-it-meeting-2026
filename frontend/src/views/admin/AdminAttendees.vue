@@ -17,6 +17,9 @@
       <el-button type="success" @click="excelDialog.show = true">
         <font-awesome-icon icon="file-arrow-up" class="mr-1" /> 导入 Excel/CSV
       </el-button>
+      <el-button type="success" @click="exportAttendees">
+        <font-awesome-icon icon="file-arrow-down" class="mr-1" /> 导出参会人员名单
+      </el-button>
       <el-button type="primary" @click="openAdd">+ 新增参会人员</el-button>
     </div>
 
@@ -380,6 +383,45 @@ async function doExcelImport() {
   } finally {
     excelDialog.importing = false;
   }
+}
+
+// ───── Export attendees to Excel ─────
+function exportAttendees() {
+  if (items.value.length === 0) {
+    ElMessage.warning('暂无参会人员可导出');
+    return;
+  }
+  // Flatten grouped items to maintain group order (by school)
+  const rows = [];
+  for (const group of groupedItems.value) {
+    for (const item of group.members) {
+      rows.push({
+        'No.': item.no ?? '',
+        'School': item.school || '',
+        'EN Name': item.nameEn || '',
+        'Name': item.nameCn || '',
+        'Email': item.email || '',
+        '照片': item.photoUrl || '',
+      });
+    }
+  }
+  const ws = XLSX.utils.json_to_sheet(rows, {
+    header: ['No.', 'School', 'EN Name', 'Name', 'Email', '照片'],
+  });
+  // Set column widths
+  ws['!cols'] = [
+    { wch: 6 },   // No.
+    { wch: 25 },  // School
+    { wch: 20 },  // EN Name
+    { wch: 12 },  // Name
+    { wch: 30 },  // Email
+    { wch: 40 },  // 照片
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '参会人员名单');
+  const today = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `参会人员名单_${today}.xlsx`);
+  ElMessage.success(`已导出 ${rows.length} 条记录`);
 }
 
 function openAdd() {

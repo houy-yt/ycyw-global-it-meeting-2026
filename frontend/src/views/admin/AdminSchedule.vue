@@ -2,7 +2,6 @@
   <div>
     <!-- Toolbar -->
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-base font-semibold text-brand-deep">日程管理</h3>
       <div class="flex gap-2">
         <el-button :type="days.length === 0 ? 'warning' : 'default'" :icon="null" @click="importStatic">
           <font-awesome-icon icon="file-import" class="mr-1" /> 从 schedule.json 导入
