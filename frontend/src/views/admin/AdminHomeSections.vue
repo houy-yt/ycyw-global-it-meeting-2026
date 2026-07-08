@@ -2,11 +2,7 @@
   <div>
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
-      <div>
-        <h3 class="text-lg font-bold text-brand-deep">
-          <font-awesome-icon icon="cubes" class="mr-1 text-brand-blue" />
-          首页板块管理
-        </h3>
+      <div>        
         <p class="text-xs text-slate-400 mt-1">管理首页的内容展示板块（如 Conference Theme、议题轨道等），每个板块可包含多张卡片。</p>
       </div>
       <div class="flex gap-2">
