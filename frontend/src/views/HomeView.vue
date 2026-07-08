@@ -396,6 +396,8 @@ const announcement = ref(null);
 const meetingInfo = ref(null);
 const pastList = ref([]);
 const statRefs = ref([]);
+const attendeeTotal = ref(57); // fallback default
+const schoolCount = ref(19); // fallback default
 
 /** Countdown dates: read from backend meetingInfo, fallback to defaults */
 const meta = computed(() => ({
@@ -518,13 +520,13 @@ const tracks = [
   },
 ];
 
-const stats = [
-  { value: 19, label: 'Schools / Depts', suffix: '' },
-  { value: 57, label: 'IT Professionals', suffix: '+' },
-  { value: 35000, label: 'End Users', suffix: '+' },
-  { value: 300, label: 'Apps & Systems', suffix: '+' },
-  { value: 5, label: 'Global Regions', suffix: '' },
-];
+const stats = computed(() => [
+  { value: schoolCount.value, label: 'Schools / Depts', suffix: ' +' },
+  { value: attendeeTotal.value, label: 'IT Professionals', suffix: ' +' },
+  { value: 35000, label: 'End Users', suffix: ' +' },
+  { value: 300, label: 'Apps & Systems', suffix: ' +' },
+  { value: 5, label: 'Global Regions', suffix: ' ' },
+]);
 
 const techStack = [
   {
@@ -594,14 +596,17 @@ function animateCounter(el) {
 
 async function load() {
   try {
-    const [a, p, m] = await Promise.all([
+    const [a, p, m, att] = await Promise.all([
       api.get('/announcements/active'),
       api.get('/past-meetings'),
       api.get('/meeting'),
+      api.get('/attendees'),
     ]);
     announcement.value = a.data;
     pastList.value = p.data || [];
     meetingInfo.value = m.data || null;
+    if (att.data?.total) attendeeTotal.value = att.data.total;
+    if (att.data?.groups?.length) schoolCount.value = att.data.groups.length;
   } catch (e) {
     console.error(e);
   }
