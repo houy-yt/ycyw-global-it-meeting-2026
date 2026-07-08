@@ -424,31 +424,28 @@ async function doExcelImport() {
 
 // ───── Export attendees to Excel ─────
 function exportAttendees() {
-  if (items.value.length === 0) {
-    ElMessage.warning('暂无参会人员可导出');
-    return;
-  }
-  // Flatten grouped items to maintain group order (by school)
   const rows = [];
   for (const group of groupedItems.value) {
     for (const item of group.members) {
       rows.push({
-        'No.': item.no ?? '',
-        'School': item.school || '',
-        'EN Name': item.nameEn || '',
-        'Name': item.nameCn || '',
-        'Email': item.email || '',
-        '照片': item.photoUrl || '',
+        '#': item.no ?? '',
+        '部门': item.department ?? '',
+        '学校': item.school ?? '',
+        '职务': item.title ?? '',
+        '英文名': item.nameEn ?? '',
+        '中文名': item.nameCn ?? '',
+        '邮箱': item.email ?? '',
+        '照片': item.photoUrl ?? '',
       });
     }
   }
-  const ws = XLSX.utils.json_to_sheet(rows, {
-    header: ['No.', 'School', 'EN Name', 'Name', 'Email', '照片'],
-  });
-  // Set column widths
+  if (!rows.length) { ElMessage.warning('暂无参会人员可导出'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [
-    { wch: 6 },   // No.
-    { wch: 25 },  // School
+    { wch: 6 },   // #
+    { wch: 10 },  // 部门
+    { wch: 20 },  // 学校
+    { wch: 20 },  // 职务
     { wch: 20 },  // EN Name
     { wch: 12 },  // Name
     { wch: 30 },  // Email
@@ -490,12 +487,10 @@ async function exportPhotos() {
 
   try {
     const zip = new JSZip();
-    // Track file names per folder to avoid duplicates
     const folderNameCount = {};
     let successCount = 0;
     let failCount = 0;
 
-    // Fetch all photos in parallel (with concurrency limit)
     const CONCURRENCY = 6;
     let index = 0;
 
@@ -504,14 +499,11 @@ async function exportPhotos() {
         const i = index++;
         const item = withPhoto[i];
         const school = item.school || '未分配';
-        // Sanitize folder name (remove chars not safe for filenames)
         const folderName = school.replace(/[\\/:*?"<>|]/g, '_');
 
-        // Build a meaningful file name: nameEn_nameCn_no.ext
         const nameParts = [item.nameEn, item.nameCn].filter(Boolean).join('_') || `attendee_${item.id}`;
         const ext = getExtFromUrl(item.photoUrl);
 
-        // Ensure unique name within folder
         const folderKey = folderName;
         if (!folderNameCount[folderKey]) folderNameCount[folderKey] = {};
         let fileName = `${nameParts}${ext}`;
@@ -535,14 +527,12 @@ async function exportPhotos() {
       }
     }
 
-    // Run concurrent fetchers
     const workers = [];
     for (let w = 0; w < Math.min(CONCURRENCY, withPhoto.length); w++) {
       workers.push(fetchNext());
     }
     await Promise.all(workers);
 
-    // Generate zip and trigger download
     const content = await zip.generateAsync({ type: 'blob' });
     const today = new Date().toISOString().slice(0, 10);
     saveAs(content, `参会人员照片_${today}.zip`);
@@ -570,7 +560,7 @@ function getExtFromUrl(url) {
       if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].includes(ext)) return ext;
     }
   } catch { /* ignore */ }
-  return '.jpg'; // default fallback
+  return '.jpg';
 }
 
 function openAdd() {
