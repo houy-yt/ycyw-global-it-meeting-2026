@@ -1,6 +1,6 @@
 # YCYW 2026 Global IT Meeting — 部署指南
 
-> 本文档详细描述了项目从本地开发到生产部署的完整流程，包括 Docker Compose 部署、数据库切换、对象存储、OIDC 认证、SSL 配置、数据备份及常见问题排查。
+> 本文档详细描述了项目从本地开发到生产部署的完整流程，包括 Docker Compose 部署、PM2 部署、数据库切换、对象存储、OIDC 认证、天气 API、邮件通知、数据分析与 LLM、SSL 配置、数据备份及常见问题排查。
 
 ---
 
@@ -14,14 +14,18 @@
   - [3.3 构建与启动](#33-构建与启动)
   - [3.4 验证部署](#34-验证部署)
   - [3.5 容器架构说明](#35-容器架构说明)
-- [4. Nginx 反向代理详解](#4-nginx-反向代理详解)
-- [5. PostgreSQL 数据库管理](#5-postgresql-数据库管理)
-- [6. 切换到阿里云 OSS 存储](#6-切换到阿里云-oss-存储)
-- [7. 启用真实 OIDC 登录](#7-启用真实-oidc-登录)
-- [8. SSL / HTTPS 配置](#8-ssl--https-配置)
-- [9. 数据备份与恢复](#9-数据备份与恢复)
-- [10. 监控与日志](#10-监控与日志)
-- [11. 常见问题排查](#11-常见问题排查)
+- [4. PM2 部署（可选）](#4-pm2-部署可选)
+- [5. Nginx 反向代理详解](#5-nginx-反向代理详解)
+- [6. PostgreSQL 数据库管理](#6-postgresql-数据库管理)
+- [7. 切换到阿里云 OSS 存储](#7-切换到阿里云-oss-存储)
+- [8. 启用真实 OIDC 登录](#8-启用真实-oidc-登录)
+- [9. 天气 API 配置](#9-天气-api-配置)
+- [10. 邮件通知配置](#10-邮件通知配置)
+- [11. 数据分析与 LLM 配置](#11-数据分析与-llm-配置)
+- [12. SSL / HTTPS 配置](#12-ssl--https-配置)
+- [13. 数据备份与恢复](#13-数据备份与恢复)
+- [14. 监控与日志](#14-监控与日志)
+- [15. 常见问题排查](#15-常见问题排查)
 
 ---
 
@@ -66,16 +70,25 @@ cp .env.example .env
 # 默认配置即可用于开发，按需修改 ADMIN_EMAILS
 cd ..
 
-# 4. 初始化数据库
+# 4. 初始化数据库（推荐一键命令）
 cd backend
-npx prisma migrate dev --name init
-npm run db:seed
+npm run db:init
 # （可选）灌入演示数据
 npm run db:seed-demo
 cd ..
 
 # 5. 启动
 npm run dev
+```
+
+> `db:init` = `prisma db push --accept-data-loss` + `node prisma/seed.js`，会自动同步 schema、灌入种子数据、并将 `data/schedule.json` 和 `data/attendees.json` 迁入数据库。
+
+如果想使用传统迁移文件方式：
+
+```bash
+cd backend
+npx prisma migrate dev --name init
+npm run db:seed
 ```
 
 ### 验证
@@ -147,6 +160,12 @@ services:
       # OIDC 配置
       OIDC_ENABLED: 'false'             # 'true' 启用真实 OIDC
       # OIDC_CLIENT_ID / OIDC_AUTHORITY / ...
+
+      # 天气 API（可选，默认使用免费 Open-Meteo）
+      # WEATHER_PROVIDER: 'auto'
+      # QWEATHER_API_HOST: ''
+      # QWEATHER_CREDENTIAL_ID: ''
+      # QWEATHER_PRIVATE_KEY: ''
 
   frontend:
     ports:
@@ -231,7 +250,82 @@ curl http://<服务器IP>/api/health
 
 ---
 
-## 4. Nginx 反向代理详解
+## 4. PM2 部署（可选）
+
+如果不使用 Docker，可以用 PM2 进行进程管理。项目根目录已提供 `ecosystem.config.js`。
+
+### 前提条件
+
+- 已安装 Node.js 20+、npm 9+
+- 已安装 PM2：`npm install -g pm2`
+- 已安装并配置 PostgreSQL（或继续使用 SQLite 开发）
+
+### 步骤
+
+```bash
+# 1. 安装依赖
+npm run install:all
+
+# 2. 配置环境变量
+cd backend
+cp .env.example .env
+# 编辑 .env，设置 DATABASE_URL、JWT_SECRET 等
+cd ..
+
+# 3. 构建前端
+npm run build:frontend
+
+# 4. 初始化数据库
+cd backend
+npm run db:init
+cd ..
+
+# 5. 启动后端（PM2）
+pm2 start ecosystem.config.js
+
+# 6. 查看状态
+pm2 status
+pm2 logs ycyw-meeting-api
+```
+
+### ecosystem.config.js 配置
+
+```javascript
+module.exports = {
+  apps: [{
+    name: 'ycyw-meeting-api',
+    cwd: './backend',
+    script: 'src/server.js',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000,
+    },
+    instances: 1,        // SQLite 不支持多进程写入
+    autorestart: true,
+    max_memory_restart: '500M',
+  }],
+};
+```
+
+> **注意**：PM2 部署时，前端需要单独配置 Nginx 提供静态文件服务 + 反向代理。参考 `frontend/nginx.conf` 的配置。
+>
+> 如果使用 PostgreSQL，可以将 `instances` 改为 `'max'` 或具体数字以支持多进程。
+
+### PM2 常用命令
+
+```bash
+pm2 start ecosystem.config.js   # 启动
+pm2 restart ycyw-meeting-api     # 重启
+pm2 stop ycyw-meeting-api        # 停止
+pm2 delete ycyw-meeting-api      # 删除
+pm2 logs ycyw-meeting-api        # 查看日志
+pm2 save                         # 保存当前进程列表
+pm2 startup                     # 配置开机自启
+```
+
+---
+
+## 5. Nginx 反向代理详解
 
 前端容器内的 Nginx 配置（`frontend/nginx.conf`）承担两个职责：
 
@@ -270,7 +364,7 @@ location /uploads/ {
 
 ---
 
-## 5. PostgreSQL 数据库管理
+## 6. PostgreSQL 数据库管理
 
 ### 连接到数据库
 
@@ -290,6 +384,12 @@ SELECT id, email, "isAttendee", "isAdmin" FROM "User" LIMIT 20;
 
 -- 查看反思数量
 SELECT COUNT(*) FROM "Reflection";
+
+-- 查看系统设置
+SELECT * FROM "SystemSetting" ORDER BY category, key;
+
+-- 查看参会人员
+SELECT id, "nameEn", "nameCn", school, department FROM "Attendee" LIMIT 20;
 
 -- 手动提升管理员
 UPDATE "User" SET "isAdmin" = true WHERE email = 'someone@example.com';
@@ -317,7 +417,7 @@ docker compose exec backend npx prisma migrate reset --force
 
 ---
 
-## 6. 切换到阿里云 OSS 存储
+## 7. 切换到阿里云 OSS 存储
 
 项目通过 `StorageService`（`backend/src/services/storageService.js`）抽象了存储层。默认使用本地磁盘，切换到阿里云 OSS 只需以下步骤：
 
@@ -384,7 +484,7 @@ await this.client.delete(key);
 
 ---
 
-## 7. 启用真实 OIDC 登录
+## 8. 启用真实 OIDC 登录
 
 项目已**完整实现**真实 OIDC 认证流程（非占位代码），使用 `openid-client` v6。只需配置环境变量即可启用。
 
@@ -452,7 +552,139 @@ docker compose restart backend
 
 ---
 
-## 8. SSL / HTTPS 配置
+## 9. 天气 API 配置
+
+项目内置天气预报功能，支持两个数据源，可在 `/weather` 页面和入场须知页面展示天气信息。
+
+### 数据源
+
+| 数据源 | 费用 | 说明 |
+| --- | --- | --- |
+| **Open-Meteo** | 免费 | 默认数据源，无需任何配置。基于 GPS 坐标（默认北京）获取天气数据 |
+| **和风天气（QWeather）** | 按量计费 | 更精确的国内天气数据，需要注册并获取 API 凭证 |
+
+### 默认行为
+
+无需配置任何环境变量，天气功能即可使用 —— 默认通过 Open-Meteo 获取北京地区天气数据，数据缓存在内存中。
+
+### 配置和风天气（可选）
+
+如需使用和风天气获取更精确的数据：
+
+1. 前往 [和风天气开发平台](https://dev.qweather.com/) 注册并创建应用
+2. 获取 API Host、Credential ID 和 Ed25519 私钥
+3. 配置环境变量：
+
+```env
+WEATHER_PROVIDER=qweather          # 或 'auto' 自动尝试和风→Open-Meteo
+QWEATHER_API_HOST=xxx.re.qweatherapi.com
+QWEATHER_CREDENTIAL_ID=your-credential-id
+QWEATHER_PRIVATE_KEY=<Ed25519 私钥的 base64 body>
+WEATHER_LOCATION=101010100         # 和风天气城市 ID（默认北京）
+```
+
+### 认证方式
+
+和风天气 API 使用 **Ed25519 JWT 签名** 认证（非传统 API Key），后端自动生成和缓存 JWT token。
+
+### 缓存策略
+
+天气数据使用内存缓存，避免频繁请求外部 API。缓存自动过期后重新获取最新数据。
+
+---
+
+## 10. 邮件通知配置
+
+项目内置了完整的邮件通知系统，支持向参会人员批量发送通知邮件。
+
+### 架构
+
+- 使用 **nodemailer** 发送邮件
+- SMTP 配置存储在数据库 `SystemSetting` 表中（通过后台界面管理）
+- 支持**多发件人轮询**（避免单一邮箱发送频率限制）
+- 收件人从 `Attendee` 表按学校/部门分组获取
+
+### 配置步骤
+
+#### 1. 通过后台界面配置（推荐）
+
+1. 登录管理员账号
+2. 进入后台 → 「邮件通知」Tab
+3. 配置 SMTP 发件人信息（支持添加多个发件人）：
+   - 发件人邮箱
+   - 发件人名称
+   - SMTP 服务器地址
+   - SMTP 端口
+   - 加密方式（TLS/SSL）
+   - 用户名和密码
+4. 点击「测试发送」验证配置
+
+#### 2. SMTP 参数参考
+
+| 参数 | 示例值 | 说明 |
+| --- | --- | --- |
+| Host | `smtp.office365.com` | SMTP 服务器地址 |
+| Port | `587` | SMTP 端口（TLS 通常为 587，SSL 为 465） |
+| Secure | `tls` | 加密方式：`tls` / `ssl` |
+| User | `sender@example.com` | SMTP 认证用户名 |
+| Pass | `app-specific-password` | SMTP 认证密码（建议使用应用专用密码） |
+
+### 发送流程
+
+1. 在「邮件通知」Tab 中选择收件人（按学校/部门筛选）
+2. 编辑邮件主题和内容（支持富文本）
+3. 选择发件人
+4. 点击发送
+
+> **注意**：多发件人配置时，系统会自动在多个发件人之间轮询，均衡分配发送任务。
+
+---
+
+## 11. 数据分析与 LLM 配置
+
+后台「数据分析」模块提供反思内容的自动分析功能，包括情感分析、关键词提取、时间趋势和 LLM 总结。
+
+### 情感分析引擎
+
+| 引擎 | 说明 | 配置 |
+| --- | --- | --- |
+| **local**（默认） | 基于本地中文情感词典（`data/sentiment-zh.json`），无需外部服务 | 开箱即用 |
+| **openai** | 使用 OpenAI API 进行情感分析 | 需配置 API Key |
+| **deepseek** | 使用 DeepSeek API 进行情感分析 | 需配置 API Key |
+
+### 配置步骤
+
+#### 使用本地分析（默认，无需配置）
+
+本地引擎使用内置的中文情感词典和分词器，适用于大多数场景。
+
+#### 使用 LLM 引擎（OpenAI / DeepSeek）
+
+1. 登录管理员 → 后台 → 「系统设置」Tab
+2. 在 `analytics` 分类下配置：
+
+| 设置键 | 值 |
+| --- | --- |
+| `analytics.sentimentEngine` | `openai` 或 `deepseek` |
+| `analytics.llmApiKey` | 你的 API Key |
+| `analytics.llmBaseUrl` | （可选）自定义 API 地址 |
+| `analytics.llmModel` | （可选）自定义模型名 |
+
+3. 进入「数据分析」Tab，点击「扫描」重新计算所有反思的情感得分
+
+### LLM 总结功能
+
+在「数据分析」Tab 中，可以点击「生成总结」按钮，让 LLM 对所有反思内容进行主题总结，生成 Markdown 格式的分析报告。
+
+> 此功能需要配置 LLM 引擎（openai 或 deepseek），local 模式不支持。
+
+### 关键词提取
+
+基于 `tokenizer.js` 分词器，自动从反思内容中提取高频关键词，排除停用词（`stopwords-zh.json` / `stopwords-en.json`）。此功能为本地计算，不依赖外部 API。
+
+---
+
+## 12. SSL / HTTPS 配置
 
 生产环境强烈建议使用 HTTPS。以下是几种常见方案：
 
@@ -522,7 +754,7 @@ CORS_ORIGIN=https://meeting.ycyw-edu.com
 
 ---
 
-## 9. 数据备份与恢复
+## 13. 数据备份与恢复
 
 ### PostgreSQL 数据备份
 
@@ -576,7 +808,7 @@ ls -la "$BACKUP_DIR"/*$DATE*
 
 ---
 
-## 10. 监控与日志
+## 14. 监控与日志
 
 ### 查看容器日志
 
@@ -615,9 +847,22 @@ docker compose exec postgres pg_isready -U meeting
    DB: postgresql://meeting:***@postgres:5432/global_it
 ```
 
+### PM2 监控
+
+```bash
+# 查看进程状态
+pm2 status
+
+# 实时日志
+pm2 logs ycyw-meeting-api
+
+# 监控面板
+pm2 monit
+```
+
 ---
 
-## 11. 常见问题排查
+## 15. 常见问题排查
 
 ### 问题：后端容器启动失败，提示 "prisma migrate deploy" 错误
 
@@ -678,6 +923,50 @@ curl -s https://your-oidc-provider/.well-known/openid-configuration | jq .
 
 ---
 
+### 问题：天气数据加载失败
+
+**排查**：
+
+1. 检查后端日志中 `[Weather]` 相关输出
+2. 如果使用 Open-Meteo（默认），确认服务器能访问 `api.open-meteo.com`
+3. 如果使用和风天气，检查：
+   - `QWEATHER_API_HOST`、`QWEATHER_CREDENTIAL_ID`、`QWEATHER_PRIVATE_KEY` 是否正确
+   - 服务器能否访问和风天气 API 主机
+   - Ed25519 私钥格式是否正确（仅需 base64 body 部分，不含 PEM 头尾）
+
+```bash
+# 测试天气 API
+curl -s http://localhost/api/weather | jq .
+```
+
+---
+
+### 问题：邮件发送失败
+
+**排查**：
+
+1. 在后台「邮件通知」Tab 中先点击「测试发送」
+2. 检查后端日志中的错误信息
+3. 常见原因：
+   - SMTP 服务器地址/端口错误
+   - 密码不正确（某些邮箱需要使用「应用专用密码」而非登录密码）
+   - 加密方式不匹配（TLS 用 587 端口，SSL 用 465 端口）
+   - 邮件服务商限制发送频率
+
+---
+
+### 问题：情感分析不工作（LLM 模式）
+
+**排查**：
+
+1. 在后台「系统设置」中确认 `analytics.sentimentEngine` 设为 `openai` 或 `deepseek`
+2. 确认 `analytics.llmApiKey` 已设置
+3. 检查后端日志中的 LLM 调用错误
+4. 确认服务器能访问 LLM API 地址（`api.openai.com` 或 `api.deepseek.com`）
+5. 本地模式（`local`）无需外部 API，始终可用
+
+---
+
 ### 问题：数据库重置后种子数据丢失
 
 **解决**：重新执行种子脚本：
@@ -703,15 +992,13 @@ curl http://localhost:3000/api/health
 
 ---
 
-### 问题：静态数据（日程/参会人员）更新后不生效
+### 问题：日程 / 参会人员数据为空
 
-**说明**：`staticData.js` 路由**每次请求都直接读取文件**（无内存缓存），修改 `backend/data/schedule.json` 或 `attendees.json` 后即刻生效，无需重启。
+**说明**：数据现在存储在数据库中。如果是首次部署或从旧版本升级：
 
-> ⚠️ 如果使用 Docker 部署，需要重新构建后端容器（因为文件被 COPY 到镜像中）：
-> ```bash
-> docker compose up -d --build backend
-> ```
-> 或者将 `data/` 目录挂载为 volume。
+1. 运行 `npm run db:init`（会自动从 JSON 文件迁移数据）
+2. 或在后台对应 Tab 顶部点击 **「📥 从静态文件导入」** 按钮
+3. 或手动执行：`node prisma/migrate-static-to-db.js`
 
 ---
 
@@ -757,7 +1044,16 @@ OIDC_REDIRECT_URI=https://meeting.your-domain.com/api/auth/oidc-callback
 OIDC_SCOPES=openid email profile
 OIDC_FRONTEND_CALLBACK=/auth/callback
 
+# === 天气 API（可选，默认使用免费 Open-Meteo）===
+WEATHER_PROVIDER=auto
+QWEATHER_API_HOST=<api-host>
+QWEATHER_CREDENTIAL_ID=<credential-id>
+QWEATHER_PRIVATE_KEY=<ed25519-private-key-base64>
+WEATHER_LOCATION=101010100
+
 # === 上传限制 ===
 MAX_IMAGE_SIZE=10485760
 MAX_VIDEO_SIZE=52428800
 ```
+
+> **注意**：邮件通知（SMTP）和数据分析（LLM）的配置通过后台「系统设置」界面管理，存储在数据库 `SystemSetting` 表中，不需要环境变量。

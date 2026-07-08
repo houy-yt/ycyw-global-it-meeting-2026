@@ -2,7 +2,7 @@
 
 > **Connect · Innovate · Empower**
 >
-> 耀中耀华教育（YCYW）全球 IT 团队年度会议站点 —— 集**会前公告与日程展示**、**会议地点导航**、**会中实时查询与照片/视频上传**、**会后反思存档**、**往届会议入口**与**后台管理**于一体的全栈 Web 应用。
+> 耀中耀华教育（YCYW）全球 IT 团队年度会议站点 —— 集**会前公告与日程展示**、**参会指南与入场须知**、**天气预报**、**会议地点导航**、**会中实时查询与照片/视频上传**、**会后反思存档**、**数据分析与 LLM 总结**、**邮件通知**、**往届会议入口**与**后台管理**于一体的全栈 Web 应用。
 
 ![Vue](https://img.shields.io/badge/Vue-3.4-42b883?logo=vue.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-4-000?logo=express&logoColor=white)
@@ -37,18 +37,20 @@
 | 模块 | 路由 | 说明 |
 | --- | --- | --- |
 | **首页** | `/` | Hero + 倒计时 + 会议主题三支柱 + 统计数字（动画计数器）+ 公告横幅 + 议题轨道 + 技术栈展示 + 快捷入口 + 往届预览 |
-| **日程安排** | `/schedule` | 按日期 Tab 切换 + 时间轴展示，数据来自 `schedule.json`，移动端友好 |
+| **日程安排** | `/schedule` | 按日期 Tab 切换 + 时间轴展示，每日可配通知/注意事项；Talk 详情弹窗支持内嵌 PPT/PDF/视频/音频/图片/外链预览 |
+| **参会指南** | `/meeting-guide` | 可配置信息卡片展示（住宿安排、交通指引、WiFi 信息、行前准备等），后台可自定义卡片内容/图标/排序 |
+| **入场须知** | `/entry-guide` | 访客二维码、天气预览、入场流程指引页面 |
 | **会议地点** | `/venue` | 学校信息、地址、嵌入式地图、交通指南 |
-| **参会人员** | `/attendees` | 按学校 / 部门手风琴分组展示，支持头像照片 |
-| **会后反思** | `/reflections` | 参会人员可发布反思；登录用户可评论、点赞（toggle）；支持匿名发布 |
+| **参会人员** | `/attendees` | 顶部部门 Tab 切换（IT / Logistics / HRD / FAD / CMD），按学校/组织手风琴分组展示，支持头像照片 |
+| **天气预报** | `/weather` | 会议地点（北京亦庄）实时天气与未来预报，支持和风天气 / Open-Meteo 双数据源 |
+| **会后反思** | `/reflections` | 参会人员可发布反思（富文本）；登录用户可评论、点赞（toggle）；支持匿名发布 |
 | **会议剪影** | `/gallery` | 图片 / 视频 / 第三方链接上传；预设标签筛选；分页网格展示 |
 | **往届会议** | `/past-meetings` | 历年会议记录浏览，支持外部链接跳转 |
 | **OIDC 回调** | `/auth/callback` | OIDC 认证完成后的前端回调页面，自动保存令牌并跳转 |
-| **后台管理** | `/admin` | 反思管理 / 剪影管理 / 往届会议 / 预设标签 / 公告 / **会议信息 / 日程 / 参会人员 / 组织 / 部门 / 系统设置 / 数据分析**（12 个 Tab） |
-| **数据分析** | `/admin → 数据分析` | 反思总览（情感分布、平均分、Top 点赞）、关键词云、时间趋势、贡献者排行、LLM 总结（OpenAI / DeepSeek 可选） |
-| **演讲资料** | `/schedule` 详情弹窗 | 每个 Talk 可挂载 PPT/PDF/视频/音频/图片/外链，前台支持内嵌预览（video/audio/image/YouTube 等） |
-| **参会人员（多部门）** | `/attendees` | 顶部部门 Tab 切换：IT / Logistics / HRD / FAD / CMD（数据由 `Attendee.department` 字段维护） |
 | **登录** | `/login` | 登录引导页面（根据 OIDC 模式自动切换行为） |
+| **后台管理** | `/admin` | 15 个 Tab：反思管理 / 剪影管理 / 往届会议 / 预设标签 / 公告 / 会议信息 / 日程 / 参会人员 / 组织 / 部门 / 参会指南 / 邮件通知 / 图标管理 / 系统设置 / 数据分析 |
+| **数据分析** | `/admin → 数据分析` | 反思总览（情感分布、平均分、Top 点赞）、关键词云、时间趋势、贡献者排行、LLM 总结（OpenAI / DeepSeek 可选） |
+| **邮件通知** | `/admin → 邮件通知` | SMTP 多发件人配置、按学校/部门选择收件人、富文本邮件编辑、测试发送 |
 
 ---
 
@@ -63,9 +65,13 @@
 | 状态管理 | **Pinia** |
 | 路由 | **Vue Router 4**（history 模式） |
 | UI 框架 | **Tailwind CSS 3.4** + **Element Plus** |
-| 图标 | **Font Awesome**（@fortawesome/vue-fontawesome） |
+| 图标 | **Font Awesome 7**（@fortawesome/vue-fontawesome） |
+| 富文本编辑器 | **TinyMCE 8**（@tinymce/tinymce-vue，含中文语言包） |
 | HTTP 客户端 | **axios**（全局拦截器自动附加 JWT） |
 | 日期处理 | **dayjs** |
+| 文件导出 | **file-saver** + **jszip**（压缩下载） |
+| 表格导入导出 | **xlsx**（Excel 读写） |
+| 拖拽排序 | **sortablejs** |
 | 字体 | Inter + Noto Sans SC（Google Fonts CDN） |
 
 ### 后端
@@ -77,8 +83,12 @@
 | ORM | **Prisma 5** |
 | 认证 | **JWT**（jsonwebtoken）+ **OIDC**（openid-client v6 ESM） |
 | 文件上传 | **multer**（内存模式 → StorageService） |
-| 安全 | **helmet** + **cors** |
+| 邮件发送 | **nodemailer**（多发件人 SMTP） |
+| 安全 | **helmet** + **cors** + **bcryptjs** |
 | 日志 | **morgan** |
+| NLP 服务 | **sentimentService**（本地中文情感词典）+ **tokenizer**（中英文分词） |
+| LLM 集成 | **llmService**（OpenAI / DeepSeek 等兼容接口，可选） |
+| 动态配置 | **settingsService**（数据库键值对 + 内存缓存） |
 
 ### 数据库
 
@@ -88,6 +98,22 @@
 | 生产 | **PostgreSQL 15**（通过 `DATABASE_URL` 切换） |
 
 > ⚠️ Prisma `schema.prisma` 中 `provider` 硬编码为 `sqlite`，生产部署前需改为 `postgresql`。详见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
+
+### 数据模型
+
+| 模型 | 说明 |
+| --- | --- |
+| `User` | 用户（邮箱登录、管理员/参会者角色） |
+| `Reflection` / `Comment` / `Like` | 会后反思、评论、点赞（含情感分析字段） |
+| `GalleryItem` | 会议剪影（图片/视频/外链） |
+| `PastMeeting` | 往届会议记录 |
+| `PresetTag` | 预设标签 |
+| `Announcement` | 公告 |
+| `MeetingInfo` | 会议基本信息（单行表） |
+| `ScheduleDay` / `ScheduleItem` / `Talk` / `TalkResource` | 日程安排四级结构 |
+| `Attendee` / `Organization` / `Department` | 参会人员、组织、部门 |
+| `SystemSetting` | 系统设置键值对 |
+| `MeetingGuideItem` | 参会指南信息卡片 |
 
 ### 存储
 
@@ -108,6 +134,7 @@
 ### 部署
 
 - **Docker Compose**：PostgreSQL + Node.js 后端 + Nginx 前端
+- **PM2**：可选，使用 `ecosystem.config.js` 进程管理
 - 前端 Nginx 自动反向代理 `/api/` 和 `/uploads/` 到后端容器
 
 ---
@@ -118,88 +145,127 @@
 project-root/
 ├── backend/
 │   ├── src/
-│   │   ├── routes/              # 路由模块
-│   │   │   ├── auth.js          # 登录 / OIDC 登录 / OIDC 回调 / 获取当前用户
-│   │   │   ├── staticData.js    # /schedule, /attendees（读取 JSON 文件）
-│   │   │   ├── reflections.js   # 反思 CRUD + 点赞 + 评论列表
-│   │   │   ├── comments.js      # 评论 创建/删除
-│   │   │   ├── gallery.js       # 剪影 CRUD（含文件上传）
-│   │   │   ├── pastMeetings.js  # 往届会议 CRUD
-│   │   │   ├── presetTags.js    # 预设标签 CRD
-│   │   │   ├── announcements.js # 公告 CRUD
-│   │   │   └── admin.js         # 管理员专属查询（反思/剪影列表）
+│   │   ├── routes/                   # 路由模块
+│   │   │   ├── auth.js               # 登录 / OIDC 登录 / OIDC 回调 / 获取当前用户
+│   │   │   ├── staticData.js         # /schedule, /attendees, /meeting（读取数据库）
+│   │   │   ├── talks.js              # 公开 Talk 详情（含资源列表）
+│   │   │   ├── reflections.js        # 反思 CRUD + 点赞 + 评论列表
+│   │   │   ├── comments.js           # 评论 创建/删除
+│   │   │   ├── gallery.js            # 剪影 CRUD（含文件上传）
+│   │   │   ├── pastMeetings.js       # 往届会议 CRUD
+│   │   │   ├── presetTags.js         # 预设标签 CRD
+│   │   │   ├── announcements.js      # 公告 CRUD
+│   │   │   ├── weather.js            # 天气 API 代理（和风天气 / Open-Meteo）
+│   │   │   ├── meetingGuide.js       # 参会指南 CRUD（public + admin）
+│   │   │   ├── admin.js              # 管理员专属查询（反思/剪影列表）
+│   │   │   ├── meeting.js            # 会议信息管理（admin）
+│   │   │   ├── schedule.js           # 日程 CRUD：天/时段/演讲/资源（admin）
+│   │   │   ├── attendeesAdmin.js     # 参会人员/组织/部门 CRUD（admin）
+│   │   │   ├── settings.js           # 系统设置键值对 CRUD（admin）
+│   │   │   ├── analytics.js          # 反思数据分析（情感/关键词/趋势/LLM）
+│   │   │   └── notification.js       # 邮件通知（SMTP 配置/发送/测试）
 │   │   ├── middleware/
-│   │   │   └── auth.js          # JWT 验证 / 权限中间件
+│   │   │   └── auth.js               # JWT 验证 / 权限中间件
 │   │   ├── services/
-│   │   │   └── storageService.js # 存储抽象层（Local / OSS）
+│   │   │   ├── storageService.js     # 存储抽象层（Local / OSS）
+│   │   │   ├── settingsService.js    # 数据库键值设置读写（内存缓存）
+│   │   │   ├── sentimentService.js   # 中文情感分析（本地词典 / LLM）
+│   │   │   ├── llmService.js         # LLM 调用（OpenAI / DeepSeek 兼容）
+│   │   │   └── tokenizer.js          # 中英文分词器
 │   │   ├── utils/
-│   │   │   └── prisma.js        # Prisma Client 单例
-│   │   ├── app.js               # Express 应用（中间件 + 路由注册）
-│   │   └── server.js            # 启动入口
+│   │   │   └── prisma.js             # Prisma Client 单例
+│   │   ├── app.js                    # Express 应用（中间件 + 路由注册）
+│   │   └── server.js                 # 启动入口
 │   ├── prisma/
-│   │   ├── schema.prisma        # 数据模型定义
-│   │   ├── seed.js              # 基础种子数据（用户 / 标签 / 往届会议 / 公告）
-│   │   ├── seed-demo.js         # 演示数据（10 篇反思 + 评论 + 点赞）
-│   │   └── clean-demo.js        # 清理演示数据
+│   │   ├── schema.prisma             # 数据模型定义（13 个模型）
+│   │   ├── seed.js                   # 基础种子数据（用户/标签/往届/公告/部门/设置/日程/参会人员）
+│   │   ├── seed-demo.js              # 演示数据（10 篇反思 + 评论 + 点赞）
+│   │   ├── clean-demo.js             # 清理演示数据
+│   │   └── migrate-static-to-db.js   # 从 JSON 文件迁移数据到数据库
 │   ├── data/
-│   │   ├── schedule.json        # 会议三天日程
-│   │   └── attendees.json       # 参会人员名单
-│   ├── uploads/                 # 本地文件存储（已 gitignore）
-│   ├── .env.example             # 环境变量模板
-│   ├── Dockerfile               # 后端容器镜像
+│   │   ├── schedule.json             # 会议三天日程（源数据）
+│   │   ├── attendees.json            # 参会人员名单（源数据）
+│   │   ├── sentiment-zh.json         # 中文情感词典
+│   │   ├── stopwords-zh.json         # 中文停用词表
+│   │   └── stopwords-en.json         # 英文停用词表
+│   ├── uploads/                      # 本地文件存储（已 gitignore）
+│   ├── .env.example                  # 环境变量模板
+│   ├── Dockerfile                    # 后端容器镜像
 │   └── package.json
 ├── frontend/
 │   ├── public/
-│   │   ├── logo.gif             # 站点 Logo
-│   │   ├── default-avatar.svg   # 默认头像
-│   │   └── attendees/           # 参会人员头像照片
+│   │   ├── logo.gif                  # 站点 Logo
+│   │   ├── default-avatar.svg        # 默认头像
+│   │   ├── hero-banner.jpg           # Hero 横幅
+│   │   ├── schedule-banner.jpg       # 日程横幅
+│   │   ├── fksq-qrcode.jpg           # 访客申请二维码
+│   │   ├── attendees/                # 参会人员头像照片
+│   │   └── tinymce/langs/            # TinyMCE 中文语言包
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── NavBar.vue       # 顶部导航栏
-│   │   │   ├── Footer.vue       # 页脚
-│   │   │   ├── AuthModal.vue    # 登录弹窗（Mock 模式）
-│   │   │   ├── Countdown.vue    # 倒计时组件
-│   │   │   └── BackToTop.vue    # 回到顶部按钮
+│   │   │   ├── NavBar.vue            # 顶部导航栏
+│   │   │   ├── Footer.vue            # 页脚
+│   │   │   ├── AuthModal.vue         # 登录弹窗（Mock 模式）
+│   │   │   ├── Countdown.vue         # 倒计时组件
+│   │   │   ├── BackToTop.vue         # 回到顶部按钮
+│   │   │   ├── WeatherCard.vue       # 天气卡片组件
+│   │   │   ├── TinyEditor.vue        # TinyMCE 富文本编辑器封装
+│   │   │   └── PhotoPreviewModal.vue # 照片预览弹窗
 │   │   ├── views/
 │   │   │   ├── HomeView.vue
 │   │   │   ├── ScheduleView.vue
+│   │   │   ├── MeetingGuideView.vue      # 参会指南
+│   │   │   ├── EntryGuideView.vue        # 入场须知
 │   │   │   ├── VenueView.vue
 │   │   │   ├── AttendeesView.vue
+│   │   │   ├── WeatherView.vue           # 天气预报
 │   │   │   ├── ReflectionsView.vue
 │   │   │   ├── GalleryView.vue
 │   │   │   ├── PastMeetingsView.vue
 │   │   │   ├── LoginView.vue
-│   │   │   ├── OidcCallbackView.vue  # OIDC 回调处理
-│   │   │   ├── AdminView.vue         # 管理后台容器
-│   │   │   └── admin/                # 管理后台 5 个 Tab
-│   │   │       ├── AdminReflections.vue
-│   │   │       ├── AdminGallery.vue
-│   │   │       ├── AdminPast.vue
-│   │   │       ├── AdminTags.vue
-│   │   │       └── AdminAnnouncements.vue
+│   │   │   ├── OidcCallbackView.vue      # OIDC 回调处理
+│   │   │   ├── AdminView.vue             # 管理后台容器
+│   │   │   └── admin/                    # 管理后台 15 个 Tab
+│   │   │       ├── AdminReflections.vue      # 反思管理
+│   │   │       ├── AdminGallery.vue          # 剪影管理
+│   │   │       ├── AdminPast.vue             # 往届会议
+│   │   │       ├── AdminTags.vue             # 预设标签
+│   │   │       ├── AdminAnnouncements.vue    # 公告管理
+│   │   │       ├── AdminMeeting.vue          # 会议信息
+│   │   │       ├── AdminSchedule.vue         # 日程管理
+│   │   │       ├── AdminAttendees.vue        # 参会人员
+│   │   │       ├── AdminOrganizations.vue    # 组织管理
+│   │   │       ├── AdminDepartments.vue      # 部门管理
+│   │   │       ├── AdminMeetingGuide.vue     # 参会指南
+│   │   │       ├── AdminNotification.vue     # 邮件通知
+│   │   │       ├── AdminFaIcons.vue          # 图标管理
+│   │   │       ├── AdminSettings.vue         # 系统设置
+│   │   │       └── AdminAnalytics.vue        # 数据分析
 │   │   ├── stores/
-│   │   │   └── auth.js          # Pinia 认证状态（双模式支持）
+│   │   │   └── auth.js               # Pinia 认证状态（双模式支持）
 │   │   ├── router/
-│   │   │   └── index.js         # 路由定义 + 导航守卫
+│   │   │   └── index.js              # 路由定义 + 导航守卫
 │   │   ├── api/
-│   │   │   └── index.js         # axios 实例（自动附加 JWT）
+│   │   │   └── index.js              # axios 实例（自动附加 JWT）
 │   │   ├── assets/
-│   │   │   └── main.css         # 全局样式 + Tailwind 指令
-│   │   ├── main.js              # 应用入口
-│   │   └── App.vue              # 根组件
-│   ├── nginx.conf               # Nginx 配置（SPA + 反向代理）
-│   ├── Dockerfile               # 前端多阶段构建
-│   ├── vite.config.js           # Vite 配置（代理 + 别名）
+│   │   │   └── main.css              # 全局样式 + Tailwind 指令
+│   │   ├── main.js                   # 应用入口
+│   │   └── App.vue                   # 根组件
+│   ├── nginx.conf                    # Nginx 配置（SPA + 反向代理）
+│   ├── Dockerfile                    # 前端多阶段构建
+│   ├── vite.config.js                # Vite 配置（代理 + 别名）
 │   ├── tailwind.config.js
 │   ├── postcss.config.js
 │   └── package.json
 ├── scripts/
-│   ├── copy-attendee-photos.js  # 复制参会人员照片到 public（Node.js）
-│   └── copy-attendee-photos.ps1 # 同上（PowerShell 版）
-├── docker-compose.yml           # 一键部署：PostgreSQL + Backend + Frontend
-├── package.json                 # 根工程（concurrently 同时启动前后端）
-├── DEPLOYMENT.md                # 部署说明文档
-└── README.md                    # 本文件
+│   ├── copy-attendee-photos.js       # 复制参会人员照片到 public（Node.js）
+│   ├── copy-attendee-photos.ps1      # 同上（PowerShell 版）
+│   └── generate-fa-categories.js     # 生成 Font Awesome 图标分类数据
+├── docker-compose.yml                # 一键部署：PostgreSQL + Backend + Frontend
+├── ecosystem.config.js               # PM2 进程管理配置
+├── package.json                      # 根工程（concurrently 同时启动前后端）
+├── DEPLOYMENT.md                     # 部署说明文档
+└── README.md                         # 本文件
 ```
 
 ---
@@ -241,9 +307,10 @@ npm run db:seed-demo
 
 > `db:init` = `prisma db push --accept-data-loss` + `node prisma/seed.js`，会自动：
 >
-> 1. 把最新 `schema.prisma` 同步到 SQLite/Postgres（创建 `MeetingInfo / ScheduleDay / ScheduleItem / Talk / TalkResource / Attendee / Organization / Department / SystemSetting` 等新表）
-> 2. 灌入用户、标签、往届会议、公告、部门、默认设置
+> 1. 把最新 `schema.prisma` 同步到 SQLite/Postgres（创建 `MeetingInfo / ScheduleDay / ScheduleItem / Talk / TalkResource / Attendee / Organization / Department / SystemSetting / MeetingGuideItem` 等表）
+> 2. 灌入用户、标签、往届会议、公告、部门、默认系统设置
 > 3. 把 `data/schedule.json` 和 `data/attendees.json` 内容**自动迁入数据库**（首次执行时）
+> 4. 灌入参会指南默认卡片（住宿/交通/WiFi 等）
 >
 > 如果新表已存在但日程/参会人员是空的（比如你从 v1 升级上来），也可以在后台「日程安排」「参会人员」Tab 顶部点击 **「📥 从静态文件导入」** 按钮一键填充。
 
@@ -258,6 +325,8 @@ npm run db:seed                     # 灌入种子数据（含静态文件迁移
 > - 基于 `data/attendees.json` 自动创建参会用户（`isAttendee=true`）
 > - 为 `ADMIN_EMAILS` 中的邮箱创建/提升管理员账号
 > - 插入预设标签、往届会议记录和欢迎公告
+> - 创建默认组织和部门数据
+> - 初始化系统设置（上传限制、分析引擎等）
 
 ### 4. 启动前后端
 
@@ -291,7 +360,7 @@ npm run dev:frontend  # 仅前端（Vite HMR）
 
 ## 🐳 生产部署
 
-> 完整的生产部署指南请参阅 **[DEPLOYMENT.md](./DEPLOYMENT.md)**，涵盖 Docker Compose 部署、PostgreSQL 切换、OSS 存储、OIDC 配置、SSL、数据备份等。
+> 完整的生产部署指南请参阅 **[DEPLOYMENT.md](./DEPLOYMENT.md)**，涵盖 Docker Compose 部署、PM2 部署、PostgreSQL 切换、OSS 存储、OIDC 配置、天气 API、邮件通知、LLM 分析、SSL、数据备份等。
 
 快速概览：
 
@@ -362,12 +431,37 @@ docker compose up -d --build
 | `OIDC_SCOPES` | `openid email profile` | 请求的 OIDC Scopes |
 | `OIDC_FRONTEND_CALLBACK` | `/auth/callback` | 认证完成后重定向的前端路径 |
 
+### 天气 API
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `WEATHER_PROVIDER` | `auto` | 天气数据源：`qweather`（和风天气）/ `openmeteo`（Open-Meteo，免费）/ `auto`（自动选择） |
+| `QWEATHER_API_HOST` | — | 和风天气 API 主机（如 `xxx.re.qweatherapi.com`） |
+| `QWEATHER_CREDENTIAL_ID` | — | 和风天气 Credential ID（用于 JWT 签名） |
+| `QWEATHER_PRIVATE_KEY` | — | 和风天气 Ed25519 私钥（仅 base64 body） |
+| `WEATHER_LOCATION` | `101010100` | 和风天气城市 ID（默认北京） |
+
+> 天气功能无需额外配置即可使用 —— 默认使用免费的 Open-Meteo 作为数据源。如需更精确的数据，可配置和风天气 API。
+
 ### 上传限制
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
 | `MAX_IMAGE_SIZE` | `10485760` | 图片最大大小（10 MB） |
 | `MAX_VIDEO_SIZE` | `52428800` | 视频最大大小（50 MB） |
+
+> 上传限制同时可通过后台「系统设置」动态调整，数据库设置优先级高于环境变量。
+
+### 数据分析 / LLM（通过后台系统设置配置）
+
+以下配置通过后台「系统设置」管理，存储在 `SystemSetting` 表中：
+
+| 设置键 | 默认值 | 说明 |
+| --- | --- | --- |
+| `analytics.sentimentEngine` | `local` | 情感分析引擎：`local`（本地词典）/ `openai` / `deepseek` |
+| `analytics.llmApiKey` | — | LLM API Key（使用 OpenAI/DeepSeek 时必填） |
+| `analytics.llmBaseUrl` | （自动） | LLM API Base URL（可自定义，支持兼容接口） |
+| `analytics.llmModel` | （自动） | LLM 模型名称（如 `gpt-4o-mini` / `deepseek-chat`） |
 
 ---
 
@@ -405,7 +499,7 @@ docker compose up -d --build
 
 | 角色 | 判定方式 | 能力 |
 | --- | --- | --- |
-| **游客** | 未登录 | 浏览首页、日程安排、会议地点、参会人员、反思列表、剪影列表、往届会议 |
+| **游客** | 未登录 | 浏览首页、日程、参会指南、入场须知、天气、会议地点、参会人员、反思列表、剪影列表、往届会议 |
 | **普通用户** | 登录但非参会者 | 游客能力 + 评论 / 点赞 / 上传剪影 |
 | **参会者** | `isAttendee=true`（来自种子数据） | 普通用户能力 + **发布反思** |
 | **管理员** | `isAdmin=true`（邮箱在 `ADMIN_EMAILS` 中） | 全部能力 + 后台管理 |
@@ -430,8 +524,27 @@ docker compose up -d --build
 
 | 方法 | 路径 | 权限 | 说明 |
 | --- | --- | --- | --- |
-| GET | `/schedule` | 公开 | 返回日程 JSON |
+| GET | `/schedule` | 公开 | 返回日程数据（从数据库读取） |
 | GET | `/attendees` | 公开 | 返回按学校分组的参会人员列表 |
+| GET | `/meeting` | 公开 | 返回会议基本信息 |
+
+### 演讲详情
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/talks/:id` | 公开 | 获取 Talk 详情 + 关联资源列表（前台日程详情弹窗用） |
+
+### 天气
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/weather` | 公开 | 获取天气数据（自动选择和风天气或 Open-Meteo，含内存缓存） |
+
+### 参会指南
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/meeting-guide` | 公开 | 获取可见的参会指南卡片（按 sortOrder 排序） |
 
 ### 反思
 
@@ -488,12 +601,96 @@ docker compose up -d --build
 | PUT | `/announcements/:id` | 管理员 | 编辑 |
 | DELETE | `/announcements/:id` | 管理员 | 删除 |
 
-### 管理员查询
+### 管理员 — 查询
 
 | 方法 | 路径 | 权限 | 说明 |
 | --- | --- | --- | --- |
 | GET | `/admin/reflections` | 管理员 | 反思列表（含作者详情）`?q=keyword` |
 | GET | `/admin/gallery` | 管理员 | 剪影列表（含上传者详情）`?tag=&uploader=` |
+
+### 管理员 — 会议信息
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/admin/meeting` | 管理员 | 获取会议信息 |
+| PUT | `/admin/meeting` | 管理员 | 更新会议信息（名称/主题/日期/地点/主办方） |
+
+### 管理员 — 日程管理
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/admin/schedule/days` | 管理员 | 获取所有日程天 |
+| POST | `/admin/schedule/days` | 管理员 | 创建日程天 |
+| PUT | `/admin/schedule/days/:id` | 管理员 | 编辑日程天 |
+| DELETE | `/admin/schedule/days/:id` | 管理员 | 删除日程天（级联） |
+| POST | `/admin/schedule/items` | 管理员 | 创建时段 |
+| PUT | `/admin/schedule/items/:id` | 管理员 | 编辑时段 |
+| DELETE | `/admin/schedule/items/:id` | 管理员 | 删除时段（级联） |
+| POST | `/admin/schedule/talks` | 管理员 | 创建演讲 |
+| PUT | `/admin/schedule/talks/:id` | 管理员 | 编辑演讲 |
+| DELETE | `/admin/schedule/talks/:id` | 管理员 | 删除演讲（级联） |
+| POST | `/admin/schedule/talks/:id/resources` | 管理员 | 上传演讲资源（multipart 或外链） |
+| PUT | `/admin/schedule/resources/:id` | 管理员 | 编辑资源 |
+| DELETE | `/admin/schedule/resources/:id` | 管理员 | 删除资源 |
+
+### 管理员 — 参会人员 / 组织 / 部门
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| POST | `/admin/attendees/import-static` | 管理员 | 从 JSON 文件导入参会人员 |
+| GET | `/admin/attendees` | 管理员 | 参会人员列表 |
+| POST | `/admin/attendees` | 管理员 | 创建参会人员 |
+| PUT | `/admin/attendees/:id` | 管理员 | 编辑参会人员 |
+| DELETE | `/admin/attendees/:id` | 管理员 | 删除参会人员 |
+| POST | `/admin/attendees/:id/photo` | 管理员 | 上传参会人员头像 |
+| POST | `/admin/attendees/import-excel` | 管理员 | 从 Excel 批量导入 |
+| GET | `/admin/organizations` | 管理员 | 组织列表 |
+| POST | `/admin/organizations` | 管理员 | 创建组织 |
+| PUT | `/admin/organizations/:id` | 管理员 | 编辑组织 |
+| DELETE | `/admin/organizations/:id` | 管理员 | 删除组织 |
+| GET | `/admin/departments` | 管理员 | 部门列表 |
+| POST | `/admin/departments` | 管理员 | 创建部门 |
+| PUT | `/admin/departments/:id` | 管理员 | 编辑部门 |
+| DELETE | `/admin/departments/:id` | 管理员 | 删除部门 |
+
+### 管理员 — 参会指南
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/admin/meeting-guide` | 管理员 | 全部卡片列表 |
+| POST | `/admin/meeting-guide` | 管理员 | 创建卡片 |
+| PUT | `/admin/meeting-guide/:id` | 管理员 | 编辑卡片 |
+| DELETE | `/admin/meeting-guide/:id` | 管理员 | 删除卡片 |
+| POST | `/admin/meeting-guide/seed-defaults` | 管理员 | 插入默认卡片 |
+
+### 管理员 — 系统设置
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/admin/settings` | 管理员 | 获取所有设置（按分类分组） |
+| GET | `/admin/settings/:category` | 管理员 | 按分类获取设置 |
+| PUT | `/admin/settings` | 管理员 | 批量更新设置 `[{key, value, category?}]` |
+
+### 管理员 — 数据分析
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/admin/analytics/overview` | 管理员 | 反思总览（总数/匿名数/点赞/评论/情感分布/Top 点赞） |
+| GET | `/admin/analytics/keywords` | 管理员 | 关键词提取 `?limit=30` |
+| GET | `/admin/analytics/timeline` | 管理员 | 时间趋势 `?bucket=day\|week` |
+| GET | `/admin/analytics/contributors` | 管理员 | 贡献者排行 `?limit=10` |
+| POST | `/admin/analytics/scan` | 管理员 | 重新计算所有反思的情感分析 |
+| POST | `/admin/analytics/summary` | 管理员 | LLM 生成 Markdown 总结 `{ topic? }` |
+
+### 管理员 — 邮件通知
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/admin/notification/recipients` | 管理员 | 获取收件人列表（按学校分组） |
+| GET | `/admin/notification/smtp-config` | 管理员 | 获取 SMTP 发件人配置（密码脱敏） |
+| PUT | `/admin/notification/smtp-config` | 管理员 | 保存 SMTP 发件人配置 |
+| POST | `/admin/notification/test-smtp` | 管理员 | 发送测试邮件 |
+| POST | `/admin/notification/send` | 管理员 | 发送通知邮件 |
 
 ### 健康检查
 
@@ -526,32 +723,38 @@ docker compose up -d --build
 | `npm start` | 生产启动 |
 | `npm run db:generate` | `prisma generate` |
 | `npm run db:migrate` | `prisma migrate dev --name init` |
-| `npm run db:push` | `prisma db push` |
+| `npm run db:push` | `prisma db push --accept-data-loss` |
+| `npm run db:init` | **一键初始化**：`prisma db push` + `seed.js`（推荐） |
 | `npm run db:seed` | 基础种子数据 |
 | `npm run db:seed-demo` | 演示数据（10 篇反思 + 评论 + 点赞） |
 | `npm run db:clean-demo` | 清理演示数据（删除 `[DEMO]` 前缀的反思及关联数据） |
+| `npm run db:migrate-static` | 从 JSON 文件迁移日程/参会人员到数据库 |
 | `npm run db:reset` | `prisma migrate reset --force` |
 
 ---
 
 ## 📦 数据初始化
 
-### 静态数据文件
+### 静态数据文件（源数据）
 
 | 文件 | 说明 |
 | --- | --- |
 | `backend/data/schedule.json` | 会议三天日程（源自日程安排 Excel） |
 | `backend/data/attendees.json` | 参会人员名单（学校 / 英文名 / 中文名 / 照片 URL） |
+| `backend/data/sentiment-zh.json` | 中文情感词典（用于本地情感分析） |
+| `backend/data/stopwords-zh.json` | 中文停用词表（关键词提取过滤） |
+| `backend/data/stopwords-en.json` | 英文停用词表 |
 
-> `staticData.js` 路由每次请求时直接读取文件，无内存缓存。修改 JSON 后重启后端即刻生效。
+> 日程和参会人员数据首次通过 `seed.js` 自动迁入数据库。后续管理通过后台 CRUD 界面进行，JSON 文件仅作为初始源数据保留。
 
 ### 种子脚本
 
 | 脚本 | 说明 |
 | --- | --- |
-| `prisma/seed.js` | 创建参会用户、管理员、18 个预设标签、往届会议（2024 上海 / 2025 石河子）、欢迎公告 |
+| `prisma/seed.js` | 创建参会用户、管理员、18 个预设标签、往届会议（2024 上海 / 2025 石河子）、欢迎公告、组织、部门、系统设置、日程/参会人员迁移 |
 | `prisma/seed-demo.js` | 创建 10 篇 `[DEMO]` 前缀反思 + 随机评论和点赞（方便演示） |
 | `prisma/clean-demo.js` | 清理所有 `[DEMO]` 开头的反思及其评论和点赞 |
+| `prisma/migrate-static-to-db.js` | 将 `data/schedule.json` 和 `data/attendees.json` 迁移到数据库表 |
 
 ### 参会人员照片
 
@@ -563,6 +766,13 @@ node scripts/copy-attendee-photos.js
 ```
 
 > 注意：脚本中的源路径是硬编码的，使用前请根据实际情况修改。
+
+### Font Awesome 图标分类
+
+```bash
+# 生成 FA 图标分类数据（用于后台图标选择器）
+node scripts/generate-fa-categories.js
+```
 
 ---
 
@@ -593,7 +803,7 @@ node scripts/copy-attendee-photos.js
 - [ ] 移动端 PWA 支持
 - [ ] 上传后自动生成视频缩略图
 - [ ] 多语言（i18n）支持
-- [ ] 邮件通知（新反思、新评论）
+- [x] ~~邮件通知（新反思、新评论）~~ — 已实现 SMTP 多发件人邮件通知
 - [ ] Redis 缓存（OIDC state、热门数据）
 - [ ] 集群部署方案（Kubernetes + Ingress）
 
