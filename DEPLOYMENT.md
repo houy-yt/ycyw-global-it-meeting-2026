@@ -1,6 +1,6 @@
 # YCYW 2026 Global IT Meeting — 部署指南
 
-> 本文档详细描述了项目从本地开发到生产部署的完整流程，包括 Docker Compose 部署、PM2 部署、数据库切换、对象存储、OIDC 认证、天气 API、邮件通知、数据分析与 LLM、SSL 配置、数据备份及常见问题排查。
+> 本文档详细描述了项目从本地开发到生产部署的完整流程，包括 Docker Compose 部署、PM2 部署、数据库切换、对象存储、OIDC 认证、天气 API、邮件通知、文件管理、数据分析与 LLM、SSL 配置、数据备份及常见问题排查。
 
 ---
 
@@ -22,10 +22,11 @@
 - [9. 天气 API 配置](#9-天气-api-配置)
 - [10. 邮件通知配置](#10-邮件通知配置)
 - [11. 数据分析与 LLM 配置](#11-数据分析与-llm-配置)
-- [12. SSL / HTTPS 配置](#12-ssl--https-配置)
-- [13. 数据备份与恢复](#13-数据备份与恢复)
-- [14. 监控与日志](#14-监控与日志)
-- [15. 常见问题排查](#15-常见问题排查)
+- [12. 文件管理（elFinder）](#12-文件管理elfinder)
+- [13. SSL / HTTPS 配置](#13-ssl--https-配置)
+- [14. 数据备份与恢复](#14-数据备份与恢复)
+- [15. 监控与日志](#15-监控与日志)
+- [16. 常见问题排查](#16-常见问题排查)
 
 ---
 
@@ -108,6 +109,18 @@ npm run db:seed
 - 点击导航栏「管理员登录」→ 弹出 AuthModal → 输入邮箱即可
 - 管理员邮箱：`admin@ycyw.cn`（或 `.env` 中 `ADMIN_EMAILS` 定义的邮箱）
 - 参会人员邮箱：种子数据生成的 `<英文名>@ycyw-edu.com`
+
+### 前端构建说明
+
+前端使用 `vite-plugin-static-copy` 在构建时自动复制以下运行时资源：
+
+| 资源 | 源路径 | 目标路径 | 说明 |
+| --- | --- | --- | --- |
+| TinyMCE 资源 | `node_modules/tinymce/{skins,icons,themes,models,plugins}` | `/tinymce/` | 富文本编辑器运行时文件 |
+| jQuery | `node_modules/jquery/dist` | `/libs/jquery/dist/` | elFinder 依赖 |
+| jQuery UI | `node_modules/jquery-ui-dist` | `/libs/jquery-ui-dist/` | elFinder 依赖 |
+
+> 这些资源在 `npm run build:frontend` 时自动处理，无需手动操作。
 
 ---
 
@@ -244,7 +257,7 @@ curl http://<服务器IP>/api/health
 | Docker Volume | 用途 |
 | --- | --- |
 | `pgdata` | PostgreSQL 数据目录 |
-| `uploads` | 用户上传的图片 / 视频文件 |
+| `uploads` | 用户上传的图片 / 视频文件（也是 elFinder 文件管理器操作的根目录） |
 
 > ⚠️ 删除 volume 会导致数据丢失。使用 `docker compose down` 不会删除 volume；`docker compose down -v` **会删除所有 volume**。
 
@@ -356,7 +369,7 @@ location /uploads/ {
 }
 ```
 
-- `/api/*` 请求转发到后端的 Express 服务
+- `/api/*` 请求转发到后端的 Express 服务（包括 elFinder 文件管理 API `/api/admin/elfinder`）
 - `/uploads/*` 请求转发到后端的静态文件服务
 - `client_max_body_size 60m` 确保大文件上传不被 Nginx 拒绝
 
@@ -472,6 +485,8 @@ await this.client.delete(key);
 ```
 
 > 业务路由代码（`routes/gallery.js` 等）**无需任何改动**，StorageService 透明切换。
+>
+> **注意**：elFinder 文件管理器当前仅操作本地磁盘 `uploads/` 目录。启用 OSS 后，elFinder 管理的仍然是本地文件，通过业务接口（剪影上传、演讲资源等）上传的文件则走 OSS。
 
 ### OSS Bucket 配置建议
 
@@ -609,7 +624,7 @@ WEATHER_LOCATION=101010100         # 和风天气城市 ID（默认北京）
 #### 1. 通过后台界面配置（推荐）
 
 1. 登录管理员账号
-2. 进入后台 → 「邮件通知」Tab
+2. 进入后台 → 「发送邮件」Tab
 3. 配置 SMTP 发件人信息（支持添加多个发件人）：
    - 发件人邮箱
    - 发件人名称
@@ -631,8 +646,8 @@ WEATHER_LOCATION=101010100         # 和风天气城市 ID（默认北京）
 
 ### 发送流程
 
-1. 在「邮件通知」Tab 中选择收件人（按学校/部门筛选）
-2. 编辑邮件主题和内容（支持富文本）
+1. 在「发送邮件」Tab 中选择收件人（按学校/部门筛选）
+2. 编辑邮件主题和内容（支持富文本，使用 TinyMCE 编辑器，可通过 elFinder 插入服务器文件）
 3. 选择发件人
 4. 点击发送
 
@@ -684,7 +699,64 @@ WEATHER_LOCATION=101010100         # 和风天气城市 ID（默认北京）
 
 ---
 
-## 12. SSL / HTTPS 配置
+## 12. 文件管理（elFinder）
+
+项目集成了 [elFinder](https://studio-42.github.io/elFinder/) 作为可视化文件管理器，允许管理员直接管理服务器上 `uploads/` 目录下的所有文件。
+
+### 架构
+
+```
+┌───────────────────┐     iframe      ┌───────────────────┐
+│  AdminFileManager │  ──────────────>│  elfinder.html    │
+│  (Vue 组件)       │                 │  (jQuery + elFinder│
+│  后台「文件管理」  │                 │   + jQuery UI)     │
+└───────────────────┘                 └─────────┬─────────┘
+                                                │ HTTP + JWT
+                                     ┌──────────▼──────────┐
+                                     │  /api/admin/elfinder │
+                                     │  (Express 路由)      │
+                                     │  操作 backend/uploads│
+                                     └─────────────────────┘
+```
+
+### 组件说明
+
+| 组件 | 文件 | 说明 |
+| --- | --- | --- |
+| 后端连接器 | `backend/src/routes/elfinder.js` | 实现 [elFinder 客户端-服务器协议 2.1](https://github.com/Studio-42/elFinder/wiki/Client-Server-API-2.1)，支持 16 个命令 |
+| 前端管理页 | `frontend/src/views/admin/AdminFileManager.vue` | 通过 iframe 嵌入 `elfinder.html`，自动传递 JWT token |
+| 前端 HTML | `frontend/public/elfinder.html` | 独立的 elFinder 页面，加载 jQuery / jQuery UI / elFinder 资源 |
+| 静态资源 | `frontend/public/elfinder/` | elFinder CSS、JS、图标、语言包（中文） |
+
+### 功能特性
+
+- **文件操作**：上传、下载、创建目录/文件、重命名、复制、移动、删除、搜索
+- **文件预览**：图片直接预览缩略图，支持 Quick Look 快速查看
+- **安全保护**：所有操作通过 JWT 认证 + 管理员权限验证；路径遍历防护
+- **上传限制**：单文件最大 50MB，最多同时上传 20 个文件
+- **中文界面**：加载 elFinder 中文语言包
+
+### TinyMCE 集成
+
+TinyMCE 富文本编辑器（`TinyEditor.vue`）可以通过 elFinder 选择服务器文件：
+
+1. 在编辑器中点击「插入图片」或「插入文件」按钮
+2. 弹出 elFinder 文件选择器窗口
+3. 选择文件后，URL 自动填入编辑器
+
+集成方式通过 iframe + `postMessage` 通信实现，支持两种模式：
+- **iframe 模式**：elFinder 嵌入 TinyMCE 对话框内，通过 `postMessage` 传回文件 URL
+- **弹窗模式**：`window.open` 打开 elFinder，通过回调函数传回文件 URL
+
+### 生产环境注意事项
+
+- elFinder 操作的是 Docker Volume 中的 `uploads/` 目录
+- 确保 Nginx 的 `client_max_body_size` 设置足够大（默认 `60m`）
+- elFinder 前端资源（`public/elfinder/`）和依赖库（jQuery / jQuery UI）在 `npm run build:frontend` 时自动包含在构建产物中
+
+---
+
+## 13. SSL / HTTPS 配置
 
 生产环境强烈建议使用 HTTPS。以下是几种常见方案：
 
@@ -754,7 +826,7 @@ CORS_ORIGIN=https://meeting.ycyw-edu.com
 
 ---
 
-## 13. 数据备份与恢复
+## 14. 数据备份与恢复
 
 ### PostgreSQL 数据备份
 
@@ -808,7 +880,7 @@ ls -la "$BACKUP_DIR"/*$DATE*
 
 ---
 
-## 14. 监控与日志
+## 15. 监控与日志
 
 ### 查看容器日志
 
@@ -862,7 +934,7 @@ pm2 monit
 
 ---
 
-## 15. 常见问题排查
+## 16. 常见问题排查
 
 ### 问题：后端容器启动失败，提示 "prisma migrate deploy" 错误
 
@@ -945,7 +1017,7 @@ curl -s http://localhost/api/weather | jq .
 
 **排查**：
 
-1. 在后台「邮件通知」Tab 中先点击「测试发送」
+1. 在后台「发送邮件」Tab 中先点击「测试发送」
 2. 检查后端日志中的错误信息
 3. 常见原因：
    - SMTP 服务器地址/端口错误
@@ -964,6 +1036,33 @@ curl -s http://localhost/api/weather | jq .
 3. 检查后端日志中的 LLM 调用错误
 4. 确认服务器能访问 LLM API 地址（`api.openai.com` 或 `api.deepseek.com`）
 5. 本地模式（`local`）无需外部 API，始终可用
+
+---
+
+### 问题：elFinder 文件管理器无法加载
+
+**排查**：
+
+1. 确认已以管理员身份登录
+2. 检查浏览器控制台是否有 JavaScript 错误
+3. 确认 `elfinder.html` 和 `elfinder/` 静态资源是否存在：
+   - 开发环境：`frontend/public/elfinder.html` 和 `frontend/public/elfinder/`
+   - 生产构建：这些文件应在 `frontend/dist/` 中
+4. 确认 jQuery 和 jQuery UI 库已正确复制：
+   - 开发环境：Vite 自动通过 `vite-plugin-static-copy` 复制到 `/libs/`
+   - 生产构建：检查 `frontend/dist/libs/` 是否存在
+5. 检查后端 API 是否可访问：`curl http://localhost:3000/api/admin/elfinder?cmd=open&init=1`（需携带 JWT）
+
+---
+
+### 问题：TinyMCE 编辑器中无法通过 elFinder 选择文件
+
+**排查**：
+
+1. 确认 `elfinder.html` 中的 `url` 配置指向正确的后端 API 地址（`/api/admin/elfinder`）
+2. 检查 JWT token 是否正确传递（通过 URL 参数或 localStorage）
+3. 确认 `TinyEditor.vue` 中的 `file_picker_callback` 配置正确
+4. 检查弹窗是否被浏览器拦截
 
 ---
 

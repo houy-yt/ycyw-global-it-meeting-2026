@@ -2,7 +2,7 @@
 
 > **Connect · Innovate · Empower**
 >
-> 耀中耀华教育（YCYW）全球 IT 团队年度会议站点 —— 集**会前公告与日程展示**、**参会指南与入场须知**、**天气预报**、**会议地点导航**、**会中实时查询与照片/视频上传**、**会后反思存档**、**数据分析与 LLM 总结**、**邮件通知**、**往届会议入口**与**后台管理**于一体的全栈 Web 应用。
+> 耀中耀华教育（YCYW）全球 IT 团队年度会议站点 —— 集**会前公告与日程展示**、**参会指南与入场须知**、**天气预报**、**会议地点导航**、**会中实时查询与照片/视频上传**、**会后反思存档**、**数据分析与 LLM 总结**、**邮件通知**、**文件管理**、**往届会议入口**与**后台管理**于一体的全栈 Web 应用。
 
 ![Vue](https://img.shields.io/badge/Vue-3.4-42b883?logo=vue.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-4-000?logo=express&logoColor=white)
@@ -48,9 +48,10 @@
 | **往届会议** | `/past-meetings` | 历年会议记录浏览，支持外部链接跳转 |
 | **OIDC 回调** | `/auth/callback` | OIDC 认证完成后的前端回调页面，自动保存令牌并跳转 |
 | **登录** | `/login` | 登录引导页面（根据 OIDC 模式自动切换行为） |
-| **后台管理** | `/admin` | 15 个 Tab：反思管理 / 剪影管理 / 往届会议 / 预设标签 / 公告 / 会议信息 / 日程 / 参会人员 / 组织 / 部门 / 参会指南 / 邮件通知 / 图标管理 / 系统设置 / 数据分析 |
+| **后台管理** | `/admin` | 4 组 15 项侧边栏管理：会议管理（会议信息 / 日程 / 参会须知 / 发送邮件）· 人员与组织（参会人员 / 部门 / 组织）· 内容管理（反思 / 剪影 / 公告 / 往届）· 数据与设置（数据分析 / 系统设置 / 文件管理 / FA图标库） |
 | **数据分析** | `/admin → 数据分析` | 反思总览（情感分布、平均分、Top 点赞）、关键词云、时间趋势、贡献者排行、LLM 总结（OpenAI / DeepSeek 可选） |
-| **邮件通知** | `/admin → 邮件通知` | SMTP 多发件人配置、按学校/部门选择收件人、富文本邮件编辑、测试发送 |
+| **邮件通知** | `/admin → 发送邮件` | SMTP 多发件人配置、按学校/部门选择收件人、富文本邮件编辑、测试发送 |
+| **文件管理** | `/admin → 文件管理` | 基于 elFinder 的可视化文件管理器，管理 `uploads/` 目录下的所有文件；支持上传、创建目录、重命名、移动、复制、删除、搜索、预览；与 TinyMCE 富文本编辑器集成，可直接插入服务器文件 |
 
 ---
 
@@ -66,12 +67,14 @@
 | 路由 | **Vue Router 4**（history 模式） |
 | UI 框架 | **Tailwind CSS 3.4** + **Element Plus** |
 | 图标 | **Font Awesome 7**（@fortawesome/vue-fontawesome） |
-| 富文本编辑器 | **TinyMCE 8**（@tinymce/tinymce-vue，含中文语言包） |
+| 富文本编辑器 | **TinyMCE 8**（@tinymce/tinymce-vue，含中文语言包；集成 elFinder 文件选择器） |
+| 文件管理器 | **elFinder**（基于 jQuery/jQuery UI，通过 iframe 嵌入后台） |
 | HTTP 客户端 | **axios**（全局拦截器自动附加 JWT） |
 | 日期处理 | **dayjs** |
 | 文件导出 | **file-saver** + **jszip**（压缩下载） |
 | 表格导入导出 | **xlsx**（Excel 读写） |
 | 拖拽排序 | **sortablejs** |
+| 构建辅助 | **vite-plugin-static-copy**（复制 TinyMCE / jQuery / jQuery UI 运行时资源） |
 | 字体 | Inter + Noto Sans SC（Google Fonts CDN） |
 
 ### 后端
@@ -83,6 +86,7 @@
 | ORM | **Prisma 5** |
 | 认证 | **JWT**（jsonwebtoken）+ **OIDC**（openid-client v6 ESM） |
 | 文件上传 | **multer**（内存模式 → StorageService） |
+| 文件管理 | **elFinder Connector**（实现 elFinder 客户端-服务器协议 2.1，管理 uploads/ 目录） |
 | 邮件发送 | **nodemailer**（多发件人 SMTP） |
 | 安全 | **helmet** + **cors** + **bcryptjs** |
 | 日志 | **morgan** |
@@ -119,7 +123,7 @@
 
 | 模式 | 说明 |
 | --- | --- |
-| 本地磁盘（默认） | 文件存储在 `backend/uploads/`，通过 Express 静态文件服务 |
+| 本地磁盘（默认） | 文件存储在 `backend/uploads/`，通过 Express 静态文件服务；可通过 elFinder 可视化管理 |
 | 阿里云 OSS | 设置 `USE_OSS=true` 并配置 OSS 参数即可切换 |
 
 整个上传流程通过 `StorageService` 抽象，业务代码无需改动。
@@ -163,7 +167,8 @@ project-root/
 │   │   │   ├── attendeesAdmin.js     # 参会人员/组织/部门 CRUD（admin）
 │   │   │   ├── settings.js           # 系统设置键值对 CRUD（admin）
 │   │   │   ├── analytics.js          # 反思数据分析（情感/关键词/趋势/LLM）
-│   │   │   └── notification.js       # 邮件通知（SMTP 配置/发送/测试）
+│   │   │   ├── notification.js       # 邮件通知（SMTP 配置/发送/测试）
+│   │   │   └── elfinder.js           # elFinder 连接器（文件管理 API）
 │   │   ├── middleware/
 │   │   │   └── auth.js               # JWT 验证 / 权限中间件
 │   │   ├── services/
@@ -197,8 +202,14 @@ project-root/
 │   │   ├── logo.gif                  # 站点 Logo
 │   │   ├── default-avatar.svg        # 默认头像
 │   │   ├── hero-banner.jpg           # Hero 横幅
+│   │   ├── hero-banner-sm.jpg        # Hero 横幅（移动端）
 │   │   ├── schedule-banner.jpg       # 日程横幅
+│   │   ├── save-date-bg.jpg          # Save the Date 背景
+│   │   ├── video-cover.jpg           # 视频封面
 │   │   ├── fksq-qrcode.jpg           # 访客申请二维码
+│   │   ├── fkzn.jpg                  # 访客指南
+│   │   ├── elfinder.html             # elFinder 文件管理器页面（独立 HTML）
+│   │   ├── elfinder/                 # elFinder 静态资源（CSS/JS/图片/语言包）
 │   │   ├── attendees/                # 参会人员头像照片
 │   │   └── tinymce/langs/            # TinyMCE 中文语言包
 │   ├── src/
@@ -209,7 +220,7 @@ project-root/
 │   │   │   ├── Countdown.vue         # 倒计时组件
 │   │   │   ├── BackToTop.vue         # 回到顶部按钮
 │   │   │   ├── WeatherCard.vue       # 天气卡片组件
-│   │   │   ├── TinyEditor.vue        # TinyMCE 富文本编辑器封装
+│   │   │   ├── TinyEditor.vue        # TinyMCE 富文本编辑器封装（集成 elFinder 文件选择）
 │   │   │   └── PhotoPreviewModal.vue # 照片预览弹窗
 │   │   ├── views/
 │   │   │   ├── HomeView.vue
@@ -224,23 +235,23 @@ project-root/
 │   │   │   ├── PastMeetingsView.vue
 │   │   │   ├── LoginView.vue
 │   │   │   ├── OidcCallbackView.vue      # OIDC 回调处理
-│   │   │   ├── AdminView.vue             # 管理后台容器
-│   │   │   └── admin/                    # 管理后台 15 个 Tab
-│   │   │       ├── AdminReflections.vue      # 反思管理
-│   │   │       ├── AdminGallery.vue          # 剪影管理
-│   │   │       ├── AdminPast.vue             # 往届会议
-│   │   │       ├── AdminTags.vue             # 预设标签
-│   │   │       ├── AdminAnnouncements.vue    # 公告管理
+│   │   │   ├── AdminView.vue             # 管理后台容器（4 组侧边栏）
+│   │   │   └── admin/                    # 管理后台模块
 │   │   │       ├── AdminMeeting.vue          # 会议信息
 │   │   │       ├── AdminSchedule.vue         # 日程管理
+│   │   │       ├── AdminMeetingGuide.vue     # 参会须知
+│   │   │       ├── AdminNotification.vue     # 发送邮件
 │   │   │       ├── AdminAttendees.vue        # 参会人员
-│   │   │       ├── AdminOrganizations.vue    # 组织管理
-│   │   │       ├── AdminDepartments.vue      # 部门管理
-│   │   │       ├── AdminMeetingGuide.vue     # 参会指南
-│   │   │       ├── AdminNotification.vue     # 邮件通知
-│   │   │       ├── AdminFaIcons.vue          # 图标管理
+│   │   │       ├── AdminDepartments.vue      # 部门维护
+│   │   │       ├── AdminOrganizations.vue    # 组织维护
+│   │   │       ├── AdminReflections.vue      # 反思管理
+│   │   │       ├── AdminGallery.vue          # 剪影管理
+│   │   │       ├── AdminAnnouncements.vue    # 公告管理
+│   │   │       ├── AdminPast.vue             # 往届会议
+│   │   │       ├── AdminAnalytics.vue        # 数据分析
 │   │   │       ├── AdminSettings.vue         # 系统设置
-│   │   │       └── AdminAnalytics.vue        # 数据分析
+│   │   │       ├── AdminFileManager.vue      # 文件管理（elFinder）
+│   │   │       └── AdminFaIcons.vue          # FA图标库
 │   │   ├── stores/
 │   │   │   └── auth.js               # Pinia 认证状态（双模式支持）
 │   │   ├── router/
@@ -253,7 +264,7 @@ project-root/
 │   │   └── App.vue                   # 根组件
 │   ├── nginx.conf                    # Nginx 配置（SPA + 反向代理）
 │   ├── Dockerfile                    # 前端多阶段构建
-│   ├── vite.config.js                # Vite 配置（代理 + 别名）
+│   ├── vite.config.js                # Vite 配置（代理 + 别名 + 静态资源复制）
 │   ├── tailwind.config.js
 │   ├── postcss.config.js
 │   └── package.json
@@ -360,7 +371,7 @@ npm run dev:frontend  # 仅前端（Vite HMR）
 
 ## 🐳 生产部署
 
-> 完整的生产部署指南请参阅 **[DEPLOYMENT.md](./DEPLOYMENT.md)**，涵盖 Docker Compose 部署、PM2 部署、PostgreSQL 切换、OSS 存储、OIDC 配置、天气 API、邮件通知、LLM 分析、SSL、数据备份等。
+> 完整的生产部署指南请参阅 **[DEPLOYMENT.md](./DEPLOYMENT.md)**，涵盖 Docker Compose 部署、PM2 部署、PostgreSQL 切换、OSS 存储、OIDC 配置、天气 API、邮件通知、LLM 分析、文件管理、SSL、数据备份等。
 
 快速概览：
 
@@ -502,7 +513,7 @@ docker compose up -d --build
 | **游客** | 未登录 | 浏览首页、日程、参会指南、入场须知、天气、会议地点、参会人员、反思列表、剪影列表、往届会议 |
 | **普通用户** | 登录但非参会者 | 游客能力 + 评论 / 点赞 / 上传剪影 |
 | **参会者** | `isAttendee=true`（来自种子数据） | 普通用户能力 + **发布反思** |
-| **管理员** | `isAdmin=true`（邮箱在 `ADMIN_EMAILS` 中） | 全部能力 + 后台管理 |
+| **管理员** | `isAdmin=true`（邮箱在 `ADMIN_EMAILS` 中） | 全部能力 + 后台管理（含文件管理） |
 
 ---
 
@@ -692,6 +703,16 @@ docker compose up -d --build
 | POST | `/admin/notification/test-smtp` | 管理员 | 发送测试邮件 |
 | POST | `/admin/notification/send` | 管理员 | 发送通知邮件 |
 
+### 管理员 — 文件管理（elFinder）
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET/POST | `/admin/elfinder` | 管理员 | elFinder 连接器端点，实现 [elFinder 客户端-服务器协议 2.1](https://github.com/Studio-42/elFinder/wiki/Client-Server-API-2.1) |
+
+支持的 elFinder 命令：`open` · `tree` · `parents` · `ls` · `file` · `upload` · `mkdir` · `mkfile` · `rename` · `rm` · `duplicate` · `paste` · `search` · `info` · `size` · `get` · `put`
+
+> elFinder 连接器操作 `backend/uploads/` 目录，通过 JWT 认证保护，仅管理员可访问。前端通过 `elfinder.html` 页面以 iframe 方式嵌入后台「文件管理」Tab，同时可作为 TinyMCE 的文件选择器使用。
+
 ### 健康检查
 
 | 方法 | 路径 | 权限 | 说明 |
@@ -804,6 +825,7 @@ node scripts/generate-fa-categories.js
 - [ ] 上传后自动生成视频缩略图
 - [ ] 多语言（i18n）支持
 - [x] ~~邮件通知（新反思、新评论）~~ — 已实现 SMTP 多发件人邮件通知
+- [x] ~~文件管理~~ — 已实现 elFinder 可视化文件管理器 + TinyMCE 集成
 - [ ] Redis 缓存（OIDC state、热门数据）
 - [ ] 集群部署方案（Kubernetes + Ingress）
 

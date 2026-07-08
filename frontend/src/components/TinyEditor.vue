@@ -59,13 +59,18 @@ import Editor from '@tinymce/tinymce-vue';
 const props = defineProps({
   modelValue: { type: String, default: '' },
   height: { type: [Number, String], default: 360 },
-  toolbar: {
+  /* toolbar: {
     type: String,
     default:
       'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | ' +
       'alignleft aligncenter alignright alignjustify | ' +
       'bullist numlist outdent indent | link image table charmap | ' +
       'forecolor backcolor removeformat | code fullscreen preview | help',
+  }, */
+  toolbar: {
+    type: String,
+    default:
+      'blocks fontsize bold italic underline alignleft aligncenter alignright alignjustify bullist numlist | link image table charmap | forecolor backcolor removeformat | code fullscreen preview | help',
   },
   plugins: {
     type: String,
@@ -132,6 +137,69 @@ const editorInit = computed(() => ({
   // Branding
   branding: false,
   promotion: false,
+
+  // File picker — open elFinder in modal dialog (iframe) for browsing/selecting files
+  file_picker_callback: (callback, value, meta) => {
+    // Generate a unique callback ID
+    const callbackId = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+    // Get auth token for elFinder
+    const token = localStorage.getItem('token') || '';
+
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:100000;display:flex;align-items:center;justify-content:center;';
+
+    // Create dialog container
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'background:#fff;border-radius:4px;width:80vw;height:80vh;max-width:1200px;max-height:900px;display:flex;flex-direction:column;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+
+    // Header bar
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 16px;border-bottom:1px solid #ddd;background:#f5f5f5;border-radius:4px 4px 0 0;flex-shrink:0;';
+    const title = document.createElement('strong');
+    title.textContent = 'elFinder 文件管理器';
+    header.appendChild(title);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'border:none;background:none;font-size:18px;cursor:pointer;padding:4px 8px;color:#666;';
+    closeBtn.onmouseenter = () => { closeBtn.style.color = '#000'; };
+    closeBtn.onmouseleave = () => { closeBtn.style.color = '#666'; };
+    closeBtn.onclick = () => cleanup();
+    header.appendChild(closeBtn);
+
+    // iframe
+    const iframe = document.createElement('iframe');
+    iframe.src = `/elfinder.html?cb=${callbackId}&token=${encodeURIComponent(token)}&mode=iframe`;
+    iframe.style.cssText = 'flex:1;border:none;border-radius:0 0 4px 4px;width:100%;';
+
+    dialog.appendChild(header);
+    dialog.appendChild(iframe);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    // Click overlay background to close
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup();
+    });
+
+    // Cleanup function
+    const cleanup = () => {
+      window.removeEventListener('message', handler);
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    };
+
+    // Listen for postMessage from iframe
+    const handler = (e) => {
+      if (e.data && e.data.type === 'elfinderFileSelected' && e.data.callbackId === callbackId) {
+        callback(e.data.url);
+        cleanup();
+      }
+    };
+    window.addEventListener('message', handler);
+  },
+  file_picker_types: 'file image media',
 
   // Image upload — upload to server, return URL (not base64)
   automatic_uploads: true,

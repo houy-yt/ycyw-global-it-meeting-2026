@@ -81,6 +81,7 @@
               <AdminAnnouncements v-if="tab === 'announce'" />
               <AdminNotification v-if="tab === 'notification'" />
               <AdminSettings v-if="tab === 'settings'" />
+              <AdminFileManager v-if="tab === 'fileManager'" />
               <AdminFaIcons v-if="tab === 'faIcons'" />
             </div>
           </main>
@@ -105,6 +106,7 @@ import AdminPast from './admin/AdminPast.vue';
 import AdminAnnouncements from './admin/AdminAnnouncements.vue';
 import AdminNotification from './admin/AdminNotification.vue';
 import AdminSettings from './admin/AdminSettings.vue';
+import AdminFileManager from './admin/AdminFileManager.vue';
 import AdminFaIcons from './admin/AdminFaIcons.vue';
 
 const tab = ref('meeting');
@@ -117,7 +119,7 @@ const menuGroups = [
       { key: 'meeting',      label: '会议信息',  icon: 'circle-info' },
       { key: 'schedule',     label: '日程安排',  icon: 'calendar-days' },
       { key: 'meetingGuide', label: '参会须知',  icon: 'clipboard-check' },
-      { key: 'notification', label: '发送通知',  icon: 'paper-plane' },
+      { key: 'notification', label: '发送邮件',  icon: 'paper-plane' },
     ],
   },
   {
@@ -142,6 +144,7 @@ const menuGroups = [
     items: [
       { key: 'analytics', label: '数据分析',  icon: 'chart-bar' },
       { key: 'settings',  label: '系统设置',  icon: 'gear' },
+      { key: 'fileManager', label: '文件管理', icon: 'folder-open' },
       { key: 'faIcons',   label: 'FA图标库',  icon: 'icons' },
     ],
   },

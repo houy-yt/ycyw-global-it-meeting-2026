@@ -226,7 +226,7 @@ router.post('/attendees/bulk', authRequired, adminRequired, async (req, res) => 
   res.json({ imported: n });
 });
 
-// Upload attendee photo → returns { url }
+// Upload attendee photo → saves to uploads/attendees/, returns { url }
 router.post(
   '/attendees/upload-photo',
   authRequired,
@@ -239,8 +239,18 @@ router.post(
       return res.status(400).json({ message: `Image too large (>${limits.imgMB}MB)` });
     }
     try {
-      const uploaded = await storage.upload(req.file);
-      res.json({ url: uploaded.url });
+      const path = require('path');
+      const fs = require('fs');
+      const crypto = require('crypto');
+      const attendeesDir = path.join(__dirname, '..', '..', 'uploads', 'attendees');
+      if (!fs.existsSync(attendeesDir)) {
+        fs.mkdirSync(attendeesDir, { recursive: true });
+      }
+      const ext = path.extname(req.file.originalname) || '';
+      const key = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
+      const target = path.join(attendeesDir, key);
+      fs.writeFileSync(target, req.file.buffer);
+      res.json({ url: `/uploads/attendees/${key}` });
     } catch (e) {
       res.status(500).json({ message: e.message });
     }

@@ -1,19 +1,33 @@
 /**
  * Admin: Send email notifications to attendees.
- *   GET  /api/admin/notification/recipients   -> attendees grouped by school (with email)
- *   GET  /api/admin/notification/smtp-config  -> sender email configs (password masked)
- *   PUT  /api/admin/notification/smtp-config  -> save sender email configs
- *   POST /api/admin/notification/test-smtp    -> send test email
- *   POST /api/admin/notification/send         -> send notification emails
+ *   GET  /api/admin/notification/recipients      -> attendees grouped by school (with email)
+ *   GET  /api/admin/notification/smtp-config     -> sender email configs (password masked)
+ *   PUT  /api/admin/notification/smtp-config     -> save sender email configs
+ *   POST /api/admin/notification/test-smtp       -> send test email
+ *   POST /api/admin/notification/send            -> start async send job
+ *   GET  /api/admin/notification/send-progress/:jobId -> poll send progress
+ *   POST /api/admin/notification/send-cancel/:jobId   -> cancel a running send job
+ *   GET  /api/admin/notification/draft           -> get saved draft
+ *   PUT  /api/admin/notification/draft           -> save draft
+ *   DELETE /api/admin/notification/draft         -> delete draft
  *
  * Each sender email config: {email, name, host, port, secure, user, pass, active}
  */
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const nodemailer = require('nodemailer');
 const prisma = require('../utils/prisma');
 const settings = require('../services/settingsService');
 const { authRequired, adminRequired } = require('../middleware/auth');
+
+// Multer for local file uploads (memory storage, 50MB limit)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
+});
 
 // All routes require admin
 router.use(authRequired, adminRequired);
@@ -219,10 +233,51 @@ router.get('/recipients', async (req, res) => {
   }
 });
 
-// ── POST send notification emails ──
+// ══════════════════════════════════════════════════════════════════════════════
+// Async Send Jobs — in-memory store
+// ══════════════════════════════════════════════════════════════════════════════
+const sendJobs = new Map();   // jobId -> { total, success, failed, errors[], cancelled, status, currentEmail }
+
+// Auto-cleanup finished jobs after 10 minutes
+function scheduleJobCleanup(jobId) {
+  setTimeout(() => { sendJobs.delete(jobId); }, 10 * 60 * 1000);
+}
+
+// ── Helper: resolve attachments from URL paths to local file buffers ──
+function resolveAttachments(reqAttachments) {
+  const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
+  const mailAttachments = [];
+  if (Array.isArray(reqAttachments) && reqAttachments.length > 0) {
+    for (const att of reqAttachments) {
+      if (!att || !att.url) continue;
+      let relPath = att.url;
+      if (relPath.startsWith('/uploads/')) {
+        relPath = relPath.slice('/uploads/'.length);
+      } else if (relPath.startsWith('uploads/')) {
+        relPath = relPath.slice('uploads/'.length);
+      }
+      const absPath = path.resolve(UPLOADS_DIR, relPath);
+      if (!absPath.startsWith(UPLOADS_DIR)) {
+        console.warn(`[notification] Attachment path outside uploads: ${absPath}`);
+        continue;
+      }
+      if (!fs.existsSync(absPath)) {
+        console.warn(`[notification] Attachment file not found: ${absPath}`);
+        continue;
+      }
+      mailAttachments.push({
+        filename: att.name || path.basename(absPath),
+        path: absPath,
+      });
+    }
+  }
+  return mailAttachments;
+}
+
+// ── POST send notification emails (async job) ──
 router.post('/send', async (req, res) => {
   try {
-    const { recipients, subject, body: htmlBody, fromEmail, fromName: customFromName } = req.body || {};
+    const { recipients, subject, body: htmlBody, fromEmail, fromName: customFromName, attachments: reqAttachments } = req.body || {};
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res.status(400).json({ message: '请选择至少一个收件人' });
@@ -234,7 +289,6 @@ router.post('/send', async (req, res) => {
       return res.status(400).json({ message: '请输入邮件正文' });
     }
 
-    // Find the SMTP config for the selected sender email
     const cfg = await findSenderConfig(fromEmail);
     if (!cfg || !cfg.host) {
       return res.status(400).json({ message: '发件邮箱未配置 SMTP，请在系统设置中配置' });
@@ -254,32 +308,184 @@ router.post('/send', async (req, res) => {
       ? `"${senderName}" <${senderEmail}>`
       : senderEmail;
 
-    const results = { success: 0, failed: 0, errors: [] };
+    const mailAttachments = resolveAttachments(reqAttachments);
 
-    for (const email of recipients) {
-      try {
-        await transporter.sendMail({
-          from,
-          to: email,
-          subject: subject.trim(),
-          html: htmlBody,
-        });
-        results.success++;
-      } catch (e) {
-        results.failed++;
-        results.errors.push({ email, error: e.message });
-        console.error(`[notification] Failed to send to ${email}:`, e.message);
+    // Create async job
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const job = {
+      total: recipients.length,
+      success: 0,
+      failed: 0,
+      errors: [],
+      cancelled: false,
+      status: 'running',      // running | completed | cancelled
+      currentEmail: '',
+    };
+    sendJobs.set(jobId, job);
+
+    // Return jobId immediately
+    res.json({ ok: true, jobId, total: recipients.length });
+
+    // ── Background send loop ──
+    (async () => {
+      for (const email of recipients) {
+        // Check cancellation before each send
+        if (job.cancelled) {
+          job.status = 'cancelled';
+          console.log(`[notification] Job ${jobId} cancelled. Sent ${job.success}, skipped remaining.`);
+          scheduleJobCleanup(jobId);
+          return;
+        }
+        job.currentEmail = email;
+        try {
+          const mailOpts = {
+            from,
+            to: email,
+            subject: subject.trim(),
+            html: htmlBody,
+          };
+          if (mailAttachments.length > 0) {
+            mailOpts.attachments = mailAttachments;
+          }
+          await transporter.sendMail(mailOpts);
+          job.success++;
+        } catch (e) {
+          job.failed++;
+          job.errors.push({ email, error: e.message });
+          console.error(`[notification] Failed to send to ${email}:`, e.message);
+        }
       }
-    }
-
-    res.json({
-      ok: true,
-      message: `发送完成：成功 ${results.success} 封，失败 ${results.failed} 封`,
-      ...results,
-    });
+      job.status = 'completed';
+      job.currentEmail = '';
+      console.log(`[notification] Job ${jobId} completed. Success: ${job.success}, Failed: ${job.failed}`);
+      scheduleJobCleanup(jobId);
+    })();
   } catch (e) {
     console.error('[notification send]', e);
     res.status(500).json({ message: `发送失败: ${e.message}` });
+  }
+});
+
+// ── GET send progress ──
+router.get('/send-progress/:jobId', (req, res) => {
+  const job = sendJobs.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ message: '任务不存在或已过期' });
+  }
+  res.json({
+    total: job.total,
+    success: job.success,
+    failed: job.failed,
+    errors: job.errors,
+    status: job.status,
+    currentEmail: job.currentEmail,
+    message: job.status === 'completed'
+      ? `发送完成：成功 ${job.success} 封，失败 ${job.failed} 封`
+      : job.status === 'cancelled'
+        ? `已取消发送：已成功 ${job.success} 封，失败 ${job.failed} 封，未发送 ${job.total - job.success - job.failed} 封`
+        : `正在发送：${job.success + job.failed} / ${job.total}`,
+  });
+});
+
+// ── POST cancel send job ──
+router.post('/send-cancel/:jobId', (req, res) => {
+  const job = sendJobs.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ message: '任务不存在或已过期' });
+  }
+  if (job.status !== 'running') {
+    return res.json({ ok: true, message: '任务已结束' });
+  }
+  job.cancelled = true;
+  res.json({ ok: true, message: '已请求取消发送' });
+});
+
+// ── POST upload local attachment file ──
+// Saves to uploads/<YYYY-MM-DD>/ directory
+router.post('/upload-attachment', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: '请选择要上传的文件' });
+    }
+
+    const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
+
+    // Create date-based subdirectory (YYYY-MM-DD)
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const dateDir = path.join(UPLOADS_DIR, dateStr);
+    if (!fs.existsSync(dateDir)) {
+      fs.mkdirSync(dateDir, { recursive: true });
+    }
+
+    // Generate unique filename: timestamp-random-originalname
+    const uniquePrefix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const safeOrigName = req.file.originalname.replace(/[\\/:*?"<>|]/g, '_');
+    const filename = `${uniquePrefix}-${safeOrigName}`;
+    const filePath = path.join(dateDir, filename);
+
+    // Write file to disk
+    fs.writeFileSync(filePath, req.file.buffer);
+
+    const url = `/uploads/${dateStr}/${filename}`;
+    res.json({
+      ok: true,
+      name: req.file.originalname,
+      url,
+    });
+  } catch (e) {
+    console.error('[upload-attachment]', e);
+    res.status(500).json({ message: `上传失败: ${e.message}` });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Draft — single draft stored in SystemSetting (key: notification.draft)
+// ══════════════════════════════════════════════════════════════════════════════
+const DRAFT_KEY = 'notification.draft';
+
+// ── GET draft ──
+router.get('/draft', async (req, res) => {
+  try {
+    const raw = await settings.get(DRAFT_KEY, '');
+    if (!raw) return res.json({ draft: null });
+    const draft = JSON.parse(raw);
+    res.json({ draft });
+  } catch {
+    res.json({ draft: null });
+  }
+});
+
+// ── PUT draft (save / update) ──
+router.put('/draft', async (req, res) => {
+  try {
+    const { fromEmail, fromName, subject, body, selectedPersonIds, manualEmails, attachments } = req.body || {};
+    const draft = {
+      fromEmail: fromEmail || '',
+      fromName: fromName || '',
+      subject: subject || '',
+      body: body || '',
+      selectedPersonIds: Array.isArray(selectedPersonIds) ? selectedPersonIds : [],
+      manualEmails: Array.isArray(manualEmails) ? manualEmails : [],
+      attachments: Array.isArray(attachments) ? attachments : [],
+      savedAt: new Date().toISOString(),
+    };
+    await settings.set(DRAFT_KEY, JSON.stringify(draft), 'notification');
+    res.json({ ok: true, message: '草稿已保存' });
+  } catch (e) {
+    console.error('[draft save]', e);
+    res.status(500).json({ message: `保存草稿失败: ${e.message}` });
+  }
+});
+
+// ── DELETE draft ──
+router.delete('/draft', async (req, res) => {
+  try {
+    await settings.set(DRAFT_KEY, '', 'notification');
+    res.json({ ok: true, message: '草稿已删除' });
+  } catch (e) {
+    console.error('[draft delete]', e);
+    res.status(500).json({ message: `删除草稿失败: ${e.message}` });
   }
 });
 

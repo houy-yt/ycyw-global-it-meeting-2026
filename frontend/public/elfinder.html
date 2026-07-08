@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文件管理器 - elFinder</title>
+
+  <!-- jQuery (本地) -->
+  <script src="/libs/jquery/dist/jquery.min.js"></script>
+
+  <!-- jQuery UI (本地) -->
+  <link rel="stylesheet" href="/libs/jquery-ui-dist/jquery-ui.min.css">
+  <script src="/libs/jquery-ui-dist/jquery-ui.min.js"></script>
+
+  <!-- elFinder (本地) -->
+  <link rel="stylesheet" href="/elfinder/css/elfinder.min.css">
+  <link rel="stylesheet" href="/elfinder/css/theme.css">
+  <script src="/elfinder/js/elfinder.min.js"></script>
+  <!-- elFinder 中文语言包 -->
+  <script src="/elfinder/js/i18n/elfinder.zh_CN.js"></script>
+
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    #elfinder { height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="elfinder"></div>
+
+  <script>
+    (function() {
+      // 从 URL 参数中获取 TinyMCE 回调 ID 和 token
+      var urlParams = new URLSearchParams(window.location.search);
+      var tinymceCallbackId = urlParams.get('cb');
+      var token = urlParams.get('token') || localStorage.getItem('token') || '';
+
+      // 初始化 elFinder
+      var elf = $('#elfinder').elfinder({
+        url: '/api/admin/elfinder',       // 后端连接器地址
+        lang: 'zh_CN',                    // 中文界面
+        height: window.innerHeight,       // 撑满窗口
+        customHeaders: token ? { 'Authorization': 'Bearer ' + token } : {},
+        // 文件选择回调 — 将选中文件的 URL 传回 TinyMCE
+        getFileCallback: function(file) {
+          if (tinymceCallbackId) {
+            var mode = urlParams.get('mode');
+            if (mode === 'iframe') {
+              // iframe 模式：通过 postMessage 传回 URL
+              window.parent.postMessage({
+                type: 'elfinderFileSelected',
+                callbackId: tinymceCallbackId,
+                url: file.url
+              }, '*');
+            } else {
+              // 兼容旧的 window.open 弹窗模式
+              if (window.opener && window.opener.tinymceElFinderCallbacks && window.opener.tinymceElFinderCallbacks[tinymceCallbackId]) {
+                window.opener.tinymceElFinderCallbacks[tinymceCallbackId](file.url);
+              }
+              window.close();
+            }
+          }
+        },
+        commandsOptions: {
+          getfile: {
+            oncomplete: 'close',       // 选择文件后关闭
+            multiple: false            // 单选模式
+          }
+        },
+        ui: ['toolbar', 'tree', 'path', 'stat'],  // 去掉 places（"位置"）
+        uiOptions: {
+          toolbar: [
+            ['back', 'forward'],
+            ['reload'],
+            ['home', 'up'],
+            ['mkdir', 'mkfile', 'upload'],
+            ['open', 'download', 'getfile'],
+            ['info', 'chmod'],
+            ['quicklook'],
+            ['copy', 'cut', 'paste'],
+            ['rm'],
+            ['duplicate', 'rename', 'edit', 'resize'],
+            ['extract', 'archive'],
+            ['search'],
+            ['view', 'sort']
+          ]
+        },
+        resizable: false,
+        // 窗口大小变化时自动调整高度
+        handlers: {
+          init: function() {
+            var fm = this;
+            $(window).on('resize', function() {
+              fm.resize(window.innerWidth, window.innerHeight);
+            });
+          }
+        },
+        // 允许的 MIME 类型（不限制，显示所有文件）
+        // onlyMimes: [],
+      }).elfinder('instance');
+    })();
+  </script>
+</body>
+</html>

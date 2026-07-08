@@ -20,6 +20,8 @@
     "dayjs": "^1.11.13",
     "element-plus": "^2.8.1",
     "file-saver": "^2.0.5",
+    "jquery": "^4.0.0",
+    "jquery-ui-dist": "^1.13.3",
     "jszip": "^3.10.1",
     "pinia": "^2.2.2",
     "sortablejs": "^1.15.7",

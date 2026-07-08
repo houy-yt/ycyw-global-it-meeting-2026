@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 const prisma = require('../utils/prisma');
-const storage = require('../services/storageService');
 const { authRequired, adminRequired } = require('../middleware/auth');
 
 const MAX_IMAGE = parseInt(process.env.MAX_IMAGE_SIZE, 10) || 10 * 1024 * 1024;
@@ -91,7 +92,7 @@ router.get('/', async (req, res) => {
   const [items, total] = await Promise.all([
     prisma.galleryItem.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { id: 'desc' },
       skip,
       take: limit,
       include: { uploader: true },
@@ -126,8 +127,17 @@ router.post('/', authRequired, upload.single('file'), async (req, res) => {
         return res.status(400).json({ message: 'Video too large (>50MB)' });
       }
 
-      const uploaded = await storage.upload(req.file);
-      fileUrl = uploaded.url;
+      // Save to uploads/gallery/YYYY-MM-DD/
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10); // e.g. "2026-07-08"
+      const galleryDir = path.join(__dirname, '..', '..', 'uploads', 'gallery', dateStr);
+      if (!fs.existsSync(galleryDir)) {
+        fs.mkdirSync(galleryDir, { recursive: true });
+      }
+      const ext = path.extname(req.file.originalname) || '';
+      const key = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
+      fs.writeFileSync(path.join(galleryDir, key), req.file.buffer);
+      fileUrl = `/uploads/gallery/${dateStr}/${key}`;
     }
 
     const g = await prisma.galleryItem.create({

@@ -182,12 +182,13 @@
           <input v-model="dialog.form.phone" class="form-input" />
         </div>
         <div class="sm:col-span-2">
-          <label class="text-sm text-slate-600 font-medium">头像 URL</label>
-          <div class="flex gap-2 mt-1">
-            <input v-model="dialog.form.photoUrl" class="form-input !mt-0 flex-1" placeholder="/attendees/xxx.jpg 或上传" />
+          <label class="text-sm text-slate-600 font-medium">照片 URL</label>
+          <div class="flex gap-2 mt-1 items-stretch">
+            <input v-model="dialog.form.photoUrl" class="form-input !mt-0 !py-0 flex-1" style="height:32px;line-height:32px;" placeholder="/uploads/attendees/xxx.jpg" />
             <el-upload :auto-upload="true" :show-file-list="false" :http-request="uploadPhoto" accept="image/*">
-              <el-button :loading="dialog.uploading">上传</el-button>
+              <el-button :loading="dialog.uploading" style="height:32px;">选择文件</el-button>
             </el-upload>
+            <el-button style="height:32px;" @click="openElFinderPicker">选择网络文件</el-button>
           </div>
           <div v-if="dialog.form.photoUrl" class="mt-2">
             <img :src="dialog.form.photoUrl" class="w-20 h-20 rounded object-cover ring-1 ring-slate-200" />
@@ -617,6 +618,67 @@ async function uploadPhoto({ file }) {
   } finally {
     dialog.uploading = false;
   }
+}
+
+// ───── Open elFinder to pick a photo ─────
+function openElFinderPicker() {
+  const callbackId = 'photo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  const token = localStorage.getItem('token') || '';
+
+  // Create modal overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:100000;display:flex;align-items:center;justify-content:center;';
+
+  // Create dialog container
+  const dlg = document.createElement('div');
+  dlg.style.cssText = 'background:#fff;border-radius:8px;width:80vw;height:80vh;max-width:1200px;max-height:900px;display:flex;flex-direction:column;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+
+  // Header bar
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #e2e8f0;background:#f8fafc;border-radius:8px 8px 0 0;flex-shrink:0;';
+  const title = document.createElement('strong');
+  title.textContent = '选择照片文件';
+  title.style.cssText = 'font-size:14px;color:#334155;';
+  header.appendChild(title);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = 'border:none;background:none;font-size:18px;cursor:pointer;padding:4px 8px;color:#666;border-radius:4px;';
+  closeBtn.onmouseenter = () => { closeBtn.style.background = '#f1f5f9'; closeBtn.style.color = '#000'; };
+  closeBtn.onmouseleave = () => { closeBtn.style.background = 'none'; closeBtn.style.color = '#666'; };
+  closeBtn.onclick = () => cleanup();
+  header.appendChild(closeBtn);
+
+  // iframe
+  const iframe = document.createElement('iframe');
+  iframe.src = `/elfinder.html?cb=${callbackId}&token=${encodeURIComponent(token)}&mode=iframe`;
+  iframe.style.cssText = 'flex:1;border:none;border-radius:0 0 8px 8px;width:100%;';
+
+  dlg.appendChild(header);
+  dlg.appendChild(iframe);
+  overlay.appendChild(dlg);
+  document.body.appendChild(overlay);
+
+  // Click overlay background to close
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) cleanup();
+  });
+
+  // Cleanup function
+  const cleanup = () => {
+    window.removeEventListener('message', handler);
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  };
+
+  // Listen for postMessage from iframe
+  const handler = (e) => {
+    if (e.data && e.data.type === 'elfinderFileSelected' && e.data.callbackId === callbackId) {
+      dialog.form.photoUrl = e.data.url;
+      ElMessage.success('已选择照片');
+      cleanup();
+    }
+  };
+  window.addEventListener('message', handler);
 }
 
 // ───── Drag sort (per group) ─────
