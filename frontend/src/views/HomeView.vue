@@ -36,7 +36,7 @@
           <div class="mt-4 flex flex-col md:flex-row items-center gap-2 text-sm sm:text-base text-white/70 flex-wrap justify-center md:justify-start">
             <span class="inline-flex items-center gap-1.5">
               <font-awesome-icon icon="calendar-days" class="text-white/50" />
-              2026 年 7 月 13 日 – 16 日
+              {{ heroDateText || '加载中...' }}
             </span>
             <span class="text-white/30 hidden md:inline">|</span>
             <span class="inline-flex items-center gap-1.5">
@@ -144,7 +144,7 @@
               <div
                 class="text-5xl sm:text-7xl font-extrabold mt-4 tabular-nums"
                 style="background-image: linear-gradient(135deg, #e8d48b 0%, #c9a84c 40%, #a07c2a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"
-              >07.14 - 07.16</div>
+              >{{ saveDateText || '07.14 - 07.16' }}</div>
               <!-- Divider with diamond -->
               <div class="flex items-center justify-center gap-2 mt-3">
                 <span class="block w-10 h-px bg-[#c9a84c]/60"></span>
@@ -152,7 +152,7 @@
                 <span class="block w-10 h-px bg-[#c9a84c]/60"></span>
               </div>
               <!-- Sub text -->
-              <div class="text-sm text-[#c9a84c]/80 mt-2 tracking-wide">- 2026 / Beijing Yizhuang -</div>
+              <div class="text-sm text-[#c9a84c]/80 mt-2 tracking-wide">{{ saveDateSubText || '- 2026 / Beijing Yizhuang -' }}</div>
             </div>
           </div>
         </div>
@@ -387,17 +387,66 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import api from '../api';
 import Countdown from '../components/Countdown.vue';
 import WeatherCard from '../components/WeatherCard.vue';
-
-const meta = { start: '2026-07-13', end: '2026-07-16' };
 
 const announcement = ref(null);
 const meetingInfo = ref(null);
 const pastList = ref([]);
 const statRefs = ref([]);
+
+/** Countdown dates: read from backend meetingInfo, fallback to defaults */
+const meta = computed(() => ({
+  start: meetingInfo.value?.startDate || '2026-07-13',
+  end: meetingInfo.value?.endDate || '2026-07-16',
+}));
+
+/** Format meetingInfo.startDate / endDate into Chinese date range like "2026 年 7 月 13 日 – 16 日" */
+const heroDateText = computed(() => {
+  const s = meetingInfo.value?.startDate;
+  const e = meetingInfo.value?.endDate;
+  if (!s || !e) return '';
+  const sd = new Date(s + 'T00:00:00');
+  const ed = new Date(e + 'T00:00:00');
+  if (isNaN(sd) || isNaN(ed)) return '';
+  const sy = sd.getFullYear(), sm = sd.getMonth() + 1, sDay = sd.getDate();
+  const ey = ed.getFullYear(), em = ed.getMonth() + 1, eDay = ed.getDate();
+  if (sy === ey && sm === em) {
+    return `${sy} 年 ${sm} 月 ${sDay} 日 – ${eDay} 日`;
+  }
+  if (sy === ey) {
+    return `${sy} 年 ${sm} 月 ${sDay} 日 – ${em} 月 ${eDay} 日`;
+  }
+  return `${sy} 年 ${sm} 月 ${sDay} 日 – ${ey} 年 ${em} 月 ${eDay} 日`;
+});
+
+/** Format dates for "Save the Date" card like "07.14 - 07.16" */
+const saveDateText = computed(() => {
+  const s = meetingInfo.value?.startDate;
+  const e = meetingInfo.value?.endDate;
+  if (!s || !e) return '';
+  const sd = new Date(s + 'T00:00:00');
+  const ed = new Date(e + 'T00:00:00');
+  if (isNaN(sd) || isNaN(ed)) return '';
+  const sm = String(sd.getMonth() + 1).padStart(2, '0');
+  const sDay = String(sd.getDate()).padStart(2, '0');
+  const em = String(ed.getMonth() + 1).padStart(2, '0');
+  const eDay = String(ed.getDate()).padStart(2, '0');
+  return `${sm}.${sDay} - ${em}.${eDay}`;
+});
+
+/** Format sub text for "Save the Date" card like "- 2026 / Beijing Yizhuang -" */
+const saveDateSubText = computed(() => {
+  const s = meetingInfo.value?.startDate;
+  if (!s) return '';
+  const sd = new Date(s + 'T00:00:00');
+  if (isNaN(sd)) return '';
+  const year = sd.getFullYear();
+  const region = meetingInfo.value?.region || 'Beijing Yizhuang';
+  return `- ${year} / ${region} -`;
+});
 
 const quickLinks = [
   { to: '/schedule', title: '日程安排', desc: '四天行程一目了然', bg: 'bg-brand-blue', icon: 'calendar-days' },
