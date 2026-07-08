@@ -148,8 +148,8 @@
               :class="{ 'md:col-span-2': card.colSpan === 2 }"
             >
               <div class="flex items-center gap-3 mb-4">
-                <div class="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0" :class="card.iconBg">
-                  <font-awesome-icon :icon="card.icon" class="text-lg" :class="card.iconColor" />
+                <div class="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0" :style="{ backgroundColor: iconBgStyle(card.iconColor) }">
+                  <font-awesome-icon :icon="card.icon" class="text-lg" :style="{ color: resolveColor(card.iconColor) }" />
                 </div>
                 <h3 class="text-lg font-bold text-brand-deep">{{ card.title }}</h3>
               </div>
@@ -199,6 +199,56 @@ function previewImage(src, title) {
 
 function previewQrcode() {
   previewImage(qrcodeUrl.value, '访客申请二维码');
+}
+
+// ── Color utilities (backward-compatible with legacy Tailwind class values) ──
+const TAILWIND_COLOR_MAP = {
+  'text-brand-blue': '#0032a0',
+  'text-brand-deep': '#001e60',
+  'text-brand-red': '#ff0044',
+  'text-brand-orange': '#ff8200',
+  'text-green-600': '#16a34a',
+  'text-cyan-600': '#0891b2',
+  'text-purple-600': '#9333ea',
+  'text-red-600': '#dc2626',
+  'text-blue-600': '#2563eb',
+  'text-indigo-600': '#4f46e5',
+  'text-pink-600': '#db2777',
+  'text-teal-600': '#0d9488',
+  'text-emerald-600': '#059669',
+  'text-amber-600': '#d97706',
+  'text-yellow-600': '#ca8a04',
+  'text-orange-600': '#ea580c',
+  'text-sky-600': '#0284c7',
+  'text-violet-600': '#7c3aed',
+  'text-rose-600': '#e11d48',
+  'text-slate-600': '#475569',
+};
+
+/** Resolve icon color: hex/rgba pass through, legacy Tailwind class → hex */
+function resolveColor(val) {
+  if (!val) return '#0032a0';
+  if (val.startsWith('#') || val.startsWith('rgb')) return val;
+  return TAILWIND_COLOR_MAP[val] || '#0032a0';
+}
+
+/** Parse a color string (hex or rgba) and return rgba with given opacity for background */
+function iconBgStyle(val) {
+  const color = resolveColor(val);
+  // Handle rgba(...) format
+  if (color.startsWith('rgba')) {
+    // Replace the alpha value with 0.1
+    return color.replace(/,\s*[\d.]+\)$/, ', 0.1)');
+  }
+  if (color.startsWith('rgb(')) {
+    return color.replace('rgb(', 'rgba(').replace(')', ', 0.1)');
+  }
+  // Handle hex format
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16) || 0;
+  const g = parseInt(hex.substring(2, 4), 16) || 0;
+  const b = parseInt(hex.substring(4, 6), 16) || 0;
+  return `rgba(${r}, ${g}, ${b}, 0.1)`;
 }
 
 async function loadData() {

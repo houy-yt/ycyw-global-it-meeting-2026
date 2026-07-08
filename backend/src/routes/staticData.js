@@ -144,6 +144,8 @@ router.get('/meeting', async (req, res) => {
       location: meeting.location,
       address: meeting.address || '',
       organizer: meeting.organizer || 'YCYW Education',
+      aboutTitle: meeting.aboutTitle || '',
+      aboutContent: meeting.aboutContent || '',
     });
   } catch (e) {
     console.error(e);

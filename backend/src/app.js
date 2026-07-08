@@ -43,6 +43,7 @@ app.use('/api/preset-tags', require('./routes/presetTags'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/weather', require('./routes/weather'));
 app.use('/api/meeting-guide', require('./routes/meetingGuide').publicRouter);
+app.use('/api/home-sections', require('./routes/homeSections').publicRouter);
 
 // Admin namespace
 app.use('/api/admin', require('./routes/admin'));            // existing user/role admin
@@ -52,6 +53,7 @@ app.use('/api/admin', require('./routes/attendeesAdmin'));   // attendees/orgs/d
 app.use('/api/admin/settings', require('./routes/settings'));// key-value settings
 app.use('/api/admin/analytics', require('./routes/analytics'));// reflection analytics
 app.use('/api/admin/meeting-guide', require('./routes/meetingGuide').adminRouter);
+app.use('/api/admin/home-sections', require('./routes/homeSections').adminRouter);
 app.use('/api/admin/notification', require('./routes/notification'));
 app.use('/api/admin/elfinder', require('./routes/elfinder'));
 

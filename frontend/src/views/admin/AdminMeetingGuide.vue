@@ -68,7 +68,7 @@
       <el-table-column label="Key" prop="key" width="120" />
       <el-table-column label="图标" width="70" align="center">
         <template #default="{ row }">
-          <font-awesome-icon :icon="row.icon" :class="row.iconColor" />
+          <font-awesome-icon :icon="row.icon" :style="{ color: resolveColor(row.iconColor) }" />
         </template>
       </el-table-column>
       <el-table-column label="标题" prop="title" min-width="120" />
@@ -120,18 +120,22 @@
           <el-form-item label="图标（FA名）">
             <el-input v-model="form.icon" placeholder="e.g. hotel">
               <template #prefix>
-                <font-awesome-icon :icon="form.icon || 'circle-info'" class="text-slate-500" />
+                <font-awesome-icon :icon="form.icon || 'circle-info'" :style="{ color: resolveColor(form.iconColor) }" />
               </template>
             </el-input>
           </el-form-item>
           <el-form-item label="排序">
             <el-input-number v-model="form.sortOrder" :min="0" />
           </el-form-item>
-          <el-form-item label="图标颜色 Class">
-            <el-input v-model="form.iconColor" placeholder="text-brand-blue" />
-          </el-form-item>
-          <el-form-item label="图标背景 Class">
-            <el-input v-model="form.iconBg" placeholder="bg-brand-blue/10" />
+          <el-form-item label="图标颜色">
+            <div class="flex items-center gap-2 w-full">
+              <el-input v-model="form.iconColor" placeholder="#0032a0" class="flex-1">
+                <template #prefix>
+                  <span class="inline-block w-4 h-4 rounded-sm border border-slate-200" :style="{ backgroundColor: resolveColor(form.iconColor) }"></span>
+                </template>
+              </el-input>
+              <el-color-picker v-model="form.iconColor" show-alpha size="default" />
+            </div>
           </el-form-item>
           <el-form-item label="列跨度">
             <el-radio-group v-model="form.colSpan">
@@ -245,12 +249,42 @@ const isEdit = ref(false);
 const saving = ref(false);
 const editId = ref(null);
 
+// ── Color utilities ──
+const TAILWIND_COLOR_MAP = {
+  'text-brand-blue': '#0032a0',
+  'text-brand-deep': '#001e60',
+  'text-brand-red': '#ff0044',
+  'text-brand-orange': '#ff8200',
+  'text-green-600': '#16a34a',
+  'text-cyan-600': '#0891b2',
+  'text-purple-600': '#9333ea',
+  'text-red-600': '#dc2626',
+  'text-blue-600': '#2563eb',
+  'text-indigo-600': '#4f46e5',
+  'text-pink-600': '#db2777',
+  'text-teal-600': '#0d9488',
+  'text-emerald-600': '#059669',
+  'text-amber-600': '#d97706',
+  'text-yellow-600': '#ca8a04',
+  'text-orange-600': '#ea580c',
+  'text-sky-600': '#0284c7',
+  'text-violet-600': '#7c3aed',
+  'text-rose-600': '#e11d48',
+  'text-slate-600': '#475569',
+};
+
+/** Resolve a color value: hex/rgba pass through, legacy Tailwind class → hex */
+function resolveColor(val) {
+  if (!val) return '#0032a0';
+  if (val.startsWith('#') || val.startsWith('rgb')) return val;
+  return TAILWIND_COLOR_MAP[val] || '#0032a0';
+}
+
 const emptyForm = () => ({
   key: '',
   title: '',
   icon: 'circle-info',
-  iconColor: 'text-brand-blue',
-  iconBg: 'bg-brand-blue/10',
+  iconColor: '#0032a0',
   content: '',
   sortOrder: 0,
   colSpan: 1,

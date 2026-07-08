@@ -20,7 +20,7 @@ const DEFAULT_ITEMS = [
   {
     key: 'hotel',
     icon: 'hotel',
-    iconColor: 'text-brand-blue',
+    iconColor: '#0032a0',
     iconBg: 'bg-brand-blue/10',
     title: '住宿安排',
     content: `<p><strong>酒店：</strong>亦庄智选假日酒店</p>
@@ -34,7 +34,7 @@ const DEFAULT_ITEMS = [
   {
     key: 'transport',
     icon: 'bus',
-    iconColor: 'text-green-600',
+    iconColor: '#16a34a',
     iconBg: 'bg-green-500/10',
     title: '交通安排',
     content: `<p>7月14日至7月16日，入住酒店的参会者可乘坐北京耀中校车从酒店出发前往会议地点。</p>
@@ -49,7 +49,7 @@ const DEFAULT_ITEMS = [
   {
     key: 'dining',
     icon: 'utensils',
-    iconColor: 'text-brand-orange',
+    iconColor: '#ff8200',
     iconBg: 'bg-brand-orange/10',
     title: '餐饮安排',
     content: `<p>会议期间的午餐将在学校餐厅享用。</p>
@@ -60,7 +60,7 @@ const DEFAULT_ITEMS = [
   {
     key: 'preparation',
     icon: 'clipboard-check',
-    iconColor: 'text-purple-600',
+    iconColor: '#9333ea',
     iconBg: 'bg-purple-500/10',
     title: '准备事项',
     content: `<ul>
@@ -74,7 +74,7 @@ const DEFAULT_ITEMS = [
   {
     key: 'wifi',
     icon: 'wifi',
-    iconColor: 'text-cyan-600',
+    iconColor: '#0891b2',
     iconBg: 'bg-cyan-500/10',
     title: 'Wi-Fi 无线网络',
     content: `<p><strong>SSID：</strong><code>YC-Event</code></p>
@@ -122,7 +122,7 @@ adminRouter.post('/', authRequired, adminRequired, async (req, res) => {
       data: {
         key: String(key),
         icon: icon || 'circle-info',
-        iconColor: iconColor || 'text-brand-blue',
+        iconColor: iconColor || '#0032a0',
         iconBg: iconBg || 'bg-brand-blue/10',
         title: String(title),
         content: content || '',

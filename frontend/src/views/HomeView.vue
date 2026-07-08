@@ -63,17 +63,12 @@
     </section>
 
     <!-- ============ CONFERENCE THEME ============ -->
-    <section class="section-y">
+    <section v-if="themeSection" class="section-y">
       <div class="container-x">
         <div class="text-center max-w-3xl mx-auto">
-          <div class="chip-orange">Conference Theme</div>
-          <h2 class="section-heading mt-4">
-            Connect <span class="text-brand-orange">·</span> Innovate <span class="text-brand-orange">·</span> Empower
-          </h2>
-          <p class="section-sub mx-auto">
-            AI 时代的教育 IT 进化 —— 在耀中耀华全球网络中，让技术成为学习的杠杆，
-            让基础设施成为信任的底座，让数据成为决策的语言。
-          </p>
+          <div class="chip-orange">{{ themeSection.chipLabel || 'Conference Theme' }}</div>
+          <h2 class="section-heading mt-4">{{ themeSection.title || '' }}</h2>
+          <p v-if="themeSection.description" class="section-sub mx-auto">{{ themeSection.description }}</p>
         </div>
 
         <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -104,15 +99,18 @@
     <section class="section-y bg-white border-y border-slate-100">
       <div class="container-x grid lg:grid-cols-2 gap-10 items-center">
         <div>
-          <div class="chip">关于本次会议</div>
-          <h2 class="section-heading mt-4">三天的 IT 同仁聚会</h2>
-          <p class="section-sub">
-            YCYW Global IT Meeting 是耀中耀华教育旗下各校 IT 团队一年一度的盛会。
-            围绕 AI 应用、安全合规、教育科技与基础设施，我们一起回顾、思考、并定义未来一年的方向。
-          </p>
+          <div class="chip">{{ meetingInfo?.aboutTitle || '关于本次会议' }}</div>
+          <div v-if="meetingInfo?.aboutContent" class="about-content mt-4" v-html="meetingInfo.aboutContent"></div>
+          <template v-else>
+            <h2 class="section-heading mt-4">三天的 IT 同仁聚会</h2>
+            <p class="section-sub">
+              YCYW Global IT Meeting 是耀中耀华教育旗下各校 IT 团队一年一度的盛会。
+              围绕 AI 应用、安全合规、教育科技与基础设施，我们一起回顾、思考、并定义未来一年的方向。
+            </p>
+          </template>
           <div class="mt-6 grid grid-cols-3 gap-4 max-w-md">
             <div class="rounded-md bg-brand-blue/5 p-4 text-center">
-              <div class="text-2xl font-extrabold text-brand-blue">57+</div>
+              <div class="text-2xl font-extrabold text-brand-blue">{{ attendeeTotal }}+</div>
               <div class="text-xs text-slate-500 mt-1">参会人员</div>
             </div>
             <div class="rounded-md bg-brand-orange/10 p-4 text-center">
@@ -120,7 +118,7 @@
               <div class="text-xs text-slate-500 mt-1">天议程</div>
             </div>
             <div class="rounded-md bg-brand-red/10 p-4 text-center">
-              <div class="text-2xl font-extrabold text-brand-red">19</div>
+              <div class="text-2xl font-extrabold text-brand-red">{{ schoolCount }}</div>
               <div class="text-xs text-slate-500 mt-1">所学校/部门</div>
             </div>
           </div>
@@ -157,17 +155,34 @@
           </div>
         </div>
       </div>
+
+      <!-- ============ ANNOUNCEMENT ============ -->
+      <div class="container-x mt-10">
+        <div
+          class="rounded-md bg-gradient-to-r from-brand-blue to-brand-deep text-white p-6 sm:p-8 shadow-glow flex flex-col sm:flex-row sm:items-center gap-4"
+        >
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <div class="h-10 w-10 rounded-full bg-brand-orange flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm-.75 4a.75.75 0 011.5 0v4.25a.75.75 0 01-1.5 0V6zm.75 7.5a1 1 0 110 2 1 1 0 010-2z" />
+              </svg>
+            </div>
+            <div class="text-xs tracking-widest uppercase text-white/70">最新公告</div>
+          </div>
+          <div class="text-sm sm:text-base leading-relaxed flex-1">
+            {{ announcement?.content || '欢迎参加 YCYW 2026 Global IT Meeting！更多公告将在此处展示。' }}
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ============ TRACKS ============ -->
-    <section class="section-y">
+    <section v-if="tracksSection" class="section-y">
       <div class="container-x">
         <div class="text-center max-w-3xl mx-auto">
-          <div class="chip">议题轨道 · Tracks</div>
-          <h2 class="section-heading mt-4">本届聚焦的六大 IT 议题</h2>
-          <p class="section-sub mx-auto">
-            从课堂的 AI 助手，到机房的零信任；从数据治理，到云原生 —— 一次会议，覆盖你正在解决的所有问题。
-          </p>
+          <div class="chip">{{ tracksSection.chipLabel || '议题轨道 · Tracks' }}</div>
+          <h2 class="section-heading mt-4">{{ tracksSection.title || '' }}</h2>
+          <p v-if="tracksSection.description" class="section-sub mx-auto">{{ tracksSection.description }}</p>
         </div>
 
         <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -191,25 +206,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ ANNOUNCEMENT ============ -->
-    <section class="container-x">
-      <div
-        class="rounded-md bg-gradient-to-r from-brand-blue to-brand-deep text-white p-6 sm:p-8 shadow-glow flex flex-col sm:flex-row sm:items-center gap-4"
-      >
-        <div class="flex items-center gap-3 flex-shrink-0">
-          <div class="h-10 w-10 rounded-full bg-brand-orange flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm-.75 4a.75.75 0 011.5 0v4.25a.75.75 0 01-1.5 0V6zm.75 7.5a1 1 0 110 2 1 1 0 010-2z" />
-            </svg>
-          </div>
-          <div class="text-xs tracking-widest uppercase text-white/70">最新公告</div>
-        </div>
-        <div class="text-sm sm:text-base leading-relaxed flex-1">
-          {{ announcement?.content || '欢迎参加 YCYW 2026 Global IT Meeting！更多公告将在此处展示。' }}
         </div>
       </div>
     </section>
@@ -398,6 +394,14 @@ const pastList = ref([]);
 const statRefs = ref([]);
 const attendeeTotal = ref(57); // fallback default
 const schoolCount = ref(19); // fallback default
+const navLinks = ref([]);
+const homeSections = ref([]);
+
+/** Look up nav label by route path, with fallback */
+function navLabel(path, fallback) {
+  const link = navLinks.value.find(l => l.to === path);
+  return link?.label || fallback;
+}
 
 /** Countdown dates: read from backend meetingInfo, fallback to defaults */
 const meta = computed(() => ({
@@ -450,75 +454,49 @@ const saveDateSubText = computed(() => {
   return `- ${year} / ${region} -`;
 });
 
-const quickLinks = [
-  { to: '/schedule', title: '日程安排', desc: '四天行程一目了然', bg: 'bg-brand-blue', icon: 'calendar-days' },
-  { to: '/attendees', title: '参会人员', desc: '57+ 同仁，19 所学校', bg: 'bg-brand-deep', icon: 'users' },
-  { to: '/reflections', title: '会后反思', desc: '记录所学所思', bg: 'bg-brand-orange', icon: 'pen-to-square' },
-  { to: '/gallery', title: '会议剪影', desc: '照片 · 视频 · 回忆', bg: 'bg-brand-red', icon: 'camera' },
-];
+const quickLinks = computed(() => [
+  { to: '/schedule', title: navLabel('/schedule', '日程安排'), desc: '四天行程一目了然', bg: 'bg-brand-blue', icon: 'calendar-days' },
+  { to: '/attendees', title: navLabel('/attendees', '参会人员'), desc: `${attendeeTotal.value}+ 同仁，${schoolCount.value} 所学校`, bg: 'bg-brand-deep', icon: 'users' },
+  { to: '/reflections', title: navLabel('/reflections', '会后反思'), desc: '记录所学所思', bg: 'bg-brand-orange', icon: 'pen-to-square' },
+  { to: '/gallery', title: navLabel('/gallery', '会议剪影'), desc: '照片 · 视频 · 回忆', bg: 'bg-brand-red', icon: 'camera' },
+]);
 
-const pillars = [
-  {
-    icon: 'robot',
-    title: 'AI for Education',
-    subtitle: 'Connect Learning',
-    desc: '把生成式 AI 落地到课堂、教务、家校沟通——让技术服务于"以学生为中心"的教育。',
-    tint: '#0032a0',
-  },
-  {
-    icon: 'shield-halved',
-    title: 'Secure & Compliant',
-    subtitle: 'Innovate Safely',
-    desc: '零信任、身份治理、数据保护与隐私合规——为每一份数据守住底线。',
-    tint: '#ff0044',
-  },
-  {
-    icon: 'globe',
-    title: 'One Global Network',
-    subtitle: 'Empower Together',
-    desc: '统一身份、统一基础设施、跨校协同——19 所学校如同一所学校。',
-    tint: '#ff8200',
-  },
-];
+/** Helper: find a section by key from homeSections */
+function findSection(key) {
+  return homeSections.value.find(s => s.key === key) || null;
+}
 
-const tracks = [
-  {
-    icon: 'wand-magic-sparkles',
-    title: 'AI Copilot 在教学场景的落地',
-    desc: '从备课、出题、批改到家长沟通，让 AI 成为每位老师的助手。',
-    tint: '#0032a0',
-  },
-  {
-    icon: 'lock',
-    title: '网络与终端的零信任架构',
-    desc: 'Entra / Intune / 条件访问 / Microsegmentation 实战。',
-    tint: '#001e60',
-  },
-  {
-    icon: 'chart-bar',
-    title: '数据治理与隐私合规',
-    desc: '统一数据底座、跨境合规、学生数据保护机制。',
-    tint: '#ff8200',
-  },
-  {
-    icon: 'cloud',
-    title: '基础设施现代化',
-    desc: '云原生、边缘、SD-WAN、Wi-Fi 6/7、教室智能化升级。',
-    tint: '#ff0044',
-  },
-  {
-    icon: 'id-card',
-    title: '统一身份与单点登录',
-    desc: 'OIDC / SAML / SCIM 在全球网络中的标准化。',
-    tint: '#1f6feb',
-  },
-  {
-    icon: 'gears',
-    title: 'DevOps & 自动化运维',
-    desc: 'IaC、监控告警、AIOps 让 IT 团队从重复劳动中解脱。',
-    tint: '#3a8a4d',
-  },
-];
+/** Conference Theme section */
+const themeSection = computed(() => findSection('conference-theme'));
+const pillars = computed(() => {
+  const sec = themeSection.value;
+  if (!sec) return [];
+  return (sec.cards || []).map(c => ({
+    icon: c.icon,
+    title: c.title,
+    subtitle: c.subtitle || '',
+    desc: c.content,
+    tint: c.iconColor,
+  }));
+});
+
+/** Tracks section */
+const tracksSection = computed(() => findSection('tracks'));
+const tracks = computed(() => {
+  const sec = tracksSection.value;
+  if (!sec) return [];
+  return (sec.cards || []).map(c => ({
+    icon: c.icon,
+    title: c.title,
+    desc: c.content,
+    tint: c.iconColor,
+  }));
+});
+
+/** Extra dynamic sections (besides conference-theme and tracks) */
+const extraSections = computed(() => {
+  return homeSections.value.filter(s => s.key !== 'conference-theme' && s.key !== 'tracks');
+});
 
 const stats = computed(() => [
   { value: schoolCount.value, label: 'Schools / Depts', suffix: ' +' },
@@ -596,17 +574,21 @@ function animateCounter(el) {
 
 async function load() {
   try {
-    const [a, p, m, att] = await Promise.all([
+    const [a, p, m, att, nav, hs] = await Promise.all([
       api.get('/announcements/active'),
       api.get('/past-meetings'),
       api.get('/meeting'),
       api.get('/attendees'),
+      api.get('/nav'),
+      api.get('/home-sections'),
     ]);
     announcement.value = a.data;
     pastList.value = p.data || [];
     meetingInfo.value = m.data || null;
     if (att.data?.total) attendeeTotal.value = att.data.total;
     if (att.data?.groups?.length) schoolCount.value = att.data.groups.length;
+    if (nav.data?.links?.length) navLinks.value = nav.data.links;
+    homeSections.value = hs.data || [];
   } catch (e) {
     console.error(e);
   }
@@ -631,3 +613,37 @@ onBeforeUnmount(() => {
   if (counterObserver) counterObserver.disconnect();
 });
 </script>
+
+<style scoped>
+/* Rich text content from TinyMCE for the "关于" section */
+.about-content :deep(h1),
+.about-content :deep(h2),
+.about-content :deep(h3) {
+  font-weight: 800;
+  color: #001e60;
+  line-height: 1.3;
+}
+.about-content :deep(h2) { font-size: 1.875rem; }
+.about-content :deep(h3) { font-size: 1.5rem; }
+.about-content :deep(p) {
+  margin-top: 0.75rem;
+  color: #64748b;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.about-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+.about-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+.about-content :deep(td),
+.about-content :deep(th) {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+}
+</style>

@@ -1,15 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
-  safelist: [
-    // Meeting guide card dynamic icon background & color classes (from DB)
-    {
-      pattern: /^bg-(purple|cyan|red|yellow|blue|indigo|pink|teal|emerald|amber|slate|gray|lime|rose|fuchsia|violet|sky|orange|green|stone|zinc|neutral)-\d+\/\d+$/,
-    },
-    {
-      pattern: /^text-(purple|cyan|red|yellow|blue|indigo|pink|teal|emerald|amber|slate|gray|lime|rose|fuchsia|violet|sky|orange|green|stone|zinc|neutral)-\d+$/,
-    },
-  ],
+  safelist: [],
   theme: {
     extend: {
       colors: {

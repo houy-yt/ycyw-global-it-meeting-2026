@@ -82,6 +82,7 @@
               <AdminNotification v-if="tab === 'notification'" />
               <AdminSettings v-if="tab === 'settings'" />
               <AdminFileManager v-if="tab === 'fileManager'" />
+              <AdminHomeSections v-if="tab === 'homeSections'" />
               <AdminFaIcons v-if="tab === 'faIcons'" />
             </div>
           </main>
@@ -108,6 +109,7 @@ import AdminNotification from './admin/AdminNotification.vue';
 import AdminSettings from './admin/AdminSettings.vue';
 import AdminFileManager from './admin/AdminFileManager.vue';
 import AdminFaIcons from './admin/AdminFaIcons.vue';
+import AdminHomeSections from './admin/AdminHomeSections.vue';
 
 const tab = ref('meeting');
 const sidebarOpen = ref(false);
@@ -133,6 +135,7 @@ const menuGroups = [
   {
     title: '内容管理',
     items: [
+      { key: 'homeSections', label: '首页板块', icon: 'cubes' },
       { key: 'reflections', label: '反思管理',  icon: 'comments' },
       { key: 'gallery',     label: '剪影管理',  icon: 'images' },
       { key: 'announce',    label: '公告管理',  icon: 'bullhorn' },

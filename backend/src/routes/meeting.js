@@ -14,7 +14,7 @@ router.get('/', authRequired, adminRequired, async (req, res) => {
 });
 
 router.put('/', authRequired, adminRequired, async (req, res) => {
-  const { name, tagline, taglineEn, startDate, endDate, region, location, address, organizer } = req.body || {};
+  const { name, tagline, taglineEn, startDate, endDate, region, location, address, organizer, aboutTitle, aboutContent } = req.body || {};
   const data = {};
   if (name !== undefined) data.name = String(name);
   if (tagline !== undefined) data.tagline = tagline ? String(tagline) : null;
@@ -25,6 +25,8 @@ router.put('/', authRequired, adminRequired, async (req, res) => {
   if (location !== undefined) data.location = String(location);
   if (address !== undefined) data.address = String(address);
   if (organizer !== undefined) data.organizer = String(organizer);
+  if (aboutTitle !== undefined) data.aboutTitle = aboutTitle ? String(aboutTitle) : null;
+  if (aboutContent !== undefined) data.aboutContent = aboutContent ? String(aboutContent) : null;
 
   const m = await prisma.meetingInfo.upsert({
     where: { id: 1 },

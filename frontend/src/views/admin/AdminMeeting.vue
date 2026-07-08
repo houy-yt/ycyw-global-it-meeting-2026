@@ -41,6 +41,20 @@
         <label class="text-sm text-slate-600 font-medium">主办方</label>
         <input v-model="form.organizer" class="form-input" placeholder="例：YCYW Education" />
       </div>
+
+      <!-- ── 关于 ── -->
+      <div class="border-t border-slate-200 pt-4 mt-4">
+        <h3 class="text-base font-semibold text-brand-deep mb-3">关于</h3>
+        <div>
+          <label class="text-sm text-slate-600 font-medium">标题</label>
+          <input v-model="form.aboutTitle" class="form-input" placeholder="例：关于本次会议" />
+        </div>
+        <div class="mt-4">
+          <label class="text-sm text-slate-600 font-medium mb-1 block">内容</label>
+          <TinyEditor v-model="form.aboutContent" :height="320" :menubar="false" />
+        </div>
+      </div>
+
       <div class="pt-2">
         <el-button type="primary" :loading="saving" @click="save">保存</el-button>
       </div>
@@ -52,6 +66,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '../../api';
+import TinyEditor from '../../components/TinyEditor.vue';
 
 const saving = ref(false);
 const form = reactive({
@@ -64,6 +79,8 @@ const form = reactive({
   location: '',
   address: '',
   organizer: '',
+  aboutTitle: '',
+  aboutContent: '',
 });
 
 async function load() {
@@ -79,6 +96,8 @@ async function load() {
     form.location = data.location || '';
     form.address = data.address || '';
     form.organizer = data.organizer || '';
+    form.aboutTitle = data.aboutTitle || '';
+    form.aboutContent = data.aboutContent || '';
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '加载失败');
   }

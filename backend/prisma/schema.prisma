@@ -120,6 +120,8 @@ model MeetingInfo {
   location  String   @default("北京")              // 会场
   address   String   @default("")                  // 详细地址
   organizer String   @default("YCYW Education")    // 主办方
+  aboutTitle   String?  // 首页"关于"区块的 chip 标题，如"关于本次会议"
+  aboutContent String?  // 首页"关于"区块的富文本内容（TinyMCE HTML）
   updatedAt DateTime @updatedAt
 }
 
@@ -222,6 +224,35 @@ model SystemSetting {
   // category for grouping in admin UI: 'upload' / 'analytics' / 'general'
   category  String   @default("general")
   updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// Home Sections: dynamic content blocks on the home page
+// (Conference Theme pillars, Tracks, etc.)
+// ============================================================================
+model HomeSection {
+  id          Int                @id @default(autoincrement())
+  key         String             @unique
+  chipLabel   String             @default("")   // 板块标签，如 "Conference Theme"
+  title       String             @default("")   // 板块标题
+  description String             @default("")   // 板块描述
+  visible     Boolean            @default(true)
+  sortOrder   Int                @default(0)
+  updatedAt   DateTime           @updatedAt
+  cards       HomeSectionCard[]
+}
+
+model HomeSectionCard {
+  id          Int          @id @default(autoincrement())
+  sectionId   Int
+  icon        String       @default("")      // FA icon name, e.g. "robot"
+  iconColor   String       @default("#0032a0") // hex color for the icon bg
+  imageUrl    String?                         // optional image URL (priority over icon)
+  title       String       @default("")
+  subtitle    String       @default("")       // optional subtitle
+  content     String       @default("")       // card description / rich content
+  sortOrder   Int          @default(0)
+  section     HomeSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 }
 
 // ============================================================================
