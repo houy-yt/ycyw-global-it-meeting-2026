@@ -92,7 +92,9 @@
     <el-dialog
       v-model="dlg.visible"
       :title="dlg.isEdit ? '编辑配置' : '新增配置'"
-      width="720px"
+      width="640px"
+      align-center
+      class="api-config-dialog"
       destroy-on-close
       :close-on-click-modal="false"
     >
@@ -216,7 +218,7 @@
         </el-form-item>
 
         <el-form-item label="Widget Config (JSON，可选)">
-          <el-input v-model="dlg.form.widgetConfig" type="textarea" :rows="5" placeholder='如：{"position":"hero-top-right"}' />
+          <el-input v-model="dlg.form.widgetConfig" type="textarea" :rows="3" placeholder='如：{"position":"hero-top-right"}' />
         </el-form-item>
       </el-form>
 
@@ -533,3 +535,12 @@ onMounted(() => {
   load();
 });
 </script>
+
+<!-- Non-scoped styles so they work with el-dialog teleport -->
+<style>
+/* ========== API Config dialog sizing ========== */
+.api-config-dialog .el-dialog__body {
+  max-height: 65vh;
+  overflow-y: auto;
+}
+</style>
