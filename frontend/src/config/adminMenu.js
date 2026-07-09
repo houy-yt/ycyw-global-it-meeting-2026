@@ -39,6 +39,7 @@ export const adminMenuGroups = [
     title: '数据与设置',
     items: [
       { key: 'analytics',   label: '数据分析',  icon: 'chart-bar' },
+      { key: 'apiConfigs',  label: 'API 管理', icon: 'key' },
       { key: 'settings',    label: '系统设置',  icon: 'gear' },
       { key: 'permissions', label: '权限设置',  icon: 'shield-halved' },
       { key: 'users',       label: '角色管理',   icon: 'users-gear',  superAdminOnly: true },

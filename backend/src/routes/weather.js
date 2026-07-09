@@ -18,17 +18,75 @@
 const crypto = require('crypto');
 const express = require('express');
 const router = express.Router();
+const prisma = require('../utils/prisma');
 
-// ── Config ──────────────────────────────────────────────
-const API_HOST = process.env.QWEATHER_API_HOST || '';
-const CREDENTIAL_ID = process.env.QWEATHER_CREDENTIAL_ID || '';
-const PRIVATE_KEY_B64 = process.env.QWEATHER_PRIVATE_KEY || '';
-const LOCATION = process.env.WEATHER_LOCATION || '101010100';
-const PROVIDER = process.env.WEATHER_PROVIDER || 'auto'; // "qweather" | "openmeteo" | "auto"
+// ── Config (env fallback) ───────────────────────────────
+const ENV_API_HOST = process.env.QWEATHER_API_HOST || '';
+const ENV_CREDENTIAL_ID = process.env.QWEATHER_CREDENTIAL_ID || '';
+const ENV_PRIVATE_KEY_B64 = process.env.QWEATHER_PRIVATE_KEY || '';
+const ENV_LOCATION = process.env.WEATHER_LOCATION || '101010100';
+const ENV_PROVIDER = process.env.WEATHER_PROVIDER || 'auto'; // "qweather" | "openmeteo" | "auto"
 
 // Beijing coordinates for Open-Meteo
 const BEIJING_LAT = 39.9042;
 const BEIJING_LON = 116.4074;
+
+// ── DB Config cache ─────────────────────────────────────
+let dbConfigCache = null;
+let dbConfigCacheTs = 0;
+const DB_CONFIG_TTL = 60 * 1000; // 60 seconds
+
+async function getWeatherDbConfig() {
+  if (dbConfigCache && Date.now() - dbConfigCacheTs < DB_CONFIG_TTL) return dbConfigCache;
+  try {
+    const row = await prisma.apiConfig.findFirst({
+      where: { type: 'weather', isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (row) {
+      const cfg = JSON.parse(row.config || '{}');
+      dbConfigCache = { provider: row.provider, ...cfg };
+      dbConfigCacheTs = Date.now();
+      return dbConfigCache;
+    }
+  } catch (e) {
+    console.warn('[Weather] Failed to load DB config, using env fallback:', e.message);
+  }
+  dbConfigCache = null;
+  dbConfigCacheTs = Date.now();
+  return null;
+}
+
+function getEffectiveConfig(dbCfg) {
+  return {
+    apiHost: dbCfg?.apiHost || ENV_API_HOST,
+    credentialId: dbCfg?.credentialId || ENV_CREDENTIAL_ID,
+    privateKey: dbCfg?.privateKey || ENV_PRIVATE_KEY_B64,
+    location: dbCfg?.location || ENV_LOCATION,
+    provider: dbCfg?.provider || ENV_PROVIDER,
+    latitude: dbCfg?.latitude || BEIJING_LAT,
+    longitude: dbCfg?.longitude || BEIJING_LON,
+    locationName: dbCfg?.locationName || '北京',
+  };
+}
+
+function isQWeatherConfiguredWith(cfg) {
+  return !!(cfg.apiHost && cfg.credentialId && cfg.privateKey);
+}
+
+/**
+ * Decide whether to use QWeather based on effective config.
+ * provider:
+ * - "openmeteo": always Open-Meteo
+ * - "qweather": QWeather only (will fallback to Open-Meteo on runtime errors)
+ * - "auto": QWeather if configured, else Open-Meteo
+ */
+function shouldUseQWeatherWith(cfg) {
+  const p = (cfg?.provider || 'auto').toLowerCase();
+  if (p === 'openmeteo') return false;
+  if (p === 'qweather') return true;
+  return isQWeatherConfiguredWith(cfg);
+}
 
 // ── Simple in-memory cache ──────────────────────────────
 const cache = {};
@@ -52,12 +110,13 @@ function base64url(data) {
 
 let cachedToken = null;
 let tokenExpiry = 0;
+let tokenCredentialId = ''; // track which credential generated the token
 
-function generateJWT() {
-  const pem = `-----BEGIN PRIVATE KEY-----\n${PRIVATE_KEY_B64}\n-----END PRIVATE KEY-----`;
+function generateJWT(credId, privKeyB64) {
+  const pem = `-----BEGIN PRIVATE KEY-----\n${privKeyB64}\n-----END PRIVATE KEY-----`;
   const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'EdDSA', kid: CREDENTIAL_ID };
-  const payload = { sub: CREDENTIAL_ID, iat: now, exp: now + 86400 };
+  const header = { alg: 'EdDSA', kid: credId };
+  const payload = { sub: credId, iat: now, exp: now + 86400 };
   const headerB64 = base64url(JSON.stringify(header));
   const payloadB64 = base64url(JSON.stringify(payload));
   const message = `${headerB64}.${payloadB64}`;
@@ -66,23 +125,21 @@ function generateJWT() {
   return `${message}.${base64url(signature)}`;
 }
 
-function getQWeatherToken() {
+function getQWeatherToken(credId, privKeyB64) {
   const now = Date.now();
-  if (!cachedToken || now >= tokenExpiry) {
-    cachedToken = generateJWT();
+  // Invalidate token if credential changed
+  if (!cachedToken || now >= tokenExpiry || tokenCredentialId !== credId) {
+    cachedToken = generateJWT(credId, privKeyB64);
     tokenExpiry = now + 23 * 60 * 60 * 1000;
+    tokenCredentialId = credId;
   }
   return cachedToken;
 }
 
-function isQWeatherConfigured() {
-  return !!(API_HOST && CREDENTIAL_ID && PRIVATE_KEY_B64);
-}
-
-async function qweatherFetch(path) {
-  const token = getQWeatherToken();
-  const url = new URL(`https://${API_HOST}${path}`);
-  url.searchParams.set('location', LOCATION);
+async function qweatherFetch(path, cfg) {
+  const token = getQWeatherToken(cfg.credentialId, cfg.privateKey);
+  const url = new URL(`https://${cfg.apiHost}${path}`);
+  url.searchParams.set('location', cfg.location);
   const res = await fetch(url.toString(), {
     headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
   });
@@ -162,8 +219,11 @@ function resolveWMO(code) {
   return wmoMap[Number(code)] || { text: '未知', icon: 'cloud' };
 }
 
-async function openMeteoFetchNow() {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${BEIJING_LAT}&longitude=${BEIJING_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&timezone=Asia/Shanghai`;
+async function openMeteoFetchNow(cfg) {
+  const lat = cfg?.latitude || BEIJING_LAT;
+  const lon = cfg?.longitude || BEIJING_LON;
+  const locName = cfg?.locationName || '北京';
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&timezone=Asia/Shanghai`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Open-Meteo ${res.status}`);
   const data = await res.json();
@@ -176,7 +236,7 @@ async function openMeteoFetchNow() {
   const ws = c.wind_speed_10m;
   const windScale = ws < 1 ? '0' : ws < 6 ? '1' : ws < 12 ? '2' : ws < 20 ? '3' : ws < 29 ? '4' : ws < 39 ? '5' : ws < 50 ? '6' : '7+';
   return {
-    location: '北京',
+    location: locName,
     temp: String(Math.round(c.temperature_2m)),
     feelsLike: String(Math.round(c.apparent_temperature)),
     text: w.text,
@@ -193,9 +253,12 @@ async function openMeteoFetchNow() {
   };
 }
 
-async function openMeteoFetchForecast(days) {
+async function openMeteoFetchForecast(days, cfg) {
   const n = Math.min(Number(days) || 15, 16);
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${BEIJING_LAT}&longitude=${BEIJING_LON}&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,relative_humidity_2m_mean,uv_index_max,sunrise,sunset&forecast_days=${n}&timezone=Asia/Shanghai`;
+  const lat = cfg?.latitude || BEIJING_LAT;
+  const lon = cfg?.longitude || BEIJING_LON;
+  const locName = cfg?.locationName || '北京';
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,relative_humidity_2m_mean,uv_index_max,sunrise,sunset&forecast_days=${n}&timezone=Asia/Shanghai`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Open-Meteo ${res.status}`);
   const data = await res.json();
@@ -227,22 +290,11 @@ async function openMeteoFetchForecast(days) {
     };
   });
   return {
-    location: '北京',
+    location: locName,
     days: daily.length,
     daily,
     updateTime: new Date().toISOString(),
   };
-}
-
-// ══════════════════════════════════════════════════════════
-//  Provider selection logic
-// ══════════════════════════════════════════════════════════
-
-function shouldUseQWeather() {
-  if (PROVIDER === 'openmeteo') return false;
-  if (PROVIDER === 'qweather') return true;
-  // auto: use QWeather if configured
-  return isQWeatherConfigured();
 }
 
 // ── Routes ──────────────────────────────────────────────
@@ -255,11 +307,13 @@ router.get('/now', async (req, res) => {
     const cached = getCached('weather_now', 30 * 60 * 1000);
     if (cached) return res.json(cached);
 
-    let result;
+    const dbCfg = await getWeatherDbConfig();
+    const cfg = getEffectiveConfig(dbCfg);
 
-    if (shouldUseQWeather()) {
+    let result;
+    if (shouldUseQWeatherWith(cfg)) {
       try {
-        const data = await qweatherFetch('/v7/weather/now');
+        const data = await qweatherFetch('/v7/weather/now', cfg);
         const now = data.now;
         const w = resolveQWeather(now.icon);
         result = {
@@ -271,10 +325,10 @@ router.get('/now', async (req, res) => {
         };
       } catch (qErr) {
         console.warn('[Weather] QWeather failed, falling back to Open-Meteo:', qErr.message);
-        result = await openMeteoFetchNow();
+        result = await openMeteoFetchNow(cfg);
       }
     } else {
-      result = await openMeteoFetchNow();
+      result = await openMeteoFetchNow(cfg);
     }
 
     setCache('weather_now', result);
@@ -295,9 +349,11 @@ router.get('/forecast', async (req, res) => {
     const cached = getCached(cacheKey, 2 * 60 * 60 * 1000);
     if (cached) return res.json(cached);
 
-    let result;
+    const dbCfg = await getWeatherDbConfig();
+    const cfg = getEffectiveConfig(dbCfg);
 
-    if (shouldUseQWeather()) {
+    let result;
+    if (shouldUseQWeatherWith(cfg)) {
       try {
         // Try QWeather with fallback chain
         const tryPaths = [];
@@ -307,7 +363,7 @@ router.get('/forecast', async (req, res) => {
 
         let data = null;
         for (const path of tryPaths) {
-          try { data = await qweatherFetch(path); break; }
+          try { data = await qweatherFetch(path, cfg); break; }
           catch (e) { console.warn(`[Weather] ${path} failed: ${e.message}`); }
         }
         if (!data) throw new Error('All QWeather forecast endpoints failed');
@@ -329,10 +385,10 @@ router.get('/forecast', async (req, res) => {
         result = { location: '北京', days: daily.length, daily, updateTime: data.updateTime };
       } catch (qErr) {
         console.warn('[Weather] QWeather forecast failed, falling back to Open-Meteo:', qErr.message);
-        result = await openMeteoFetchForecast(requestedDays);
+        result = await openMeteoFetchForecast(requestedDays, cfg);
       }
     } else {
-      result = await openMeteoFetchForecast(requestedDays);
+      result = await openMeteoFetchForecast(requestedDays, cfg);
     }
 
     setCache(cacheKey, result);

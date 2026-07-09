@@ -5,7 +5,16 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
+const { ensureDefaultWeatherApiConfig } = require('./utils/ensureDefaultApiConfigs');
+
 const app = express();
+
+// Bootstrap non-critical default configs.
+// Fire-and-forget: should not block server start.
+ensureDefaultWeatherApiConfig();
+
+// Trust reverse proxy (Nginx etc.) so req.protocol reflects X-Forwarded-Proto
+app.set('trust proxy', true);
 
 // CORS
 const allowed = (process.env.CORS_ORIGIN || '*')
@@ -42,6 +51,9 @@ app.use('/api/past-meetings', require('./routes/pastMeetings'));
 app.use('/api/preset-tags', require('./routes/presetTags'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/weather', require('./routes/weather'));
+// Third-party API configs (weather/map/etc.)
+app.use('/api/admin/api-configs', require('./routes/apiConfig').adminRouter);
+app.use('/api/api-configs', require('./routes/apiConfig').publicRouter);
 app.use('/api/meeting-guide', require('./routes/meetingGuide').publicRouter);
 app.use('/api/home-sections', require('./routes/homeSections').publicRouter);
 

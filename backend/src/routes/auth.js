@@ -26,6 +26,18 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
 
+/**
+ * Get the frontend origin, respecting reverse proxy headers.
+ * Priority: CORS_ORIGIN env var → X-Forwarded-Proto + Host → req.protocol + Host.
+ */
+function getFrontendOrigin(req) {
+  if (process.env.CORS_ORIGIN) {
+    return process.env.CORS_ORIGIN.split(',')[0].trim();
+  }
+  const proto = req.get('x-forwarded-proto') || req.protocol;
+  return `${proto}://${req.get('host')}`;
+}
+
 // In-memory state store for OIDC (simple; use Redis in production cluster)
 const stateStore = new Map();
 
@@ -168,10 +180,7 @@ router.get('/oidc-callback', async (req, res) => {
     const stateParam = req.query.state;
     if (stateParam) stateStore.delete(stateParam);
     // Redirect back to frontend home page
-    const frontendOrigin = process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN.split(',')[0].trim()
-      : `${req.protocol}://${req.get('host')}`;
-    return res.redirect(frontendOrigin + '/');
+    return res.redirect(getFrontendOrigin(req) + '/');
   }
 
   try {
@@ -227,10 +236,7 @@ router.get('/oidc-callback', async (req, res) => {
 
     // Build frontend callback URL
     const frontendCallback = process.env.OIDC_FRONTEND_CALLBACK || '/auth/callback';
-    const frontendOrigin = process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN.split(',')[0].trim()
-      : `${req.protocol}://${req.get('host')}`;
-    const url = new URL(frontendCallback, frontendOrigin);
+    const url = new URL(frontendCallback, getFrontendOrigin(req));
     url.searchParams.set('token', jwtToken);
     if (idToken) url.searchParams.set('id_token', idToken);
     if (stateData.redirect) url.searchParams.set('redirect', stateData.redirect);
@@ -267,10 +273,7 @@ router.get('/me', authRequired, (req, res) => {
  * server-side to invalidate in mock mode.
  * ────────────────────────────────────────────── */
 router.get('/logout', async (req, res) => {
-  const frontendOrigin = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',')[0].trim()
-    : `${req.protocol}://${req.get('host')}`;
-  const postLogoutRedirect = frontendOrigin + '/';
+  const postLogoutRedirect = getFrontendOrigin(req) + '/';
 
   if (!OIDC_ENABLED) {
     return res.redirect(postLogoutRedirect);

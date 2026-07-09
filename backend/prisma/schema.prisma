@@ -264,6 +264,23 @@ model HomeSectionCard {
 // ============================================================================
 // Meeting Guide: editable info cards (hotel, transport, wifi, etc.)
 // ============================================================================
+// ============================================================================
+// API Config: manage third-party API keys (weather, map, etc.)
+// ============================================================================
+model ApiConfig {
+  id            Int      @id @default(autoincrement())
+  name          String               // 显示名称，如 "和风天气"、"高德地图"
+  type          String               // 类型: "weather" | "map" | "other"
+  provider      String               // 提供商标识: "qweather" | "openmeteo" | "amap" | "custom"
+  config        String   @default("{}") // JSON: API Key、Host、Secret 等配置
+  widgetEnabled Boolean  @default(false) // 是否在首页显示小部件
+  widgetConfig  String   @default("{}") // JSON: 小部件配置
+  isActive      Boolean  @default(true)  // 是否启用
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 model MeetingGuideItem {
   id        Int      @id @default(autoincrement())
   key       String   @unique          // "hotel" / "transport" / "dining" / "preparation" / "wifi"

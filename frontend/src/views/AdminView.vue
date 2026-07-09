@@ -76,6 +76,7 @@
               <AdminOrganizations v-if="tab === 'organizations'" />
               <AdminReflections v-if="tab === 'reflections'" />
               <AdminAnalytics v-if="tab === 'analytics'" />
+              <AdminApiConfigs v-if="tab === 'apiConfigs'" />
               <AdminGallery v-if="tab === 'gallery'" />
               <AdminPast v-if="tab === 'past'" />
               <AdminNotification v-if="tab === 'notification'" />
@@ -106,6 +107,7 @@ import AdminAnalytics from './admin/AdminAnalytics.vue';
 import AdminGallery from './admin/AdminGallery.vue';
 import AdminPast from './admin/AdminPast.vue';
 import AdminNotification from './admin/AdminNotification.vue';
+import AdminApiConfigs from './admin/AdminApiConfigs.vue';
 import AdminSettings from './admin/AdminSettings.vue';
 import AdminPermissions from './admin/AdminPermissions.vue';
 import AdminFileManager from './admin/AdminFileManager.vue';

@@ -4,7 +4,7 @@
     <section class="relative overflow-hidden hero-banner text-white md:min-h-[90vh] flex items-center" :style="heroBannerStyle">
       <!-- Weather card: desktop absolute top-right of Hero section -->
       <div class="hidden md:block absolute top-8 right-6 z-10">
-        <WeatherCard />
+        <WeatherCard v-if="weatherWidgetEnabled" />
       </div>
 
       <div class="container-x relative py-12 sm:py-20 md:py-28 w-full text-center md:text-left">
@@ -57,7 +57,7 @@
 
         <!-- Weather card: mobile inline (below countdown) -->
         <div class="mt-6 md:hidden flex justify-center">
-          <WeatherCard />
+          <WeatherCard v-if="weatherWidgetEnabled" />
         </div>
       </div>
     </section>
@@ -416,6 +416,12 @@ const attendeeTotal = ref(57); // fallback default
 const schoolCount = ref(19); // fallback default
 const navLinks = ref([]);
 const homeSections = ref([]);
+const widgets = ref([]);
+
+// Weather widget enabled when there exists an active widget-enabled weather config
+const weatherWidgetEnabled = computed(() =>
+  Array.isArray(widgets.value) && widgets.value.some((w) => w?.type === 'weather')
+);
 
 /** Look up nav label by route path, with fallback */
 function navLabel(path, fallback) {
@@ -631,13 +637,14 @@ function animateCounter(el) {
 
 async function load() {
   try {
-    const [a, p, m, att, nav, hs] = await Promise.all([
+    const [a, p, m, att, nav, hs, wdg] = await Promise.all([
       api.get('/announcements/active'),
       api.get('/past-meetings'),
       api.get('/meeting'),
       api.get('/attendees'),
       api.get('/nav'),
       api.get('/home-sections'),
+      api.get('/api-configs/widgets'),
     ]);
     announcement.value = a.data;
     pastList.value = p.data || [];
@@ -646,6 +653,7 @@ async function load() {
     if (att.data?.groups?.length) schoolCount.value = att.data.groups.length;
     if (nav.data?.links?.length) navLinks.value = nav.data.links;
     homeSections.value = hs.data || [];
+    widgets.value = wdg.data || [];
   } catch (e) {
     console.error(e);
   }
