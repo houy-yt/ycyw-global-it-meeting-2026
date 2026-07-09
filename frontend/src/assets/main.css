@@ -76,13 +76,14 @@ body {
 }
 
 /* Hero with banner image - mobile: sm banner, desktop: full banner */
+/* Uses CSS custom properties set by Vue when custom banners are uploaded */
 .hero-banner {
-  background: url('/hero-banner-sm.jpg') center / cover no-repeat;
+  background: var(--hero-banner-mobile, url('/hero-banner-sm.jpg')) center / cover no-repeat;
 }
 
 @media (min-width: 768px) {
   .hero-banner {
-    background: url('/hero-banner.jpg') center / cover no-repeat;
+    background: var(--hero-banner-desktop, url('/hero-banner.jpg')) center / cover no-repeat;
   }
 }
 

@@ -46,6 +46,7 @@ app.use('/api/meeting-guide', require('./routes/meetingGuide').publicRouter);
 app.use('/api/home-sections', require('./routes/homeSections').publicRouter);
 
 // Admin namespace
+app.use('/api/admin/admins', require('./routes/adminUsers')); // admin user management (super admin only)
 app.use('/api/admin', require('./routes/admin'));            // existing user/role admin
 app.use('/api/admin/meeting', require('./routes/meeting'));   // meeting info
 app.use('/api/admin/schedule', require('./routes/schedule')); // schedule CRUD + resources

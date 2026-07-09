@@ -78,11 +78,12 @@
               <AdminAnalytics v-if="tab === 'analytics'" />
               <AdminGallery v-if="tab === 'gallery'" />
               <AdminPast v-if="tab === 'past'" />
-              <AdminAnnouncements v-if="tab === 'announce'" />
               <AdminNotification v-if="tab === 'notification'" />
               <AdminSettings v-if="tab === 'settings'" />
+              <AdminPermissions v-if="tab === 'permissions'" />
               <AdminFileManager v-if="tab === 'fileManager'" />
               <AdminHomeSections v-if="tab === 'homeSections'" />
+              <AdminAdmins v-if="tab === 'users'" />
               <AdminFaIcons v-if="tab === 'faIcons'" />
             </div>
           </main>
@@ -93,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import AdminMeeting from './admin/AdminMeeting.vue';
 import AdminSchedule from './admin/AdminSchedule.vue';
 import AdminMeetingGuide from './admin/AdminMeetingGuide.vue';
@@ -104,61 +105,64 @@ import AdminReflections from './admin/AdminReflections.vue';
 import AdminAnalytics from './admin/AdminAnalytics.vue';
 import AdminGallery from './admin/AdminGallery.vue';
 import AdminPast from './admin/AdminPast.vue';
-import AdminAnnouncements from './admin/AdminAnnouncements.vue';
 import AdminNotification from './admin/AdminNotification.vue';
 import AdminSettings from './admin/AdminSettings.vue';
+import AdminPermissions from './admin/AdminPermissions.vue';
 import AdminFileManager from './admin/AdminFileManager.vue';
 import AdminFaIcons from './admin/AdminFaIcons.vue';
 import AdminHomeSections from './admin/AdminHomeSections.vue';
+import AdminAdmins from './admin/AdminAdmins.vue';
+import { adminMenuGroups } from '../config/adminMenu';
+import { useAuthStore } from '../stores/auth';
 
-const tab = ref('meeting');
+const auth = useAuthStore();
+const tab = ref('');
 const sidebarOpen = ref(false);
 
-const menuGroups = [
-  {
-    title: '会议管理',
-    items: [
-      { key: 'meeting',      label: '会议信息',  icon: 'circle-info' },
-      { key: 'schedule',     label: '日程安排',  icon: 'calendar-days' },
-      { key: 'meetingGuide', label: '参会须知',  icon: 'clipboard-check' },
-      { key: 'notification', label: '发送邮件',  icon: 'paper-plane' },
-    ],
-  },
-  {
-    title: '人员与组织',
-    items: [
-      { key: 'attendees',     label: '参会人员',  icon: 'users' },
-      { key: 'departments',   label: '部门维护',  icon: 'building' },
-      { key: 'organizations', label: '组织维护',  icon: 'globe' },
-    ],
-  },
-  {
-    title: '内容管理',
-    items: [
-      { key: 'homeSections', label: '首页板块', icon: 'cubes' },
-      { key: 'reflections', label: '反思管理',  icon: 'comments' },
-      { key: 'gallery',     label: '剪影管理',  icon: 'images' },
-      { key: 'announce',    label: '公告管理',  icon: 'bullhorn' },
-      { key: 'past',        label: '往届会议',  icon: 'clock-rotate-left' },
-    ],
-  },
-  {
-    title: '数据与设置',
-    items: [
-      { key: 'analytics', label: '数据分析',  icon: 'chart-bar' },
-      { key: 'settings',  label: '系统设置',  icon: 'gear' },
-      { key: 'fileManager', label: '文件管理', icon: 'folder-open' },
-      { key: 'faIcons',   label: 'FA图标库',  icon: 'icons' },
-    ],
-  },
-];
+/**
+ * Filter menu groups based on the current admin's permissions.
+ * - Super admins (adminPermissions === null) see everything.
+ * - Regular admins only see items whose key is in their adminPermissions array,
+ *   plus any item they have explicit access to.
+ * - Items marked `superAdminOnly` are only shown to super admins.
+ */
+const menuGroups = computed(() => {
+  const perms = auth.adminPermissions; // null = super admin (all), or string[]
+  const isSuperAdmin = auth.isSuperAdmin;
 
-const allItems = menuGroups.flatMap((g) => g.items);
+  return adminMenuGroups
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((item) => {
+        // superAdminOnly items only for super admins
+        if (item.superAdminOnly && !isSuperAdmin) return false;
+        // Super admin sees all
+        if (perms === null) return true;
+        // Regular admin: check permissions
+        return perms.includes(item.key);
+      }),
+    }))
+    .filter((g) => g.items.length > 0);
+});
+
+const allItems = computed(() => menuGroups.value.flatMap((g) => g.items));
 
 const currentLabel = computed(() => {
-  const item = allItems.find((i) => i.key === tab.value);
+  const item = allItems.value.find((i) => i.key === tab.value);
   return item ? item.label : '';
 });
+
+// Auto-select first available tab
+watch(
+  menuGroups,
+  (groups) => {
+    const keys = groups.flatMap((g) => g.items.map((i) => i.key));
+    if (!tab.value || !keys.includes(tab.value)) {
+      tab.value = keys[0] || '';
+    }
+  },
+  { immediate: true },
+);
 
 function selectTab(key) {
   tab.value = key;

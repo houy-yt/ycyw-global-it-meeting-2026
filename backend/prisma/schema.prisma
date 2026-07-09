@@ -12,12 +12,14 @@ datasource db {
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
-  nickname     String?
-  isAttendee   Boolean       @default(false)
-  isAdmin      Boolean       @default(false)
-  createdAt    DateTime      @default(now())
+  id               Int           @id @default(autoincrement())
+  email            String        @unique
+  nickname         String?
+  isAttendee       Boolean       @default(false)
+  isAdmin          Boolean       @default(false)
+  role             String        @default("user")  // "admin" | "auditor" | "editor" | "user"
+  adminPermissions String?       // JSON array of allowed admin page keys, e.g. ["meeting","schedule"]
+  createdAt        DateTime      @default(now())
 
   reflections  Reflection[]
   comments     Comment[]
@@ -231,15 +233,19 @@ model SystemSetting {
 // (Conference Theme pillars, Tracks, etc.)
 // ============================================================================
 model HomeSection {
-  id          Int                @id @default(autoincrement())
-  key         String             @unique
-  chipLabel   String             @default("")   // 板块标签，如 "Conference Theme"
-  title       String             @default("")   // 板块标题
-  description String             @default("")   // 板块描述
-  visible     Boolean            @default(true)
-  sortOrder   Int                @default(0)
-  updatedAt   DateTime           @updatedAt
-  cards       HomeSectionCard[]
+  id           Int                @id @default(autoincrement())
+  key          String             @unique
+  sectionType  String             @default("cards") // "cards" = 卡片组 | "statement" = 宣言/引言
+  chipLabel    String             @default("")   // 板块标签，如 "Conference Theme"
+  title        String             @default("")   // 板块标题
+  description  String             @default("")   // 板块描述
+  visible      Boolean            @default(true)
+  sortOrder    Int                @default(0)
+  bgColor      String             @default("")   // 背景颜色: "" (无) | "#FFFFFF" (白色) | "#FAFBFC" (淡灰色)
+  borderTop    Boolean            @default(false) // 是否显示上边线 (1px #e5e7eb solid)
+  borderBottom Boolean            @default(false) // 是否显示下边线 (1px #e5e7eb solid)
+  updatedAt    DateTime           @updatedAt
+  cards        HomeSectionCard[]
 }
 
 model HomeSectionCard {

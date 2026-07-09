@@ -48,6 +48,21 @@ function adminRequired(req, res, next) {
   next();
 }
 
+/**
+ * Only super admins (emails listed in ADMIN_EMAILS env var) can proceed.
+ * Must be used AFTER authRequired.
+ */
+function superAdminRequired(req, res, next) {
+  const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (!req.user || !ADMIN_EMAILS.includes(req.user.email.toLowerCase())) {
+    return res.status(403).json({ message: 'Super admin only' });
+  }
+  next();
+}
+
 function attendeeRequired(req, res, next) {
   if (!req.user || !req.user.isAttendee) {
     return res.status(403).json({ message: 'Only attendees can do this action' });
@@ -65,6 +80,7 @@ module.exports = {
   authRequired,
   authOptional,
   adminRequired,
+  superAdminRequired,
   attendeeRequired,
   signToken,
 };

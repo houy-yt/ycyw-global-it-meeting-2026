@@ -41,6 +41,7 @@ const error = ref('');
 
 onMounted(async () => {
   const token = route.query.token;
+  const idToken = route.query.id_token;
   const redirect = route.query.redirect || '/';
   const action = route.query.action;
 
@@ -50,8 +51,9 @@ onMounted(async () => {
   }
 
   try {
-    // Save token and fetch user info
+    // Save token and id_token, then fetch user info
     auth.setToken(token);
+    if (idToken) auth.setIdToken(idToken);
     const user = await auth.fetchMe();
 
     if (!user) {

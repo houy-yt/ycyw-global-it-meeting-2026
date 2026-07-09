@@ -47,8 +47,24 @@ const router = createRouter({
   },
 });
 
-router.beforeEach((to, from, next) => {
+// Routes that are always accessible without login (login flow itself)
+const PUBLIC_ROUTES = new Set(['login', 'oidc-callback']);
+
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
+
+  // Ensure config (oidcEnabled + whitelist) is loaded before evaluating access.
+  // Handles direct URL entry / page refresh where App.vue's onMounted hasn't run yet.
+  if (!auth.configLoaded) {
+    await auth.fetchConfig();
+  }
+
+  // Login-flow routes are always allowed
+  if (PUBLIC_ROUTES.has(to.name)) {
+    return next();
+  }
+
+  // Admin routes: must be logged in AND be an admin
   if (to.meta.requiresAdmin) {
     if (!auth.isLoggedIn) {
       if (auth.oidcEnabled) {
@@ -57,16 +73,31 @@ router.beforeEach((to, from, next) => {
         window.location.href = `/api/auth/oidc-login?${params.toString()}`;
         return; // stop navigation
       } else {
-        // Mock mode: open AuthModal popup
-        auth.openLogin(to.fullPath);
-        return next('/');
+        // Mock mode: redirect to login page
+        return next({ path: '/login', query: { redirect: to.fullPath } });
       }
     }
     if (!auth.isAdmin) {
       return next('/');
     }
+    return next();
   }
+
+  // All other pages require login unless whitelisted (accessible anonymously)
+  if (!auth.isLoggedIn && !auth.isWhitelisted(to.path)) {
+    if (auth.oidcEnabled) {
+      // OIDC mode: redirect to external OIDC via backend
+      const params = new URLSearchParams({ redirect: to.fullPath });
+      window.location.href = `/api/auth/oidc-login?${params.toString()}`;
+      return; // stop navigation
+    } else {
+      // Mock mode: redirect to login page with return path
+      return next({ path: '/login', query: { redirect: to.fullPath } });
+    }
+  }
+
   next();
 });
+
 
 export default router;

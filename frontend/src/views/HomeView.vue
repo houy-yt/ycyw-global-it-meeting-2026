@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- ============ HERO ============ -->
-    <section class="relative overflow-hidden hero-banner text-white md:min-h-[90vh] flex items-center">
+    <section class="relative overflow-hidden hero-banner text-white md:min-h-[90vh] flex items-center" :style="heroBannerStyle">
       <!-- Weather card: desktop absolute top-right of Hero section -->
       <div class="hidden md:block absolute top-8 right-6 z-10">
         <WeatherCard />
@@ -62,282 +62,302 @@
       </div>
     </section>
 
-    <!-- ============ CONFERENCE THEME ============ -->
-    <section v-if="themeSection" class="section-y">
-      <div class="container-x">
-        <div class="text-center max-w-3xl mx-auto">
-          <div class="chip-orange">{{ themeSection.chipLabel || 'Conference Theme' }}</div>
-          <h2 class="section-heading mt-4">{{ themeSection.title || '' }}</h2>
-          <p v-if="themeSection.description" class="section-sub mx-auto">{{ themeSection.description }}</p>
-        </div>
+    <!-- ============ DYNAMIC SECTIONS (sorted by sortOrder) ============ -->
+    <template v-for="sec in orderedSections" :key="sec.key">
 
-        <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div
-            v-for="p in pillars"
-            :key="p.title"
-            class="card p-7 relative overflow-hidden"
-          >
+      <!-- ── CONFERENCE THEME ── -->
+      <section v-if="sec.key === 'conference-theme'" class="section-y" :style="sectionStyle(sec)">
+        <div class="container-x">
+          <div class="text-center max-w-3xl mx-auto">
+            <div class="chip-orange">{{ sec.chipLabel || 'Conference Theme' }}</div>
+            <h2 class="section-heading mt-4">{{ sec.title || '' }}</h2>
+            <p v-if="sec.description" class="section-sub mx-auto">{{ sec.description }}</p>
+          </div>
+
+          <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div
-              class="absolute -top-10 -right-10 h-32 w-32 rounded-full opacity-10"
-              :style="{ background: p.tint }"
-            ></div>
-            <div
-              class="h-12 w-12 rounded-2xl flex items-center justify-center text-2xl text-white shadow-soft"
-              :style="{ background: p.tint }"
+              v-for="p in cardList(sec)"
+              :key="p.title"
+              class="card p-7 relative overflow-hidden"
             >
-              <font-awesome-icon :icon="p.icon" />
-            </div>
-            <div class="mt-5 text-lg font-semibold text-brand-deep">{{ p.title }}</div>
-            <div class="mt-1 text-xs uppercase tracking-widest text-slate-400">{{ p.subtitle }}</div>
-            <p class="mt-3 text-sm text-slate-600 leading-relaxed">{{ p.desc }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ INTRO ============ -->
-    <section class="section-y bg-white border-y border-slate-100">
-      <div class="container-x grid lg:grid-cols-2 gap-10 items-center">
-        <div>
-          <div class="chip">{{ meetingInfo?.aboutTitle || '关于本次会议' }}</div>
-          <div v-if="meetingInfo?.aboutContent" class="about-content mt-4" v-html="meetingInfo.aboutContent"></div>
-          <template v-else>
-            <h2 class="section-heading mt-4">三天的 IT 同仁聚会</h2>
-            <p class="section-sub">
-              YCYW Global IT Meeting 是耀中耀华教育旗下各校 IT 团队一年一度的盛会。
-              围绕 AI 应用、安全合规、教育科技与基础设施，我们一起回顾、思考、并定义未来一年的方向。
-            </p>
-          </template>
-          <div class="mt-6 grid grid-cols-3 gap-4 max-w-md">
-            <div class="rounded-md bg-brand-blue/5 p-4 text-center">
-              <div class="text-2xl font-extrabold text-brand-blue">{{ attendeeTotal }}+</div>
-              <div class="text-xs text-slate-500 mt-1">参会人员</div>
-            </div>
-            <div class="rounded-md bg-brand-orange/10 p-4 text-center">
-              <div class="text-2xl font-extrabold text-brand-orange">3</div>
-              <div class="text-xs text-slate-500 mt-1">天议程</div>
-            </div>
-            <div class="rounded-md bg-brand-red/10 p-4 text-center">
-              <div class="text-2xl font-extrabold text-brand-red">{{ schoolCount }}</div>
-              <div class="text-xs text-slate-500 mt-1">所学校/部门</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="relative">
-          <div
-            class="aspect-[4/3] rounded-md shadow-glow ring-1 ring-brand-deep/10 flex items-center justify-center p-10"
-            style="background: url('/save-date-bg.jpg') center/cover no-repeat"
-          >
-            <div class="text-center w-full">
-              <!-- SAVE THE DATE with diamond decorators -->
-              <div class="flex items-center justify-center gap-3">
-                <span class="block w-12 h-px bg-[#c9a84c]/60"></span>
-                <span class="text-[#c9a84c] text-xs">◆</span>
-                <span class="text-sm tracking-[0.3em] text-[#c9a84c] uppercase font-medium">Save the Date</span>
-                <span class="text-[#c9a84c] text-xs">◆</span>
-                <span class="block w-12 h-px bg-[#c9a84c]/60"></span>
-              </div>
-              <!-- Big date with gold gradient -->
               <div
-                class="text-5xl sm:text-7xl font-extrabold mt-4 tabular-nums"
-                style="background-image: linear-gradient(135deg, #e8d48b 0%, #c9a84c 40%, #a07c2a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"
-              >{{ saveDateText || '07.14 - 07.16' }}</div>
-              <!-- Divider with diamond -->
-              <div class="flex items-center justify-center gap-2 mt-3">
-                <span class="block w-10 h-px bg-[#c9a84c]/60"></span>
-                <span class="text-[#c9a84c] text-[10px]">◆</span>
-                <span class="block w-10 h-px bg-[#c9a84c]/60"></span>
+                class="absolute -top-10 -right-10 h-32 w-32 rounded-full opacity-10"
+                :style="{ background: p.tint }"
+              ></div>
+              <div
+                class="h-12 w-12 rounded-2xl flex items-center justify-center text-2xl text-white shadow-soft"
+                :style="{ background: p.tint }"
+              >
+                <font-awesome-icon :icon="p.icon" />
               </div>
-              <!-- Sub text -->
-              <div class="text-sm text-[#c9a84c]/80 mt-2 tracking-wide">{{ saveDateSubText || '- 2026 / Beijing Yizhuang -' }}</div>
+              <div class="mt-5 text-lg font-semibold text-brand-deep">{{ p.title }}</div>
+              <div class="mt-1 text-xs uppercase tracking-widest text-slate-400">{{ p.subtitle }}</div>
+              <p class="mt-3 text-sm text-slate-600 leading-relaxed">{{ p.desc }}</p>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- ============ ANNOUNCEMENT ============ -->
-      <div class="container-x mt-10">
-        <div
-          class="rounded-md bg-gradient-to-r from-brand-blue to-brand-deep text-white p-6 sm:p-8 shadow-glow flex flex-col sm:flex-row sm:items-center gap-4"
-        >
-          <div class="flex items-center gap-3 flex-shrink-0">
-            <div class="h-10 w-10 rounded-full bg-brand-orange flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm-.75 4a.75.75 0 011.5 0v4.25a.75.75 0 01-1.5 0V6zm.75 7.5a1 1 0 110 2 1 1 0 010-2z" />
-              </svg>
-            </div>
-            <div class="text-xs tracking-widest uppercase text-white/70">最新公告</div>
-          </div>
-          <div class="text-sm sm:text-base leading-relaxed flex-1">
-            {{ announcement?.content || '欢迎参加 YCYW 2026 Global IT Meeting！更多公告将在此处展示。' }}
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ TRACKS ============ -->
-    <section v-if="tracksSection" class="section-y">
-      <div class="container-x">
-        <div class="text-center max-w-3xl mx-auto">
-          <div class="chip">{{ tracksSection.chipLabel || '议题轨道 · Tracks' }}</div>
-          <h2 class="section-heading mt-4">{{ tracksSection.title || '' }}</h2>
-          <p v-if="tracksSection.description" class="section-sub mx-auto">{{ tracksSection.description }}</p>
-        </div>
-
-        <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <div
-            v-for="t in tracks"
-            :key="t.title"
-            class="card p-5 flex items-start gap-4 group"
-          >
-            <div
-              class="h-11 w-11 rounded-xl flex-shrink-0 flex items-center justify-center text-xl text-white shadow-soft"
-              :style="{ background: t.tint }"
-            >
-              <font-awesome-icon :icon="t.icon" />
-            </div>
-            <div class="min-w-0">
-              <div class="text-base font-semibold text-brand-deep group-hover:text-brand-blue transition">
-                {{ t.title }}
+      <!-- ── INTRO (About) ── -->
+      <section v-else-if="sec.sectionType === 'intro'" class="section-y" :style="sectionStyle(sec)">
+        <div class="container-x grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <div class="chip">{{ meetingInfo?.aboutTitle || '关于本次会议' }}</div>
+            <div v-if="meetingInfo?.aboutContent" class="about-content mt-4" v-html="meetingInfo.aboutContent"></div>
+            <template v-else>
+              <h2 class="section-heading mt-4">三天的 IT 同仁聚会</h2>
+              <p class="section-sub">
+                YCYW Global IT Meeting 是耀中耀华教育旗下各校 IT 团队一年一度的盛会。
+                围绕 AI 应用、安全合规、教育科技与基础设施，我们一起回顾、思考、并定义未来一年的方向。
+              </p>
+            </template>
+            <div class="mt-6 grid grid-cols-3 gap-4 max-w-md">
+              <div class="rounded-md bg-brand-blue/5 p-4 text-center">
+                <div class="text-2xl font-extrabold text-brand-blue">{{ attendeeTotal }}+</div>
+                <div class="text-xs text-slate-500 mt-1">参会人员</div>
               </div>
-              <div class="mt-1 text-sm text-slate-500 leading-relaxed">
-                {{ t.desc }}
+              <div class="rounded-md bg-brand-orange/10 p-4 text-center">
+                <div class="text-2xl font-extrabold text-brand-orange">3</div>
+                <div class="text-xs text-slate-500 mt-1">天议程</div>
+              </div>
+              <div class="rounded-md bg-brand-red/10 p-4 text-center">
+                <div class="text-2xl font-extrabold text-brand-red">{{ schoolCount }}</div>
+                <div class="text-xs text-slate-500 mt-1">所学校/部门</div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ BY THE NUMBERS ============ -->
-    <section class="section-y">
-      <div class="container-x">
-        <div
-          class="rounded-md hero-bg text-white p-8 sm:p-12 shadow-glow relative overflow-hidden"
-        >
-          <div
-            class="absolute inset-0 opacity-[0.08]"
-            style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 24px 24px"
-          ></div>
 
           <div class="relative">
-            <div class="text-xs uppercase tracking-widest text-white/70">By the Numbers</div>
-            <h2 class="mt-3 text-3xl sm:text-4xl font-extrabold">YCYW Global IT，一览</h2>
-            <p class="mt-3 text-white/80 max-w-2xl">
-              一个网络，多元文化；一支团队，连接全球。下面是我们日复一日守护的数字。
-            </p>
-
-            <div class="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
-              <div
-                v-for="s in stats"
-                :key="s.label"
-                ref="statRefs"
-                :data-target="s.value"
-                :data-suffix="s.suffix || ''"
-                class="text-center"
-              >
-                <div class="text-3xl sm:text-5xl font-extrabold text-brand-orange tabular-nums">
-                  <span class="counter">0</span>{{ s.suffix || '' }}
+            <div
+              class="aspect-[4/3] rounded-md shadow-glow ring-1 ring-brand-deep/10 flex items-center justify-center p-10"
+              style="background: url('/save-date-bg.jpg') center/cover no-repeat"
+            >
+              <div class="text-center w-full">
+                <!-- SAVE THE DATE with diamond decorators -->
+                <div class="flex items-center justify-center gap-3">
+                  <span class="block w-12 h-px bg-[#c9a84c]/60"></span>
+                  <span class="text-[#c9a84c] text-xs">◆</span>
+                  <span class="text-sm tracking-[0.3em] text-[#c9a84c] uppercase font-medium">Save the Date</span>
+                  <span class="text-[#c9a84c] text-xs">◆</span>
+                  <span class="block w-12 h-px bg-[#c9a84c]/60"></span>
                 </div>
-                <div class="mt-2 text-xs sm:text-sm text-white/70 uppercase tracking-widest">
-                  {{ s.label }}
+                <!-- Big date with gold gradient -->
+                <div
+                  class="text-5xl sm:text-7xl font-extrabold mt-4 tabular-nums"
+                  style="background-image: linear-gradient(135deg, #e8d48b 0%, #c9a84c 40%, #a07c2a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"
+                >{{ saveDateText || '07.14 - 07.16' }}</div>
+                <!-- Divider with diamond -->
+                <div class="flex items-center justify-center gap-2 mt-3">
+                  <span class="block w-10 h-px bg-[#c9a84c]/60"></span>
+                  <span class="text-[#c9a84c] text-[10px]">◆</span>
+                  <span class="block w-10 h-px bg-[#c9a84c]/60"></span>
                 </div>
+                <!-- Sub text -->
+                <div class="text-sm text-[#c9a84c]/80 mt-2 tracking-wide">{{ saveDateSubText || '- 2026 / Beijing Yizhuang -' }}</div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ============ QUICK NAV ============ -->
-    <section class="section-y bg-white border-y border-slate-100">
-      <div class="container-x">
-        <div class="text-center">
-          <div class="chip-orange">快捷入口</div>
-          <h2 class="section-heading mt-4">直达你想去的地方</h2>
-        </div>
-        <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <router-link
-            v-for="c in quickLinks"
-            :key="c.to"
-            :to="c.to"
-            class="card p-6 group"
-          >
-            <div class="flex items-start gap-4">
-              <div
-                class="h-12 w-12 rounded-xl flex-shrink-0 flex items-center justify-center text-white text-xl font-bold"
-                :class="c.bg"
-              >
-                <font-awesome-icon :icon="c.icon" />
-              </div>
-              <div>
-                <div class="text-lg font-semibold text-brand-deep">{{ c.title }}</div>
-                <div class="mt-1 text-sm text-slate-500">{{ c.desc }}</div>
-              </div>
-            </div>
-            <div class="mt-4 text-sm text-brand-blue group-hover:text-brand-red transition flex items-center gap-1">
-              进入 <font-awesome-icon icon="circle-right" class="text-xs transition-transform group-hover:translate-x-1" />
-            </div>
-          </router-link>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ TECH STACK ============ -->
-    <section class="section-y">
-      <div class="container-x">
-        <div class="text-center max-w-3xl mx-auto">
-          <div class="chip">Tech & Tools at YCYW</div>
-          <h2 class="section-heading mt-4">我们正在用、即将用的技术</h2>
-          <p class="section-sub mx-auto">
-            从云到端、从生产力到智能，下面是支撑 YCYW 全球 IT 的代表性平台与工具。
-          </p>
-        </div>
-
-        <div class="mt-10 space-y-6">
+      <!-- ── ANNOUNCEMENT ── -->
+      <section v-else-if="sec.sectionType === 'announcement'" :style="sectionStyle(sec)">
+        <div class="container-x py-6">
           <div
-            v-for="cat in techStack"
-            :key="cat.title"
-            class="card p-6"
+            class="rounded-md bg-gradient-to-r from-brand-blue to-brand-deep text-white p-6 sm:p-8 shadow-glow flex flex-col sm:flex-row sm:items-center gap-4"
           >
-            <div class="flex items-center gap-3">
-              <div
-                class="h-9 w-9 rounded-lg flex items-center justify-center text-white text-base"
-                :style="{ background: cat.tint }"
-              >
-                <font-awesome-icon :icon="cat.icon" />
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <div class="h-10 w-10 rounded-full bg-brand-orange flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm-.75 4a.75.75 0 011.5 0v4.25a.75.75 0 01-1.5 0V6zm.75 7.5a1 1 0 110 2 1 1 0 010-2z" />
+                </svg>
               </div>
-              <div class="text-base font-semibold text-brand-deep">{{ cat.title }}</div>
-              <div class="text-xs text-slate-400">· {{ cat.subtitle }}</div>
+              <div class="text-xs tracking-widest uppercase text-white/70">最新公告</div>
             </div>
-            <div class="mt-4 flex flex-wrap gap-2">
-              <span
-                v-for="item in cat.items"
-                :key="item"
-                class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-50 text-slate-700 ring-1 ring-slate-200 hover:ring-brand-blue/40 hover:text-brand-blue transition"
-              >
-                {{ item }}
-              </span>
+            <div class="text-sm sm:text-base leading-relaxed flex-1">
+              {{ announcement?.content || '欢迎参加 YCYW 2026 Global IT Meeting！更多公告将在此处展示。' }}
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- Quote -->
-        <div class="mt-12 rounded-md border border-slate-100 bg-white p-8 sm:p-10 text-center shadow-soft">
-          <div class="text-brand-orange text-4xl leading-none">"</div>
-          <p class="mt-3 text-base sm:text-lg text-slate-700 max-w-3xl mx-auto leading-relaxed">
-            我们既是技术的工程师，也是教育的同行者。借助 IT 这把杠杆，让全球每一位耀中耀华师生都能享受到顺畅、安全、智能的数字校园。
-          </p>
-          <div class="mt-4 text-xs uppercase tracking-widest text-slate-400">
-            — YCYW Global IT Team
+      <!-- ── TRACKS ── -->
+      <section v-else-if="sec.key === 'tracks'" class="section-y" :style="sectionStyle(sec)">
+        <div class="container-x">
+          <div class="text-center max-w-3xl mx-auto">
+            <div class="chip">{{ sec.chipLabel || '议题轨道 · Tracks' }}</div>
+            <h2 class="section-heading mt-4">{{ sec.title || '' }}</h2>
+            <p v-if="sec.description" class="section-sub mx-auto">{{ sec.description }}</p>
+          </div>
+
+          <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div
+              v-for="t in cardList(sec)"
+              :key="t.title"
+              class="card p-5 flex items-start gap-4 group"
+            >
+              <div
+                class="h-11 w-11 rounded-xl flex-shrink-0 flex items-center justify-center text-xl text-white shadow-soft"
+                :style="{ background: t.tint }"
+              >
+                <font-awesome-icon :icon="t.icon" />
+              </div>
+              <div class="min-w-0">
+                <div class="text-base font-semibold text-brand-deep group-hover:text-brand-blue transition">
+                  {{ t.title }}
+                </div>
+                <div class="mt-1 text-sm text-slate-500 leading-relaxed">
+                  {{ t.desc }}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <!-- ── BY THE NUMBERS ── -->
+      <section v-else-if="sec.sectionType === 'stats'" class="section-y" :style="sectionStyle(sec)">
+        <div class="container-x">
+          <div
+            class="rounded-md hero-bg text-white p-8 sm:p-12 shadow-glow relative overflow-hidden"
+          >
+            <div
+              class="absolute inset-0 opacity-[0.08]"
+              style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 24px 24px"
+            ></div>
+
+            <div class="relative">
+              <div class="text-xs uppercase tracking-widest text-white/70">By the Numbers</div>
+              <h2 class="mt-3 text-3xl sm:text-4xl font-extrabold">YCYW Global IT，一览</h2>
+              <p class="mt-3 text-white/80 max-w-2xl">
+                一个网络，多元文化；一支团队，连接全球。下面是我们日复一日守护的数字。
+              </p>
+
+              <div class="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+                <div
+                  v-for="s in stats"
+                  :key="s.label"
+                  ref="statRefs"
+                  :data-target="s.value"
+                  :data-suffix="s.suffix || ''"
+                  class="text-center"
+                >
+                  <div class="text-3xl sm:text-5xl font-extrabold text-brand-orange tabular-nums">
+                    <span class="counter">0</span>{{ s.suffix || '' }}
+                  </div>
+                  <div class="mt-2 text-xs sm:text-sm text-white/70 uppercase tracking-widest">
+                    {{ s.label }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── QUICK NAV ── -->
+      <section v-else-if="sec.key === 'quick-nav'" class="section-y" :style="sectionStyle(sec)">
+        <div class="container-x">
+          <div class="text-center">
+            <div class="chip-orange">{{ sec.chipLabel || '快捷入口' }}</div>
+            <h2 class="section-heading mt-4">{{ sec.title || '直达你想去的地方' }}</h2>
+          </div>
+          <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <router-link
+              v-for="c in quickLinksFromSection(sec)"
+              :key="c.to"
+              :to="c.to"
+              class="card p-6 group"
+            >
+              <div class="flex items-start gap-4">
+                <div
+                  class="h-12 w-12 rounded-xl flex-shrink-0 flex items-center justify-center text-white text-xl font-bold"
+                  :style="{ backgroundColor: c.bg }"
+                >
+                  <font-awesome-icon :icon="c.icon" />
+                </div>
+                <div>
+                  <div class="text-lg font-semibold text-brand-deep">{{ c.title }}</div>
+                  <div class="mt-1 text-sm text-slate-500">{{ c.desc }}</div>
+                </div>
+              </div>
+              <div class="mt-4 text-sm text-brand-blue group-hover:text-brand-red transition flex items-center gap-1">
+                进入 <font-awesome-icon icon="circle-right" class="text-xs transition-transform group-hover:translate-x-1" />
+              </div>
+            </router-link>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── TECH STACK ── -->
+      <section v-else-if="sec.key === 'tech-stack'" class="section-y" :style="sectionStyle(sec)">
+        <div class="container-x">
+          <div class="text-center max-w-3xl mx-auto">
+            <div class="chip">{{ sec.chipLabel || 'Tech & Tools at YCYW' }}</div>
+            <h2 class="section-heading mt-4">{{ sec.title || '我们正在用、即将用的技术' }}</h2>
+            <p v-if="sec.description" class="section-sub mx-auto">{{ sec.description }}</p>
+          </div>
+
+          <div class="mt-10 space-y-6">
+            <div
+              v-for="cat in techStackFromSection(sec)"
+              :key="cat.title"
+              class="card p-6"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="h-9 w-9 rounded-lg flex items-center justify-center text-white text-base"
+                  :style="{ background: cat.tint }"
+                >
+                  <font-awesome-icon :icon="cat.icon" />
+                </div>
+                <div class="text-base font-semibold text-brand-deep">{{ cat.title }}</div>
+                <div class="text-xs text-slate-400">· {{ cat.subtitle }}</div>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <span
+                  v-for="item in cat.items"
+                  :key="item"
+                  class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-50 text-slate-700 ring-1 ring-slate-200 hover:ring-brand-blue/40 hover:text-brand-blue transition"
+                >
+                  {{ item }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quote (statement section rendered after tech-stack if adjacent) -->
+          <div v-if="quoteSection" class="mt-12 rounded-md border border-slate-100 bg-white p-8 sm:p-10 text-center shadow-soft">
+            <div class="text-brand-orange text-4xl leading-none">"</div>
+            <p class="mt-3 text-base sm:text-lg text-slate-700 max-w-3xl mx-auto leading-relaxed">
+              {{ quoteSection.title }}
+            </p>
+            <div class="mt-4 text-xs uppercase tracking-widest text-slate-400">
+              {{ quoteSection.description || '— YCYW Global IT Team' }}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── STATEMENT (standalone, not after tech-stack) ── -->
+      <section v-else-if="sec.sectionType === 'statement'" class="section-y" :style="sectionStyle(sec)">
+        <div class="container-x">
+          <div class="rounded-md border border-slate-100 bg-white p-8 sm:p-10 text-center shadow-soft">
+            <div class="text-brand-orange text-4xl leading-none">"</div>
+            <p class="mt-3 text-base sm:text-lg text-slate-700 max-w-3xl mx-auto leading-relaxed">
+              {{ sec.title }}
+            </p>
+            <div class="mt-4 text-xs uppercase tracking-widest text-slate-400">
+              {{ sec.description || '— YCYW Global IT Team' }}
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </template>
 
     <!-- ============ PAST MEETINGS ============ -->
-    <section class="section-y bg-white border-y border-slate-100" style="display: none;">
+    <section class="section-y" style="display: none;">
       <div class="container-x">
         <div class="flex items-end justify-between flex-wrap gap-4">
           <div>
@@ -454,49 +474,124 @@ const saveDateSubText = computed(() => {
   return `- ${year} / ${region} -`;
 });
 
-const quickLinks = computed(() => [
-  { to: '/schedule', title: navLabel('/schedule', '日程安排'), desc: '四天行程一目了然', bg: 'bg-brand-blue', icon: 'calendar-days' },
-  { to: '/attendees', title: navLabel('/attendees', '参会人员'), desc: `${attendeeTotal.value}+ 同仁，${schoolCount.value} 所学校`, bg: 'bg-brand-deep', icon: 'users' },
-  { to: '/reflections', title: navLabel('/reflections', '会后反思'), desc: '记录所学所思', bg: 'bg-brand-orange', icon: 'pen-to-square' },
-  { to: '/gallery', title: navLabel('/gallery', '会议剪影'), desc: '照片 · 视频 · 回忆', bg: 'bg-brand-red', icon: 'camera' },
-]);
+/**
+ * Dynamic hero banner background style.
+ * Uses uploaded images when available, CSS fallback (hero-banner class) otherwise.
+ * Mobile: heroBannerMobile, Desktop (≥768px): heroBannerDesktop
+ * We use CSS custom properties so the media query in main.css can switch between them.
+ */
+const heroBannerStyle = computed(() => {
+  const mobile = meetingInfo.value?.heroBannerMobile;
+  const desktop = meetingInfo.value?.heroBannerDesktop;
+  // If either custom banner is set, override the CSS background
+  if (mobile || desktop) {
+    const mobileUrl = mobile || '/hero-banner-sm.jpg';
+    const desktopUrl = desktop || '/hero-banner.jpg';
+    return {
+      '--hero-banner-mobile': `url('${mobileUrl}')`,
+      '--hero-banner-desktop': `url('${desktopUrl}')`,
+    };
+  }
+  return {};
+});
 
 /** Helper: find a section by key from homeSections */
 function findSection(key) {
   return homeSections.value.find(s => s.key === key) || null;
 }
 
-/** Conference Theme section */
-const themeSection = computed(() => findSection('conference-theme'));
-const pillars = computed(() => {
-  const sec = themeSection.value;
-  if (!sec) return [];
-  return (sec.cards || []).map(c => ({
+/**
+ * Ordered sections for rendering.
+ * All sections (intro, conference-theme, tracks, announcement, quick-nav, tech-stack, stats, statement)
+ * come from the API and are sorted by sortOrder. Statement sections that appear
+ * right after tech-stack are handled inline and excluded from standalone rendering.
+ */
+const orderedSections = computed(() => {
+  // Start with all API sections (already sorted by sortOrder from backend)
+  const apiSections = homeSections.value.filter(s => s.visible !== false);
+
+  // All sections now come from the API (no more virtual sections)
+  const allSections = [...apiSections];
+
+  // Sort by sortOrder
+  allSections.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
+  // Filter out statement sections that will be rendered inline after tech-stack
+  return allSections.filter(s => {
+    if (s.sectionType === 'statement') {
+      // Check if tech-stack exists — if so, statement is rendered inside tech-stack section
+      const hasTechStack = apiSections.some(ss => ss.key === 'tech-stack');
+      if (hasTechStack) return false; // rendered inline
+    }
+    return true;
+  });
+});
+
+/** Team Manifesto / statement section (团队宣言) — find by sectionType, fallback to key */
+const quoteSection = computed(() =>
+  homeSections.value.find(s => s.sectionType === 'statement') || findSection('team-manifesto')
+);
+
+/** Dynamic section style based on bgColor / borderTop / borderBottom from API */
+function sectionStyle(sec) {
+  const style = {};
+  if (sec.bgColor) style.backgroundColor = sec.bgColor;
+  if (sec.borderTop) style.borderTop = '1px solid #e5e7eb';
+  if (sec.borderBottom) style.borderBottom = '1px solid #e5e7eb';
+  return style;
+}
+
+/** Generic card list helper */
+function cardList(section) {
+  return (section.cards || []).map(c => ({
     icon: c.icon,
     title: c.title,
     subtitle: c.subtitle || '',
     desc: c.content,
     tint: c.iconColor,
   }));
-});
+}
 
-/** Tracks section */
-const tracksSection = computed(() => findSection('tracks'));
-const tracks = computed(() => {
-  const sec = tracksSection.value;
-  if (!sec) return [];
-  return (sec.cards || []).map(c => ({
-    icon: c.icon,
+/** Quick Nav links from section */
+function quickLinksFromSection(sec) {
+  if (!sec.cards?.length) {
+    // Fallback to hardcoded defaults when no API data
+    return [
+      { to: '/schedule', title: navLabel('/schedule', '日程安排'), desc: '四天行程一目了然', bg: '#0032a0', icon: 'calendar-days' },
+      { to: '/attendees', title: navLabel('/attendees', '参会人员'), desc: `${attendeeTotal.value}+ 同仁，${schoolCount.value} 所学校`, bg: '#001e60', icon: 'users' },
+      { to: '/reflections', title: navLabel('/reflections', '会后反思'), desc: '记录所学所思', bg: '#ff8200', icon: 'pen-to-square' },
+      { to: '/gallery', title: navLabel('/gallery', '会议剪影'), desc: '照片 · 视频 · 回忆', bg: '#ff0044', icon: 'camera' },
+    ];
+  }
+  return sec.cards.map(c => ({
+    to: c.subtitle || '/',
     title: c.title,
     desc: c.content,
-    tint: c.iconColor,
+    bg: c.iconColor || '#0032a0',
+    icon: c.icon || 'circle-info',
   }));
-});
+}
 
-/** Extra dynamic sections (besides conference-theme and tracks) */
-const extraSections = computed(() => {
-  return homeSections.value.filter(s => s.key !== 'conference-theme' && s.key !== 'tracks');
-});
+/** Tech Stack from section */
+function techStackFromSection(sec) {
+  if (!sec.cards?.length) {
+    // Fallback to hardcoded defaults when no API data
+    return [
+      { icon: 'building', title: 'Productivity & Identity', subtitle: '日常协作与身份基础', items: ['Microsoft 365', 'Entra ID', 'Intune', 'Defender', 'SharePoint', 'Teams'], tint: '#0032a0' },
+      { icon: 'screwdriver-wrench', title: 'DevOps & Code', subtitle: '工程化与协作', items: ['GitHub', 'Azure DevOps', 'Bicep', 'Terraform', 'GitHub Actions'], tint: '#001e60' },
+      { icon: 'chart-line', title: 'Data & Analytics', subtitle: '一个学校的数据底座', items: ['Power BI', 'Microsoft Fabric', 'Synapse', 'Dataverse', 'SQL'], tint: '#ff8200' },
+      { icon: 'globe', title: 'Network & Security', subtitle: '稳健的连接与防御', items: ['Cisco Meraki', 'Fortinet', 'Aruba', 'Zscaler', 'CrowdStrike'], tint: '#ff0044' },
+      { icon: 'robot', title: 'AI & Education', subtitle: '面向未来的教与学', items: ['Azure OpenAI', 'AI Foundry', 'Copilot', 'Copilot Studio', 'Whisper'], tint: '#7c3aed' },
+    ];
+  }
+  return sec.cards.map(c => ({
+    icon: c.icon,
+    title: c.title,
+    subtitle: c.subtitle || '',
+    items: (c.content || '').split(',').map(s => s.trim()).filter(Boolean),
+    tint: c.iconColor || '#0032a0',
+  }));
+}
 
 const stats = computed(() => [
   { value: schoolCount.value, label: 'Schools / Depts', suffix: ' +' },
@@ -505,44 +600,6 @@ const stats = computed(() => [
   { value: 300, label: 'Apps & Systems', suffix: ' +' },
   { value: 5, label: 'Global Regions', suffix: ' ' },
 ]);
-
-const techStack = [
-  {
-    icon: 'building',
-    title: 'Productivity & Identity',
-    subtitle: '日常协作与身份基础',
-    items: ['Microsoft 365', 'Entra ID', 'Intune', 'Defender', 'SharePoint', 'Teams'],
-    tint: '#0032a0',
-  },
-  {
-    icon: 'screwdriver-wrench',
-    title: 'DevOps & Code',
-    subtitle: '工程化与协作',
-    items: ['GitHub', 'Azure DevOps', 'Bicep', 'Terraform', 'GitHub Actions'],
-    tint: '#001e60',
-  },
-  {
-    icon: 'chart-line',
-    title: 'Data & Analytics',
-    subtitle: '一个学校的数据底座',
-    items: ['Power BI', 'Microsoft Fabric', 'Synapse', 'Dataverse', 'SQL'],
-    tint: '#ff8200',
-  },
-  {
-    icon: 'globe',
-    title: 'Network & Security',
-    subtitle: '稳健的连接与防御',
-    items: ['Cisco Meraki', 'Fortinet', 'Aruba', 'Zscaler', 'CrowdStrike'],
-    tint: '#ff0044',
-  },
-  {
-    icon: 'robot',
-    title: 'AI & Education',
-    subtitle: '面向未来的教与学',
-    items: ['Azure OpenAI', 'AI Foundry', 'Copilot', 'Copilot Studio', 'Whisper'],
-    tint: '#7c3aed',
-  },
-];
 
 function formatDateRange(raw) {
   if (!raw) return '';

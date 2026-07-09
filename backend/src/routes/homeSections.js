@@ -22,6 +22,16 @@ const { authRequired, adminRequired } = require('../middleware/auth');
 
 // ─────────── Default data (migrated from HomeView.vue hardcoded arrays) ───────────
 const DEFAULT_SECTIONS = [
+  // ── Intro: 关于会议 (content managed via Meeting Settings, not editable here) ──
+  {
+    key: 'intro',
+    sectionType: 'intro',
+    chipLabel: '关于会议',
+    title: '关于本次会议',
+    description: '',
+    sortOrder: -1,
+    cards: [],
+  },
   {
     key: 'conference-theme',
     chipLabel: 'Conference Theme',
@@ -112,6 +122,128 @@ const DEFAULT_SECTIONS = [
       },
     ],
   },
+  // ── Quick Nav: 快捷入口 ──
+  {
+    key: 'quick-nav',
+    chipLabel: '快捷入口',
+    title: '直达你想去的地方',
+    description: '',
+    sortOrder: 2,
+    cards: [
+      {
+        icon: 'calendar-days',
+        iconColor: '#0032a0',
+        title: '日程安排',
+        subtitle: '/schedule',
+        content: '四天行程一目了然',
+        sortOrder: 0,
+      },
+      {
+        icon: 'users',
+        iconColor: '#001e60',
+        title: '参会人员',
+        subtitle: '/attendees',
+        content: '57+ 同仁，19 所学校',
+        sortOrder: 1,
+      },
+      {
+        icon: 'pen-to-square',
+        iconColor: '#ff8200',
+        title: '会后反思',
+        subtitle: '/reflections',
+        content: '记录所学所思',
+        sortOrder: 2,
+      },
+      {
+        icon: 'camera',
+        iconColor: '#ff0044',
+        title: '会议剪影',
+        subtitle: '/gallery',
+        content: '照片 · 视频 · 回忆',
+        sortOrder: 3,
+      },
+    ],
+  },
+  // ── Tech Stack: 技术栈 ──
+  {
+    key: 'tech-stack',
+    chipLabel: 'Tech & Tools at YCYW',
+    title: '我们正在用、即将用的技术',
+    description: '从云到端、从生产力到智能，下面是支撑 YCYW 全球 IT 的代表性平台与工具。',
+    sortOrder: 3,
+    cards: [
+      {
+        icon: 'building',
+        iconColor: '#0032a0',
+        title: 'Productivity & Identity',
+        subtitle: '日常协作与身份基础',
+        content: 'Microsoft 365, Entra ID, Intune, Defender, SharePoint, Teams',
+        sortOrder: 0,
+      },
+      {
+        icon: 'screwdriver-wrench',
+        iconColor: '#001e60',
+        title: 'DevOps & Code',
+        subtitle: '工程化与协作',
+        content: 'GitHub, Azure DevOps, Bicep, Terraform, GitHub Actions',
+        sortOrder: 1,
+      },
+      {
+        icon: 'chart-line',
+        iconColor: '#ff8200',
+        title: 'Data & Analytics',
+        subtitle: '一个学校的数据底座',
+        content: 'Power BI, Microsoft Fabric, Synapse, Dataverse, SQL',
+        sortOrder: 2,
+      },
+      {
+        icon: 'globe',
+        iconColor: '#ff0044',
+        title: 'Network & Security',
+        subtitle: '稳健的连接与防御',
+        content: 'Cisco Meraki, Fortinet, Aruba, Zscaler, CrowdStrike',
+        sortOrder: 3,
+      },
+      {
+        icon: 'robot',
+        iconColor: '#7c3aed',
+        title: 'AI & Education',
+        subtitle: '面向未来的教与学',
+        content: 'Azure OpenAI, AI Foundry, Copilot, Copilot Studio, Whisper',
+        sortOrder: 4,
+      },
+    ],
+  },
+  // ── Team Manifesto: 团队宣言 ──
+  {
+    key: 'team-manifesto',
+    sectionType: 'statement',
+    chipLabel: '团队宣言',
+    title: '我们既是技术的工程师，也是教育的同行者。借助 IT 这把杠杆，让全球每一位耀中耀华师生都能享受到顺畅、安全、智能的数字校园。',
+    description: '— YCYW Global IT Team',
+    sortOrder: 4,
+    cards: [],
+  },
+  // ── Announcement: 公告 ──
+  {
+    key: 'announcement',
+    sectionType: 'announcement',
+    chipLabel: '最新公告',
+    title: '公告',
+    description: '',
+    sortOrder: 5,
+    cards: [],
+  },
+  // ── Stats: 数字一览 (content auto-generated, not editable) ──
+  {
+    key: 'stats',
+    sectionType: 'stats',
+    chipLabel: '数字一览',
+    title: 'By the Numbers',
+    description: '',
+    sortOrder: 6,
+    cards: [],
+  },
 ];
 
 // ─────────── Public router ───────────
@@ -167,17 +299,21 @@ adminRouter.get('/', authRequired, adminRequired, async (req, res) => {
 
 // Create section
 adminRouter.post('/', authRequired, adminRequired, async (req, res) => {
-  const { key, chipLabel, title, description, visible, sortOrder } = req.body || {};
+  const { key, sectionType, chipLabel, title, description, visible, sortOrder, bgColor, borderTop, borderBottom } = req.body || {};
   if (!key) return res.status(400).json({ message: 'key is required' });
   try {
     const section = await prisma.homeSection.create({
       data: {
         key: String(key),
+        sectionType: sectionType || 'cards',
         chipLabel: chipLabel || '',
         title: title || '',
         description: description || '',
         visible: visible !== false,
         sortOrder: Number(sortOrder) || 0,
+        bgColor: bgColor || '',
+        borderTop: borderTop === true,
+        borderBottom: borderBottom === true,
       },
     });
     res.status(201).json(section);
@@ -215,6 +351,7 @@ adminRouter.post('/seed-defaults', authRequired, adminRequired, async (req, res)
         await prisma.homeSection.create({
           data: {
             key: s.key,
+            sectionType: s.sectionType || 'cards',
             chipLabel: s.chipLabel,
             title: s.title,
             description: s.description,
@@ -245,17 +382,21 @@ adminRouter.post('/seed-defaults', authRequired, adminRequired, async (req, res)
 // Update section
 adminRouter.put('/:id', authRequired, adminRequired, async (req, res) => {
   const id = Number(req.params.id);
-  const { key, chipLabel, title, description, visible, sortOrder } = req.body || {};
+  const { key, sectionType, chipLabel, title, description, visible, sortOrder, bgColor, borderTop, borderBottom } = req.body || {};
   try {
     const section = await prisma.homeSection.update({
       where: { id },
       data: {
         ...(key !== undefined ? { key: String(key) } : {}),
+        ...(sectionType !== undefined ? { sectionType: String(sectionType) } : {}),
         ...(chipLabel !== undefined ? { chipLabel: String(chipLabel) } : {}),
         ...(title !== undefined ? { title: String(title) } : {}),
         ...(description !== undefined ? { description: String(description) } : {}),
         ...(sortOrder !== undefined ? { sortOrder: Number(sortOrder) } : {}),
         ...(visible !== undefined ? { visible: Boolean(visible) } : {}),
+        ...(bgColor !== undefined ? { bgColor: String(bgColor) } : {}),
+        ...(borderTop !== undefined ? { borderTop: Boolean(borderTop) } : {}),
+        ...(borderBottom !== undefined ? { borderBottom: Boolean(borderBottom) } : {}),
       },
     });
     res.json(section);

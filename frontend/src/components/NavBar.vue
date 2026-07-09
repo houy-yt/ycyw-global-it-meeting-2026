@@ -163,9 +163,38 @@ function onAdminClick() {
 }
 
 function handleLogout() {
+  // Snapshot flags BEFORE clearing local auth state, because auth.logout()
+  // resets `oidcEnabled` etc. only via its own logic (it doesn't reset config,
+  // but we still want a stable decision).
+  const wasOidc = auth.oidcEnabled;
+  // Capture the OIDC id_token before clearing — passed directly to the
+  // backend as id_token_hint so IdentityServer skips the logout
+  // confirmation page ("Would you like to logout?").
+  const currentIdToken = auth.idToken;
+
+  // Clear local token/user first so any in-flight component reactivity
+  // sees the logged-out state immediately.
   auth.logout();
+
+  if (wasOidc) {
+    // Production/OIDC: full-page navigation so the browser follows the
+    // 302 chain to the IdP end_session endpoint, terminating the SSO
+    // session, and then lands back on the frontend.
+    // Pass the id_token directly so the backend can use it as
+    // id_token_hint (skips IdentityServer confirmation page).
+    const logoutUrl = currentIdToken
+      ? `/api/auth/logout?id_token=${encodeURIComponent(currentIdToken)}`
+      : '/api/auth/logout';
+    window.location.href = logoutUrl;
+    return;
+  }
+
+  // Mock mode: always navigate to home page after logout.
+  // The router guard will redirect to /login if the home page
+  // requires authentication (not in the whitelist).
   router.push('/');
 }
+
 
 // Default fallback links
 const defaultLinks = [

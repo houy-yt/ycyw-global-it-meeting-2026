@@ -4,16 +4,46 @@ import api from '../api';
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: '',
+    idToken: '',
     user: null,
     showLogin: false,
     loginRedirect: null,
     loginAction: null,
     oidcEnabled: false,
+    whitelist: [],
+    configLoaded: false,
   }),
   getters: {
     isLoggedIn: (s) => !!s.token && !!s.user,
     isAdmin: (s) => !!s.user?.isAdmin,
+    isSuperAdmin: (s) => !!s.user?.isSuperAdmin,
+    /** User role: 'superadmin' | 'admin' | 'auditor' | 'editor' | 'user' */
+    userRole: (s) => s.user?.role || 'user',
+    /**
+     * Admin permissions array. null = super admin (all access).
+     * Array of admin page keys for regular admins.
+     */
+    adminPermissions: (s) => {
+      if (!s.user?.isAdmin) return [];
+      if (s.user?.isSuperAdmin) return null; // null = all
+      return Array.isArray(s.user?.adminPermissions) ? s.user.adminPermissions : [];
+    },
     isAttendee: (s) => !!s.user?.isAttendee,
+    /**
+     * Whether a given route path is allowed without login (in the whitelist).
+     * Returns a function so it can be called with a path argument.
+     */
+    isWhitelisted: (s) => (path) => {
+      if (!path) return false;
+      // Normalize: strip trailing slash (except root) and query/hash
+      const clean = path.split('?')[0].split('#')[0];
+      const norm = clean.length > 1 ? clean.replace(/\/+$/, '') : clean;
+      return s.whitelist.some((p) => {
+        const pn = p.length > 1 ? p.replace(/\/+$/, '') : p;
+        return pn === norm;
+      });
+    },
+
     /**
      * Display name for the currently logged-in user.
      * Priority: nickname (which the backend keeps in sync with Attendee.nameEn)
@@ -33,27 +63,35 @@ export const useAuthStore = defineStore('auth', {
     hydrate() {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
+      const idToken = localStorage.getItem('id_token');
       if (token && userStr) {
         try {
           this.token = token;
           this.user = JSON.parse(userStr);
+          this.idToken = idToken || '';
         } catch (e) {
           this.token = '';
           this.user = null;
+          this.idToken = '';
         }
       }
     },
 
-    /** Fetch OIDC mode from backend */
+    /** Fetch OIDC mode + page whitelist from backend */
     async fetchConfig() {
       try {
         const { data } = await api.get('/auth/config');
         this.oidcEnabled = !!data.oidcEnabled;
+        this.whitelist = Array.isArray(data.whitelist) ? data.whitelist : [];
       } catch (e) {
         // Default to false if backend is unreachable
         this.oidcEnabled = false;
+        this.whitelist = [];
+      } finally {
+        this.configLoaded = true;
       }
     },
+
 
     async login(email) {
       const { data } = await api.post('/auth/login', { email });
@@ -68,6 +106,16 @@ export const useAuthStore = defineStore('auth', {
     setToken(token) {
       this.token = token;
       localStorage.setItem('token', token);
+    },
+
+    /** Set OIDC id_token (used by OIDC callback for logout id_token_hint) */
+    setIdToken(idToken) {
+      this.idToken = idToken || '';
+      if (idToken) {
+        localStorage.setItem('id_token', idToken);
+      } else {
+        localStorage.removeItem('id_token');
+      }
     },
 
     async fetchMe() {
@@ -85,8 +133,10 @@ export const useAuthStore = defineStore('auth', {
 
     logout() {
       this.token = '';
+      this.idToken = '';
       this.user = null;
       localStorage.removeItem('token');
+      localStorage.removeItem('id_token');
       localStorage.removeItem('user');
     },
 

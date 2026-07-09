@@ -13,7 +13,11 @@ const fs = require('fs');
 const path = require('path');
 const router = express.Router();
 const prisma = require('../utils/prisma');
+const settingsService = require('../services/settingsService');
+const jwt = require('jsonwebtoken');
 const { signToken, authRequired } = require('../middleware/auth');
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+
 
 const OIDC_ENABLED = process.env.OIDC_ENABLED === 'true';
 
@@ -24,6 +28,9 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
 
 // In-memory state store for OIDC (simple; use Redis in production cluster)
 const stateStore = new Map();
+
+// In-memory store for id_tokens keyed by user ID (used for logout id_token_hint)
+const idTokenStore = new Map();
 
 // Lazy-initialized OIDC configuration & module reference (openid-client v6)
 let oidcConfig = null;
@@ -63,11 +70,23 @@ async function getOidc() {
 
 /* ──────────────────────────────────────────────
  * GET /api/auth/config
- * Returns { oidcEnabled } so frontend knows which mode to use.
+ * Returns { oidcEnabled, whitelist } so frontend knows which mode to use
+ * and which page paths are accessible without login.
  * ────────────────────────────────────────────── */
-router.get('/config', (_req, res) => {
-  res.json({ oidcEnabled: OIDC_ENABLED });
+router.get('/config', async (_req, res) => {
+  let whitelist = [];
+  try {
+    const raw = await settingsService.get('auth.whitelist', '[]');
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      whitelist = parsed.filter((p) => typeof p === 'string');
+    }
+  } catch (_e) {
+    whitelist = [];
+  }
+  res.json({ oidcEnabled: OIDC_ENABLED, whitelist });
 });
+
 
 /* ──────────────────────────────────────────────
  * POST /api/auth/login  (Mock mode only)
@@ -200,6 +219,12 @@ router.get('/oidc-callback', async (req, res) => {
     const user = await findOrCreateUser(email, userinfo.name || userinfo.preferred_username);
     const jwtToken = signToken(user);
 
+    // Pass the id_token to the frontend so it can be stored in localStorage
+    // and sent back during logout as id_token_hint (skips IdentityServer
+    // confirmation page). This is more reliable than the in-memory idTokenStore
+    // which is lost on backend restart.
+    const idToken = tokenResponse.id_token;
+
     // Build frontend callback URL
     const frontendCallback = process.env.OIDC_FRONTEND_CALLBACK || '/auth/callback';
     const frontendOrigin = process.env.CORS_ORIGIN
@@ -207,6 +232,7 @@ router.get('/oidc-callback', async (req, res) => {
       : `${req.protocol}://${req.get('host')}`;
     const url = new URL(frontendCallback, frontendOrigin);
     url.searchParams.set('token', jwtToken);
+    if (idToken) url.searchParams.set('id_token', idToken);
     if (stateData.redirect) url.searchParams.set('redirect', stateData.redirect);
     if (stateData.action) url.searchParams.set('action', stateData.action);
 
@@ -223,6 +249,103 @@ router.get('/oidc-callback', async (req, res) => {
 router.get('/me', authRequired, (req, res) => {
   res.json({ user: sanitize(req.user) });
 });
+
+/* ──────────────────────────────────────────────
+ * GET /api/auth/logout
+ * Ends the SSO session with the OIDC provider (if enabled) and
+ * redirects the browser back to the frontend home page.
+ *
+ * OIDC mode : full-page redirect to the IdP end_session endpoint
+ *             (post_logout_redirect_uri points back to the frontend
+ *             origin so the browser lands on the home page again).
+ * Mock mode : simply redirect to the frontend home page. The frontend
+ *             router guard will then send the user to /login if the
+ *             home page is not in the anonymous whitelist.
+ *
+ * The local JWT lives only in the browser's localStorage, which the
+ * frontend clears before calling this endpoint. There is nothing
+ * server-side to invalidate in mock mode.
+ * ────────────────────────────────────────────── */
+router.get('/logout', async (req, res) => {
+  const frontendOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',')[0].trim()
+    : `${req.protocol}://${req.get('host')}`;
+  const postLogoutRedirect = frontendOrigin + '/';
+
+  if (!OIDC_ENABLED) {
+    return res.redirect(postLogoutRedirect);
+  }
+
+  // The frontend passes the OIDC id_token directly as a query parameter.
+  // This is more reliable than the in-memory idTokenStore which is lost
+  // on backend restart. Falls back to the legacy JWT-based lookup.
+  let idTokenHint = req.query.id_token || null;
+
+  // Legacy fallback: extract userId from JWT token to look up stored id_token
+  if (!idTokenHint) {
+    const token = req.query.token;
+    if (token) {
+      try {
+        const payload = jwt.verify(token, JWT_SECRET);
+        if (payload.userId && idTokenStore.has(payload.userId)) {
+          idTokenHint = idTokenStore.get(payload.userId);
+          idTokenStore.delete(payload.userId); // one-time use
+        }
+      } catch (_e) {
+        // Token invalid/expired — proceed without id_token_hint
+      }
+    }
+  }
+
+  try {
+    const { config, lib } = await getOidc();
+
+    // Build end session URL parameters.
+    // When id_token_hint is provided, IdentityServer skips the
+    // "Do you really want to logout?" confirmation page and honours
+    // post_logout_redirect_uri to redirect back to the home page.
+    // client_id helps IdentityServer validate post_logout_redirect_uri
+    // even when id_token_hint is unavailable.
+    const endSessionParams = {
+      post_logout_redirect_uri: postLogoutRedirect,
+      client_id: process.env.OIDC_CLIENT_ID,
+    };
+    if (idTokenHint) {
+      endSessionParams.id_token_hint = idTokenHint;
+    }
+
+    // openid-client v6 exposes buildEndSessionUrl(config, params)
+    if (typeof lib.buildEndSessionUrl === 'function') {
+      const endUrl = lib.buildEndSessionUrl(config, endSessionParams);
+      return res.redirect(endUrl.href);
+    }
+
+    // Fallback: try to read end_session_endpoint from server metadata
+    const meta =
+      (typeof config.serverMetadata === 'function' && config.serverMetadata()) ||
+      config.serverMetadata ||
+      {};
+    const endSessionEndpoint = meta.end_session_endpoint;
+    if (endSessionEndpoint) {
+      const url = new URL(endSessionEndpoint);
+      url.searchParams.set('post_logout_redirect_uri', postLogoutRedirect);
+      if (process.env.OIDC_CLIENT_ID) {
+        url.searchParams.set('client_id', process.env.OIDC_CLIENT_ID);
+      }
+      if (idTokenHint) {
+        url.searchParams.set('id_token_hint', idTokenHint);
+      }
+      return res.redirect(url.href);
+    }
+
+    // Provider does not advertise end_session — best effort: just go home.
+    return res.redirect(postLogoutRedirect);
+  } catch (e) {
+    console.error('[OIDC] Logout failed, falling back to home redirect:', e.message);
+    return res.redirect(postLogoutRedirect);
+  }
+});
+
 
 /* ────────────────── helpers ────────────────── */
 
@@ -338,12 +461,30 @@ async function findOrCreateUser(email, oidcName) {
 }
 
 function sanitize(u) {
+  const isSuperAdmin = ADMIN_EMAILS.includes(u.email.toLowerCase());
+  let adminPermissions = null;
+  if (u.isAdmin) {
+    if (isSuperAdmin) {
+      // Super admins have access to all admin pages (null = all)
+      adminPermissions = null;
+    } else {
+      // Parse stored permissions
+      try {
+        adminPermissions = u.adminPermissions ? JSON.parse(u.adminPermissions) : [];
+      } catch {
+        adminPermissions = [];
+      }
+    }
+  }
   return {
     id: u.id,
     email: u.email,
     nickname: u.nickname,
     isAttendee: u.isAttendee,
     isAdmin: u.isAdmin,
+    isSuperAdmin,
+    role: isSuperAdmin ? 'superadmin' : (u.role || 'user'),
+    adminPermissions,
   };
 }
 

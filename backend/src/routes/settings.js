@@ -66,6 +66,54 @@ router.delete('/site-logo', authRequired, adminRequired, async (req, res) => {
   }
 });
 
+// ── Hero Banner Desktop Upload ──
+router.post('/hero-banner-desktop', authRequired, adminRequired, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: '请上传文件' });
+    const { url } = await storageService.upload(req.file);
+    await settingsService.set('hero.bannerDesktop', url, 'hero');
+    res.json({ ok: true, url });
+  } catch (e) {
+    console.error('[hero-banner-desktop] upload error', e);
+    res.status(500).json({ message: e.message || '上传失败' });
+  }
+});
+
+// ── Delete Hero Banner Desktop ──
+router.delete('/hero-banner-desktop', authRequired, adminRequired, async (req, res) => {
+  try {
+    await settingsService.set('hero.bannerDesktop', '', 'hero');
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[hero-banner-desktop] delete error', e);
+    res.status(500).json({ message: e.message || '删除失败' });
+  }
+});
+
+// ── Hero Banner Mobile Upload ──
+router.post('/hero-banner-mobile', authRequired, adminRequired, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: '请上传文件' });
+    const { url } = await storageService.upload(req.file);
+    await settingsService.set('hero.bannerMobile', url, 'hero');
+    res.json({ ok: true, url });
+  } catch (e) {
+    console.error('[hero-banner-mobile] upload error', e);
+    res.status(500).json({ message: e.message || '上传失败' });
+  }
+});
+
+// ── Delete Hero Banner Mobile ──
+router.delete('/hero-banner-mobile', authRequired, adminRequired, async (req, res) => {
+  try {
+    await settingsService.set('hero.bannerMobile', '', 'hero');
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[hero-banner-mobile] delete error', e);
+    res.status(500).json({ message: e.message || '删除失败' });
+  }
+});
+
 // ── Entry Guide QR Code Upload ──
 router.post('/entry-guide-qrcode', authRequired, adminRequired, upload.single('file'), async (req, res) => {
   try {

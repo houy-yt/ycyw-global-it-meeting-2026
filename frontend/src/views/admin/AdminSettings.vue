@@ -172,6 +172,7 @@
 
     <!-- ── 上传限制 ── -->
     <el-divider content-position="left" class="mt-6"><b>上传限制（MB）</b></el-divider>
+
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div>
         <label class="text-sm text-slate-600 font-medium">图片上限 (MB)</label>
@@ -353,6 +354,7 @@ import api from '../../api';
 
 // ── General settings ──
 const saving = ref(false);
+
 const form = reactive({
   'upload.maxImageMB': 10,
   'upload.maxVideoMB': 100,
@@ -375,9 +377,14 @@ const smtpDlgForm = reactive({
   email: '', name: '', host: '', port: 587, secure: 'tls', user: '', pass: '', active: true,
 });
 
+// ── Page access whitelist ──
+// NOTE: 页面访问白名单已迁移到独立的「权限设置」（AdminPermissions.vue），
+// 由其统一管理 auth.whitelist。本组件不再读写该配置。
+
 // ── Site Logo ──
 const logoUrl = ref('');
 const logoUploading = ref(false);
+
 
 async function handleLogoUpload(e) {
   const file = e.target.files?.[0];
@@ -625,6 +632,7 @@ async function load() {
     } else if (it.key === 'site.logoUrl') {
       logoUrl.value = it.value || '';
     } else if (it.key === 'footer.settings') {
+
       try {
         const parsed = JSON.parse(it.value);
         if (parsed && typeof parsed === 'object') {
@@ -682,6 +690,7 @@ async function save() {
     await api.put('/admin/settings', { items });
     // SMTP sender emails are saved independently via their own API
     ElMessage.success('已保存');
+
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '保存失败');
   } finally { saving.value = false; }

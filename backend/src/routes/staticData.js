@@ -133,6 +133,11 @@ router.get('/meeting', async (req, res) => {
       if (legacy?.meeting) return res.json(legacy.meeting);
       return res.json(null);
     }
+
+    // Read hero banner URLs from SystemSetting
+    const heroBannerDesktop = await settingsService.get('hero.bannerDesktop', '');
+    const heroBannerMobile = await settingsService.get('hero.bannerMobile', '');
+
     res.json({
       id: meeting.id,
       name: meeting.name,
@@ -146,6 +151,8 @@ router.get('/meeting', async (req, res) => {
       organizer: meeting.organizer || 'YCYW Education',
       aboutTitle: meeting.aboutTitle || '',
       aboutContent: meeting.aboutContent || '',
+      heroBannerDesktop: heroBannerDesktop || '',
+      heroBannerMobile: heroBannerMobile || '',
     });
   } catch (e) {
     console.error(e);
