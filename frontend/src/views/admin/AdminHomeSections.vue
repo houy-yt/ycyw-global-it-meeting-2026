@@ -357,11 +357,11 @@
             <div class="flex flex-col gap-2">
               <el-checkbox v-model="sectionForm.borderTop">
                 上边线
-                <span class="text-[11px] text-slate-400 ml-1">1px #e5e7eb solid</span>
+                <span class="text-[11px] text-slate-400 ml-1">1px #efefef solid</span>
               </el-checkbox>
               <el-checkbox v-model="sectionForm.borderBottom">
                 下边线
-                <span class="text-[11px] text-slate-400 ml-1">1px #e5e7eb solid</span>
+                <span class="text-[11px] text-slate-400 ml-1">1px #efefef solid</span>
               </el-checkbox>
             </div>
           </el-form-item>
@@ -373,8 +373,8 @@
             class="rounded-md h-10 border border-dashed border-slate-200 transition-all"
             :style="{
               backgroundColor: sectionForm.bgColor || 'transparent',
-              borderTop: sectionForm.borderTop ? '1px solid #e5e7eb' : undefined,
-              borderBottom: sectionForm.borderBottom ? '1px solid #e5e7eb' : undefined,
+              borderTop: sectionForm.borderTop ? '1px solid #efefef' : undefined,
+              borderBottom: sectionForm.borderBottom ? '1px solid #efefef' : undefined,
             }"
           ></div>
         </div>

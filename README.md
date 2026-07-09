@@ -2,7 +2,7 @@
 
 > **Connect · Innovate · Empower**
 >
-> 耀中耀华教育（YCYW）全球 IT 团队年度会议站点 —— 集**会前公告与日程展示**、**参会指南与入场须知**、**天气预报**、**会议地点导航**、**会中实时查询与照片/视频上传**、**会后反思存档**、**数据分析与 LLM 总结**、**邮件通知**、**文件管理**、**往届会议入口**与**后台管理**于一体的全栈 Web 应用。
+> 耀中耀华教育（YCYW）全球 IT 团队年度会议站点 —— 集**首页动态内容管理**、**会前公告与日程展示**、**参会指南与入场须知**、**天气预报**、**会议地点导航**、**会中实时查询与照片/视频上传**、**会后反思存档**、**数据分析与 LLM 总结**、**邮件通知**、**文件管理**、**RBAC 权限体系**、**往届会议入口**与**后台管理**于一体的全栈 Web 应用。
 
 ![Vue](https://img.shields.io/badge/Vue-3.4-42b883?logo=vue.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-4-000?logo=express&logoColor=white)
@@ -22,7 +22,7 @@
 - [🚀 快速开始（开发环境）](#-快速开始开发环境)
 - [🐳 生产部署](#-生产部署)
 - [⚙️ 环境变量说明](#️-环境变量说明)
-- [🔐 认证系统](#-认证系统)
+- [🔐 认证与权限系统](#-认证与权限系统)
 - [📡 API 参考](#-api-参考)
 - [🧱 npm 脚本汇总](#-npm-脚本汇总)
 - [📦 数据初始化](#-数据初始化)
@@ -36,7 +36,7 @@
 
 | 模块 | 路由 | 说明 |
 | --- | --- | --- |
-| **首页** | `/` | Hero + 倒计时 + 会议主题三支柱 + 统计数字（动画计数器）+ 公告横幅 + 议题轨道 + 技术栈展示 + 快捷入口 + 往届预览 |
+| **首页** | `/` | Hero + 倒计时 + 关于会议（富文本）+ 会议主题三支柱 + 统计数字（动画计数器）+ 公告横幅 + 议题轨道 + 技术栈展示 + 快捷入口 + 团队宣言 + 往届预览；**所有区块均可通过后台「首页管理」动态配置** |
 | **日程安排** | `/schedule` | 按日期 Tab 切换 + 时间轴展示，每日可配通知/注意事项；Talk 详情弹窗支持内嵌 PPT/PDF/视频/音频/图片/外链预览 |
 | **参会指南** | `/meeting-guide` | 可配置信息卡片展示（住宿安排、交通指引、WiFi 信息、行前准备等），后台可自定义卡片内容/图标/排序 |
 | **入场须知** | `/entry-guide` | 访客二维码、天气预览、入场流程指引页面 |
@@ -48,10 +48,22 @@
 | **往届会议** | `/past-meetings` | 历年会议记录浏览，支持外部链接跳转 |
 | **OIDC 回调** | `/auth/callback` | OIDC 认证完成后的前端回调页面，自动保存令牌并跳转 |
 | **登录** | `/login` | 登录引导页面（根据 OIDC 模式自动切换行为） |
-| **后台管理** | `/admin` | 4 组 15 项侧边栏管理：会议管理（会议信息 / 日程 / 参会须知 / 发送邮件）· 人员与组织（参会人员 / 部门 / 组织）· 内容管理（反思 / 剪影 / 公告 / 往届）· 数据与设置（数据分析 / 系统设置 / 文件管理 / FA图标库） |
-| **数据分析** | `/admin → 数据分析` | 反思总览（情感分布、平均分、Top 点赞）、关键词云、时间趋势、贡献者排行、LLM 总结（OpenAI / DeepSeek 可选） |
-| **邮件通知** | `/admin → 发送邮件` | SMTP 多发件人配置、按学校/部门选择收件人、富文本邮件编辑、测试发送 |
-| **文件管理** | `/admin → 文件管理` | 基于 elFinder 的可视化文件管理器，管理 `uploads/` 目录下的所有文件；支持上传、创建目录、重命名、移动、复制、删除、搜索、预览；与 TinyMCE 富文本编辑器集成，可直接插入服务器文件 |
+| **后台管理** | `/admin` | 4 组 17 项侧边栏管理（详见下表） |
+
+### 后台管理模块
+
+| 分组 | 管理项 | 说明 |
+| --- | --- | --- |
+| **会议管理** | 会议信息 · 日程安排 · 参会须知 · 发送邮件 | 会议基本信息 CRUD、四级日程管理、参会指南卡片、SMTP 多发件人邮件通知 |
+| **人员与组织** | 参会人员 · 部门维护 · 组织维护 | 参会者管理（含头像上传/Excel 导入）、部门字典、学校/组织维护 |
+| **内容管理** | 首页管理 · 反思管理 · 剪影管理 · 往届会议 | **首页区块动态配置**（卡片组/宣言/公告/统计等）、反思审核、剪影审核、往届记录 |
+| **数据与设置** | 数据分析 · 系统设置 · 权限设置 · 角色管理 · 文件管理 · FA图标库 | 反思分析（情感/关键词/LLM）、键值设置、**页面访问白名单**、**RBAC 角色管理**（超管专属）、elFinder 文件管理、图标参考 |
+
+> **数据分析**：反思总览（情感分布、平均分、Top 点赞）、关键词云、时间趋势、贡献者排行、LLM 总结（OpenAI / DeepSeek 可选）
+>
+> **邮件通知**：SMTP 多发件人配置、按学校/部门选择收件人、富文本邮件编辑、测试发送
+>
+> **文件管理**：基于 elFinder 的可视化文件管理器，管理 `uploads/` 目录下的所有文件；支持上传、创建目录、重命名、移动、复制、删除、搜索、预览；与 TinyMCE 富文本编辑器集成，可直接插入服务器文件
 
 ---
 
@@ -84,7 +96,8 @@
 | 运行时 | **Node.js 20** |
 | 框架 | **Express 4** |
 | ORM | **Prisma 5** |
-| 认证 | **JWT**（jsonwebtoken）+ **OIDC**（openid-client v6 ESM） |
+| 认证 | **JWT**（jsonwebtoken）+ **OIDC**（openid-client v6 ESM，含登录 + 退出） |
+| RBAC | 基于 `role` + `adminPermissions` 字段的角色权限控制 |
 | 文件上传 | **multer**（内存模式 → StorageService） |
 | 文件管理 | **elFinder Connector**（实现 elFinder 客户端-服务器协议 2.1，管理 uploads/ 目录） |
 | 邮件发送 | **nodemailer**（多发件人 SMTP） |
@@ -107,16 +120,17 @@
 
 | 模型 | 说明 |
 | --- | --- |
-| `User` | 用户（邮箱登录、管理员/参会者角色） |
+| `User` | 用户（邮箱登录、角色 role、管理员权限 adminPermissions） |
 | `Reflection` / `Comment` / `Like` | 会后反思、评论、点赞（含情感分析字段） |
 | `GalleryItem` | 会议剪影（图片/视频/外链） |
 | `PastMeeting` | 往届会议记录 |
 | `PresetTag` | 预设标签 |
 | `Announcement` | 公告 |
-| `MeetingInfo` | 会议基本信息（单行表） |
+| `MeetingInfo` | 会议基本信息（单行表，含 `aboutTitle` / `aboutContent` 首页关于区块） |
 | `ScheduleDay` / `ScheduleItem` / `Talk` / `TalkResource` | 日程安排四级结构 |
 | `Attendee` / `Organization` / `Department` | 参会人员、组织、部门 |
-| `SystemSetting` | 系统设置键值对 |
+| `SystemSetting` | 系统设置键值对（含 `auth.whitelist` 页面白名单） |
+| `HomeSection` / `HomeSectionCard` | 首页动态区块 + 卡片（支持 cards / statement / intro / announcement / stats 等类型） |
 | `MeetingGuideItem` | 参会指南信息卡片 |
 
 ### 存储
@@ -133,7 +147,7 @@
 | 模式 | 触发条件 | 说明 |
 | --- | --- | --- |
 | Mock 模式 | `OIDC_ENABLED=false` | 弹出 AuthModal 输入邮箱即可登录（开发用） |
-| OIDC 模式 | `OIDC_ENABLED=true` | 302 重定向到外部 OIDC Provider，回调后自动创建本地用户 |
+| OIDC 模式 | `OIDC_ENABLED=true` | 302 重定向到外部 OIDC Provider，回调后自动创建本地用户；支持 OIDC 退出登录 |
 
 ### 部署
 
@@ -150,7 +164,7 @@ project-root/
 ├── backend/
 │   ├── src/
 │   │   ├── routes/                   # 路由模块
-│   │   │   ├── auth.js               # 登录 / OIDC 登录 / OIDC 回调 / 获取当前用户
+│   │   │   ├── auth.js               # 登录 / OIDC 登录 / OIDC 回调 / OIDC 退出 / 获取当前用户
 │   │   │   ├── staticData.js         # /schedule, /attendees, /meeting（读取数据库）
 │   │   │   ├── talks.js              # 公开 Talk 详情（含资源列表）
 │   │   │   ├── reflections.js        # 反思 CRUD + 点赞 + 评论列表
@@ -161,7 +175,9 @@ project-root/
 │   │   │   ├── announcements.js      # 公告 CRUD
 │   │   │   ├── weather.js            # 天气 API 代理（和风天气 / Open-Meteo）
 │   │   │   ├── meetingGuide.js       # 参会指南 CRUD（public + admin）
+│   │   │   ├── homeSections.js       # 首页区块 CRUD（public + admin）
 │   │   │   ├── admin.js              # 管理员专属查询（反思/剪影列表）
+│   │   │   ├── adminUsers.js         # 角色管理 CRUD（超级管理员专属）
 │   │   │   ├── meeting.js            # 会议信息管理（admin）
 │   │   │   ├── schedule.js           # 日程 CRUD：天/时段/演讲/资源（admin）
 │   │   │   ├── attendeesAdmin.js     # 参会人员/组织/部门 CRUD（admin）
@@ -170,7 +186,7 @@ project-root/
 │   │   │   ├── notification.js       # 邮件通知（SMTP 配置/发送/测试）
 │   │   │   └── elfinder.js           # elFinder 连接器（文件管理 API）
 │   │   ├── middleware/
-│   │   │   └── auth.js               # JWT 验证 / 权限中间件
+│   │   │   └── auth.js               # JWT 验证 / adminRequired / superAdminRequired / attendeeRequired
 │   │   ├── services/
 │   │   │   ├── storageService.js     # 存储抽象层（Local / OSS）
 │   │   │   ├── settingsService.js    # 数据库键值设置读写（内存缓存）
@@ -182,8 +198,9 @@ project-root/
 │   │   ├── app.js                    # Express 应用（中间件 + 路由注册）
 │   │   └── server.js                 # 启动入口
 │   ├── prisma/
-│   │   ├── schema.prisma             # 数据模型定义（13 个模型）
+│   │   ├── schema.prisma             # 数据模型定义（15 个模型）
 │   │   ├── seed.js                   # 基础种子数据（用户/标签/往届/公告/部门/设置/日程/参会人员）
+│   │   ├── seed-about.js             # 首页「关于会议」区块内容种子
 │   │   ├── seed-demo.js              # 演示数据（10 篇反思 + 评论 + 点赞）
 │   │   ├── clean-demo.js             # 清理演示数据
 │   │   └── migrate-static-to-db.js   # 从 JSON 文件迁移数据到数据库
@@ -213,6 +230,8 @@ project-root/
 │   │   ├── attendees/                # 参会人员头像照片
 │   │   └── tinymce/langs/            # TinyMCE 中文语言包
 │   ├── src/
+│   │   ├── config/
+│   │   │   └── adminMenu.js          # 后台菜单定义（单一事实来源）+ 前端路由标签 + 排除路径
 │   │   ├── components/
 │   │   │   ├── NavBar.vue            # 顶部导航栏
 │   │   │   ├── Footer.vue            # 页脚
@@ -244,18 +263,22 @@ project-root/
 │   │   │       ├── AdminAttendees.vue        # 参会人员
 │   │   │       ├── AdminDepartments.vue      # 部门维护
 │   │   │       ├── AdminOrganizations.vue    # 组织维护
+│   │   │       ├── AdminHomeSections.vue     # 首页管理（动态区块 + 卡片）
 │   │   │       ├── AdminReflections.vue      # 反思管理
 │   │   │       ├── AdminGallery.vue          # 剪影管理
 │   │   │       ├── AdminAnnouncements.vue    # 公告管理
 │   │   │       ├── AdminPast.vue             # 往届会议
+│   │   │       ├── AdminTags.vue             # 预设标签管理
 │   │   │       ├── AdminAnalytics.vue        # 数据分析
 │   │   │       ├── AdminSettings.vue         # 系统设置
+│   │   │       ├── AdminPermissions.vue      # 权限设置（页面白名单）
+│   │   │       ├── AdminAdmins.vue           # 角色管理（超级管理员专属）
 │   │   │       ├── AdminFileManager.vue      # 文件管理（elFinder）
 │   │   │       └── AdminFaIcons.vue          # FA图标库
 │   │   ├── stores/
-│   │   │   └── auth.js               # Pinia 认证状态（双模式支持）
+│   │   │   └── auth.js               # Pinia 认证状态（双模式 + RBAC 权限）
 │   │   ├── router/
-│   │   │   └── index.js              # 路由定义 + 导航守卫
+│   │   │   └── index.js              # 路由定义 + 导航守卫（含白名单检查）
 │   │   ├── api/
 │   │   │   └── index.js              # axios 实例（自动附加 JWT）
 │   │   ├── assets/
@@ -318,7 +341,7 @@ npm run db:seed-demo
 
 > `db:init` = `prisma db push --accept-data-loss` + `node prisma/seed.js`，会自动：
 >
-> 1. 把最新 `schema.prisma` 同步到 SQLite/Postgres（创建 `MeetingInfo / ScheduleDay / ScheduleItem / Talk / TalkResource / Attendee / Organization / Department / SystemSetting / MeetingGuideItem` 等表）
+> 1. 把最新 `schema.prisma` 同步到 SQLite/Postgres（创建 `MeetingInfo / ScheduleDay / ScheduleItem / Talk / TalkResource / Attendee / Organization / Department / SystemSetting / HomeSection / HomeSectionCard / MeetingGuideItem` 等表）
 > 2. 灌入用户、标签、往届会议、公告、部门、默认系统设置
 > 3. 把 `data/schedule.json` 和 `data/attendees.json` 内容**自动迁入数据库**（首次执行时）
 > 4. 灌入参会指南默认卡片（住宿/交通/WiFi 等）
@@ -337,7 +360,7 @@ npm run db:seed                     # 灌入种子数据（含静态文件迁移
 > - 为 `ADMIN_EMAILS` 中的邮箱创建/提升管理员账号
 > - 插入预设标签、往届会议记录和欢迎公告
 > - 创建默认组织和部门数据
-> - 初始化系统设置（上传限制、分析引擎等）
+> - 初始化系统设置（上传限制、分析引擎、页面白名单等）
 
 ### 4. 启动前后端
 
@@ -363,7 +386,7 @@ npm run dev:frontend  # 仅前端（Vite HMR）
 
 | 角色 | 登录方式 |
 | --- | --- |
-| **管理员** | 输入 `admin@ycyw.cn` 或 `.env` 中 `ADMIN_EMAILS` 配置的任何邮箱 |
+| **超级管理员** | 输入 `admin@ycyw.cn` 或 `.env` 中 `ADMIN_EMAILS` 配置的任何邮箱 → 拥有全部后台权限 |
 | **参会人员** | 种子数据已为 `attendees.json` 中每人生成形如 `joycechen@ycyw-edu.com` 的邮箱 |
 | **普通用户** | 输入任意有效邮箱 → 自动创建普通账户（可评论/点赞/上传剪影，但不能发布反思） |
 
@@ -371,7 +394,7 @@ npm run dev:frontend  # 仅前端（Vite HMR）
 
 ## 🐳 生产部署
 
-> 完整的生产部署指南请参阅 **[DEPLOYMENT.md](./DEPLOYMENT.md)**，涵盖 Docker Compose 部署、PM2 部署、PostgreSQL 切换、OSS 存储、OIDC 配置、天气 API、邮件通知、LLM 分析、文件管理、SSL、数据备份等。
+> 完整的生产部署指南请参阅 **[DEPLOYMENT.md](./DEPLOYMENT.md)**，涵盖 Docker Compose 部署、PM2 部署、PostgreSQL 切换、OSS 存储、OIDC 配置（含退出登录）、天气 API、邮件通知、LLM 分析、文件管理、RBAC 权限、页面白名单、SSL、数据备份等。
 
 快速概览：
 
@@ -416,7 +439,7 @@ docker compose up -d --build
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `ADMIN_EMAILS` | `admin@ycyw.cn,ying.hou@ycyw.cn` | 管理员邮箱列表（逗号分隔），登录即获管理员权限 |
+| `ADMIN_EMAILS` | `admin@ycyw.cn,ying.hou@ycyw.cn` | **超级管理员**邮箱列表（逗号分隔），登录即获最高权限；不可被角色管理撤销 |
 
 ### 存储
 
@@ -474,11 +497,19 @@ docker compose up -d --build
 | `analytics.llmBaseUrl` | （自动） | LLM API Base URL（可自定义，支持兼容接口） |
 | `analytics.llmModel` | （自动） | LLM 模型名称（如 `gpt-4o-mini` / `deepseek-chat`） |
 
+### 页面白名单（通过后台权限设置配置）
+
+| 设置键 | 默认值 | 说明 |
+| --- | --- | --- |
+| `auth.whitelist` | `[]` | JSON 数组，列出无需登录即可访问的前端页面路径（如 `["/", "/schedule", "/weather"]`） |
+
+> 当 `auth.whitelist` 为空数组时，所有页面都需要登录才能访问（OIDC 模式下会自动重定向到 SSO）。
+
 ---
 
-## 🔐 认证系统
+## 🔐 认证与权限系统
 
-### 双模式架构
+### 双模式认证
 
 项目实现了完整的双模式认证，通过 `OIDC_ENABLED` 环境变量在两种模式之间切换：
 
@@ -500,20 +531,47 @@ docker compose up -d --build
   → OIDC Provider 回调到 /api/auth/oidc-callback?code=...&state=...
   → 后端用 code 换 token → fetchUserInfo 获取邮箱
   → findOrCreate 本地用户 → 签发 JWT
-  → 302 重定向到前端 /auth/callback?token=JWT&redirect=...
-  → OidcCallbackView 保存 token → fetchMe → 跳转目标页面
+  → 302 重定向到前端 /auth/callback?token=JWT&id_token=...&redirect=...
+  → OidcCallbackView 保存 token + id_token → fetchMe → 跳转目标页面
 ```
 
-> 后端使用 **openid-client v6**（ESM，通过 CommonJS 动态 `import()` 加载），支持 Discovery、Authorization Code Grant、UserInfo 获取。
+退出登录（OIDC 模式）：
 
-### 权限模型
+```
+前端清除 localStorage → window.location.href = /api/auth/logout?id_token=...
+  → 后端构建 end_session_endpoint URL（附带 id_token_hint + post_logout_redirect_uri）
+  → 302 重定向到 OIDC Provider 退出页
+  → Provider 退出后重定向回前端首页
+```
+
+> 后端使用 **openid-client v6**（ESM，通过 CommonJS 动态 `import()` 加载），支持 Discovery、Authorization Code Grant、UserInfo 获取、End Session。
+
+### RBAC 角色权限模型
 
 | 角色 | 判定方式 | 能力 |
 | --- | --- | --- |
-| **游客** | 未登录 | 浏览首页、日程、参会指南、入场须知、天气、会议地点、参会人员、反思列表、剪影列表、往届会议 |
-| **普通用户** | 登录但非参会者 | 游客能力 + 评论 / 点赞 / 上传剪影 |
+| **游客** | 未登录 | 浏览白名单页面（首页、日程等，取决于 `auth.whitelist` 设置） |
+| **普通用户** | 登录但无特殊角色（`role=user`） | 浏览所有前台页面 + 评论 / 点赞 / 上传剪影 |
 | **参会者** | `isAttendee=true`（来自种子数据） | 普通用户能力 + **发布反思** |
-| **管理员** | `isAdmin=true`（邮箱在 `ADMIN_EMAILS` 中） | 全部能力 + 后台管理（含文件管理） |
+| **管理员** | `role=admin`（通过角色管理分配） | 前台全部能力 + 后台管理（按 `adminPermissions` 限制可见页面） |
+| **审核员** | `role=auditor`（预留） | 同管理员，可按权限限制 |
+| **编辑** | `role=editor`（预留） | 同管理员，可按权限限制 |
+| **超级管理员** | 邮箱在 `ADMIN_EMAILS` 中（运行时判定） | **全部权限**，不可被撤销；可管理其他角色用户 |
+
+#### 权限控制机制
+
+- **超级管理员**由环境变量 `ADMIN_EMAILS` 定义，是运行时概念，无法通过后台撤销
+- **角色用户**通过后台「角色管理」页面添加/修改/撤销，`adminPermissions` 字段控制可访问的后台页面
+- `adminPermissions` 为 JSON 数组，值为后台菜单的 `key`（如 `["meeting", "schedule", "attendees"]`）
+- 超级管理员的 `adminPermissions` 返回 `null`，表示拥有全部权限
+- 前端 `AdminView.vue` 根据 `adminPermissions` 过滤侧边栏菜单项
+
+#### 页面访问白名单
+
+- 通过后台「权限设置」页面配置哪些前端路由无需登录即可访问
+- 存储在 `SystemSetting` 表中（`auth.whitelist`）
+- 前端路由守卫在 `beforeEach` 中检查白名单
+- OIDC 模式下，非白名单页面会自动重定向到 SSO 登录
 
 ---
 
@@ -525,11 +583,12 @@ docker compose up -d --build
 
 | 方法 | 路径 | 权限 | 说明 |
 | --- | --- | --- | --- |
-| GET | `/auth/config` | 公开 | 返回 `{ oidcEnabled }` |
+| GET | `/auth/config` | 公开 | 返回 `{ oidcEnabled, whitelist }` |
 | POST | `/auth/login` | 公开 | Mock 模式邮箱登录，`{ email }` → `{ token, user }` |
-| GET | `/auth/oidc-login` | 公开 | OIDC 模式入口，302 重定向到 OIDC Provider |
-| GET | `/auth/oidc-callback` | 公开 | OIDC 回调，完成认证后重定向到前端 |
-| GET | `/auth/me` | 登录 | 获取当前用户信息 |
+| GET | `/auth/oidc-login` | 公开 | OIDC 模式入口，`?redirect=&action=`，302 重定向到 OIDC Provider |
+| GET | `/auth/oidc-callback` | 公开 | OIDC 回调，完成认证后重定向到前端（含 `token` + `id_token`） |
+| GET | `/auth/logout` | 公开 | OIDC 退出登录，`?id_token=`，302 重定向到 Provider end_session |
+| GET | `/auth/me` | 登录 | 获取当前用户信息（含 `role`、`isSuperAdmin`、`adminPermissions`） |
 
 ### 静态数据
 
@@ -556,6 +615,12 @@ docker compose up -d --build
 | 方法 | 路径 | 权限 | 说明 |
 | --- | --- | --- | --- |
 | GET | `/meeting-guide` | 公开 | 获取可见的参会指南卡片（按 sortOrder 排序） |
+
+### 首页区块
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/home-sections` | 公开 | 获取可见的首页区块 + 卡片（按 sortOrder 排序；数据库为空时回退到默认值） |
 
 ### 反思
 
@@ -623,8 +688,8 @@ docker compose up -d --build
 
 | 方法 | 路径 | 权限 | 说明 |
 | --- | --- | --- | --- |
-| GET | `/admin/meeting` | 管理员 | 获取会议信息 |
-| PUT | `/admin/meeting` | 管理员 | 更新会议信息（名称/主题/日期/地点/主办方） |
+| GET | `/admin/meeting` | 管理员 | 获取会议信息（含 aboutTitle / aboutContent） |
+| PUT | `/admin/meeting` | 管理员 | 更新会议信息（名称/主题/日期/地点/主办方/关于区块） |
 
 ### 管理员 — 日程管理
 
@@ -673,6 +738,31 @@ docker compose up -d --build
 | PUT | `/admin/meeting-guide/:id` | 管理员 | 编辑卡片 |
 | DELETE | `/admin/meeting-guide/:id` | 管理员 | 删除卡片 |
 | POST | `/admin/meeting-guide/seed-defaults` | 管理员 | 插入默认卡片 |
+
+### 管理员 — 首页区块
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/admin/home-sections` | 管理员 | 全部区块列表（含隐藏的） |
+| POST | `/admin/home-sections` | 管理员 | 创建区块 |
+| PUT | `/admin/home-sections/reorder` | 管理员 | 批量调整区块排序 |
+| PUT | `/admin/home-sections/:id` | 管理员 | 编辑区块 |
+| DELETE | `/admin/home-sections/:id` | 管理员 | 删除区块（级联删除卡片） |
+| POST | `/admin/home-sections/:id/cards` | 管理员 | 添加卡片 |
+| PUT | `/admin/home-sections/:id/cards/reorder` | 管理员 | 批量调整卡片排序 |
+| PUT | `/admin/home-sections/cards/:cardId` | 管理员 | 编辑卡片 |
+| DELETE | `/admin/home-sections/cards/:cardId` | 管理员 | 删除卡片 |
+| POST | `/admin/home-sections/seed-defaults` | 管理员 | 插入默认区块数据 |
+
+### 管理员 — 角色管理（超级管理员专属）
+
+| 方法 | 路径 | 权限 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/admin/admins/roles` | 超管 | 获取角色定义列表（admin / auditor / editor） |
+| GET | `/admin/admins` | 超管 | 获取所有角色用户列表 `?role=` |
+| POST | `/admin/admins` | 超管 | 添加角色用户 `{ email, role, adminPermissions }` |
+| PUT | `/admin/admins/:id` | 超管 | 更新角色/权限（不可修改超级管理员） |
+| DELETE | `/admin/admins/:id` | 超管 | 撤销角色（降级为普通用户） |
 
 ### 管理员 — 系统设置
 
@@ -773,6 +863,7 @@ docker compose up -d --build
 | 脚本 | 说明 |
 | --- | --- |
 | `prisma/seed.js` | 创建参会用户、管理员、18 个预设标签、往届会议（2024 上海 / 2025 石河子）、欢迎公告、组织、部门、系统设置、日程/参会人员迁移 |
+| `prisma/seed-about.js` | 灌入首页「关于会议」区块的富文本内容（`aboutTitle` / `aboutContent`） |
 | `prisma/seed-demo.js` | 创建 10 篇 `[DEMO]` 前缀反思 + 随机评论和点赞（方便演示） |
 | `prisma/clean-demo.js` | 清理所有 `[DEMO]` 开头的反思及其评论和点赞 |
 | `prisma/migrate-static-to-db.js` | 将 `data/schedule.json` 和 `data/attendees.json` 迁移到数据库表 |
@@ -824,10 +915,14 @@ node scripts/generate-fa-categories.js
 - [ ] 移动端 PWA 支持
 - [ ] 上传后自动生成视频缩略图
 - [ ] 多语言（i18n）支持
+- [ ] Redis 缓存（OIDC state、热门数据、页面白名单）
+- [ ] 集群部署方案（Kubernetes + Ingress）
+- [ ] auditor / editor 角色具体权限逻辑实现
 - [x] ~~邮件通知（新反思、新评论）~~ — 已实现 SMTP 多发件人邮件通知
 - [x] ~~文件管理~~ — 已实现 elFinder 可视化文件管理器 + TinyMCE 集成
-- [ ] Redis 缓存（OIDC state、热门数据）
-- [ ] 集群部署方案（Kubernetes + Ingress）
+- [x] ~~RBAC 角色权限~~ — 已实现角色管理 + 页面级权限控制 + 白名单
+- [x] ~~首页动态配置~~ — 已实现 Home Sections 管理（区块 + 卡片 CRUD）
+- [x] ~~OIDC 退出登录~~ — 已实现 end_session + id_token_hint
 
 ---
 

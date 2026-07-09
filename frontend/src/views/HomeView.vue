@@ -164,7 +164,7 @@
       <section v-else-if="sec.sectionType === 'announcement'" :style="sectionStyle(sec)">
         <div class="container-x py-6">
           <div
-            class="rounded-md bg-gradient-to-r from-brand-blue to-brand-deep text-white p-6 sm:p-8 shadow-glow flex flex-col sm:flex-row sm:items-center gap-4"
+            class="rounded-md bg-gradient-to-r from-brand-blue to-brand-deep text-white p-6 sm:p-8 shadow-soft flex flex-col sm:flex-row sm:items-center gap-4"
           >
             <div class="flex items-center gap-3 flex-shrink-0">
               <div class="h-10 w-10 rounded-full bg-brand-orange flex items-center justify-center">
@@ -536,8 +536,8 @@ const quoteSection = computed(() =>
 function sectionStyle(sec) {
   const style = {};
   if (sec.bgColor) style.backgroundColor = sec.bgColor;
-  if (sec.borderTop) style.borderTop = '1px solid #e5e7eb';
-  if (sec.borderBottom) style.borderBottom = '1px solid #e5e7eb';
+  if (sec.borderTop) style.borderTop = '1px solid #efefef';
+  if (sec.borderBottom) style.borderBottom = '1px solid #efefef';
   return style;
 }
 
