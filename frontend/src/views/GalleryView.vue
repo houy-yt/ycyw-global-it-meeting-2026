@@ -49,13 +49,22 @@
             >
               <div class="relative overflow-hidden bg-slate-100">
                 <!-- Image -->
-                <img
-                  v-if="g.type === 'image'"
-                  :src="g.fileUrl"
-                  :alt="g.title"
-                  class="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
+                <template v-if="g.type === 'image'">
+                  <img
+                    :src="g.fileUrl"
+                    :alt="g.title"
+                    class="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <button
+                    v-if="g.originalUrl"
+                    class="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="下载原图"
+                    @click.stop="downloadOriginal(g)"
+                  >
+                    <font-awesome-icon icon="download" class="text-xs" />
+                  </button>
+                </template>
                 <!-- Video (MP4 direct link) – use <video> as thumbnail with fallback poster -->
                 <div v-else-if="g.type === 'video'" class="relative">
                   <video
@@ -236,6 +245,7 @@
       :type="current?.type || 'image'"
       :video-link="current?.videoLink || ''"
       :meta="previewMeta"
+      :original-url="current?.originalUrl || ''"
     />
   </div>
 </template>
@@ -245,6 +255,7 @@ import { reactive, ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import dayjs from 'dayjs';
+import { saveAs } from 'file-saver';
 import api from '../api';
 import { useAuthStore } from '../stores/auth';
 import PhotoPreviewModal from '../components/PhotoPreviewModal.vue';
@@ -376,6 +387,19 @@ async function doUpload() {
 function preview(g) {
   current.value = g;
   previewVisible.value = true;
+}
+
+async function downloadOriginal(g) {
+  if (!g.originalUrl) return;
+  try {
+    const res = await fetch(g.originalUrl);
+    const blob = await res.blob();
+    const ext = g.originalUrl.split('.').pop().split('?')[0];
+    const name = (g.title || 'image').replace(/[\\/:*?"<>|]/g, '_');
+    saveAs(blob, `${name}.${ext}`);
+  } catch (e) {
+    ElMessage.error('下载原图失败');
+  }
 }
 
 async function del(g) {

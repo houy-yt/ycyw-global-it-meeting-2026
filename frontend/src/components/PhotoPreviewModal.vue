@@ -63,6 +63,14 @@
               <div class="photo-modal-name">{{ title }}</div>
               <div v-if="subtitle" class="photo-modal-name-sub">{{ subtitle }}</div>
               <div v-if="meta" class="photo-modal-meta">{{ meta }}</div>
+              <button
+                v-if="type === 'image' && originalUrl"
+                class="photo-modal-download"
+                @click="downloadOriginal"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                下载原图
+              </button>
             </div>
           </div>
         </div>
@@ -73,6 +81,7 @@
 
 <script setup>
 import { computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { saveAs } from 'file-saver';
 import { getEmbedUrl } from '../utils/videoEmbed';
 
 const props = defineProps({
@@ -83,6 +92,7 @@ const props = defineProps({
   type: { type: String, default: 'image' },       // 'image' | 'video' | 'link'
   videoLink: { type: String, default: '' },
   meta: { type: String, default: '' },
+  originalUrl: { type: String, default: '' },     // uncompressed original, image type only
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -92,6 +102,19 @@ const embedUrl = computed(() => getEmbedUrl(props.videoLink));
 
 function close() {
   emit('update:modelValue', false);
+}
+
+async function downloadOriginal() {
+  if (!props.originalUrl) return;
+  try {
+    const res = await fetch(props.originalUrl);
+    const blob = await res.blob();
+    const ext = props.originalUrl.split('.').pop().split('?')[0];
+    const name = (props.title || 'image').replace(/[\\/:*?"<>|]/g, '_');
+    saveAs(blob, `${name}.${ext}`);
+  } catch (e) {
+    console.error('download original failed', e);
+  }
 }
 
 function handleKeydown(e) {
@@ -274,6 +297,25 @@ onBeforeUnmount(() => {
   color: rgba(255, 255, 255, 0.4);
   margin-top: 8px;
   font-weight: 400;
+}
+.photo-modal-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(6px);
+}
+.photo-modal-download:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 /* ========== Transition animations ========== */

@@ -77,6 +77,7 @@ model GalleryItem {
   title      String
   type       String   // 'image' | 'video' | 'link'
   fileUrl    String   // local URL like /uploads/xxx OR OSS URL; '' when type=link
+  originalUrl String? // uncompressed original, set when type=image and compression succeeded
   videoLink  String?  // YouTube/Vimeo etc when type=link
   tags       String   // JSON string array, e.g. ["AI应用","开幕"]
   uploaderId Int

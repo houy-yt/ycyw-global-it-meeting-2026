@@ -6,6 +6,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const prisma = require('../utils/prisma');
 const { authRequired, adminRequired } = require('../middleware/auth');
+const { compressToWebp } = require('../utils/imageProcessor');
 
 const MAX_IMAGE = parseInt(process.env.MAX_IMAGE_SIZE, 10) || 10 * 1024 * 1024;
 const MAX_VIDEO = parseInt(process.env.MAX_VIDEO_SIZE, 10) || 50 * 1024 * 1024;
@@ -47,6 +48,7 @@ function serialize(g) {
     title: g.title,
     type: g.type,
     fileUrl: g.fileUrl,
+    originalUrl: g.originalUrl,
     videoLink: g.videoLink,
     tags: safeJsonParse(g.tags, []),
     uploaderId: g.uploaderId,
@@ -113,6 +115,7 @@ router.post('/', authRequired, upload.single('file'), async (req, res) => {
     if (!title) return res.status(400).json({ message: 'Title is required' });
 
     let fileUrl = '';
+    let originalUrl = null;
 
     if (tt === 'link') {
       if (!videoLink) return res.status(400).json({ message: 'videoLink is required' });
@@ -135,9 +138,31 @@ router.post('/', authRequired, upload.single('file'), async (req, res) => {
         fs.mkdirSync(galleryDir, { recursive: true });
       }
       const ext = path.extname(req.file.originalname) || '';
-      const key = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
-      fs.writeFileSync(path.join(galleryDir, key), req.file.buffer);
-      fileUrl = `/uploads/gallery/${dateStr}/${key}`;
+      const key = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+
+      if (tt === 'image') {
+        const webpBuffer = await compressToWebp(req.file.buffer);
+        if (webpBuffer) {
+          // compressed display copy
+          fs.writeFileSync(path.join(galleryDir, `${key}.webp`), webpBuffer);
+          fileUrl = `/uploads/gallery/${dateStr}/${key}.webp`;
+
+          // untouched original, kept alongside for download
+          const originalDir = path.join(galleryDir, 'original');
+          if (!fs.existsSync(originalDir)) {
+            fs.mkdirSync(originalDir, { recursive: true });
+          }
+          fs.writeFileSync(path.join(originalDir, `${key}${ext}`), req.file.buffer);
+          originalUrl = `/uploads/gallery/${dateStr}/original/${key}${ext}`;
+        } else {
+          // couldn't compress (e.g. SVG) -> keep old behaviour, store as-is
+          fs.writeFileSync(path.join(galleryDir, `${key}${ext}`), req.file.buffer);
+          fileUrl = `/uploads/gallery/${dateStr}/${key}${ext}`;
+        }
+      } else {
+        fs.writeFileSync(path.join(galleryDir, `${key}${ext}`), req.file.buffer);
+        fileUrl = `/uploads/gallery/${dateStr}/${key}${ext}`;
+      }
     }
 
     const g = await prisma.galleryItem.create({
@@ -145,6 +170,7 @@ router.post('/', authRequired, upload.single('file'), async (req, res) => {
         title: String(title).slice(0, 200),
         type: tt,
         fileUrl,
+        originalUrl,
         videoLink: tt === 'link' ? String(videoLink).slice(0, 500) : null,
         tags: JSON.stringify(tags),
         uploaderId: req.user.id,
